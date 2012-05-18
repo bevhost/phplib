@@ -208,7 +208,7 @@ Submit for import into SQL.
 
 Goto /phplib/autogen.php
 The files are now created in phplib/autogen/
-copy the .inc and .ihtml files to the phplib folder and any .pho files you want to document root (public_html).
+copy the .inc and .ihtml files to the phplib folder and any .php files you want to document root (public_html).
 
 You should now be able to add the .php file to somewhere on the menu in your application.
 You may want to restrict access to just admin to start with. 
