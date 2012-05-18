@@ -1,0 +1,104 @@
+
+  PHPLIB package by David Beveridge
+
+A library that provides session managent, authentication, permission
+control, tables, forms, form elements, templating and sql query builder.
+Compatible with a wide range of databases including MySQL, ODBC, Oracle,
+Postgres, MSSQL etc.
+
+The package is designed to be installed in a central shared folder with
+just the files in the local folder being copied to each web site.
+
+
+INSTALLTION
+
+If you have received the .tar.gz instead of the .rpm you will have to
+install it manually.  The rpm installs into /usr/share/phplib
+
+
+
+
+If you are on a hosted web server where everything must go in your own 
+webspace, do the following.  I'll assume you can cPanel with shell access.
+
+if you are installing into the default web site on a web server that 
+won't be using Virtual Hosts which you have root access to.
+then...
+
+
+  SINGLE  USER  SETUP
+:-===================-:
+
+cd ~/public_html
+or
+cd /var/www/html
+
+tar zxvf ~/phplib-1.0.tar.gz
+ln -s phplib-1.0 phplib
+mv phplib/inc/* phplib/ && rmdir phplib/inc
+mv phplib/local/phplib/* phplib/ && rmdir phplib/local/phplib
+mv phplib/local/* . && rmdir phplib/local
+
+These last two steps are required because ther shared files in /usr/share/phplib
+are not available.
+
+
+
+If you have root access to the server and are installing normally, 
+then do the following instead.
+
+To end up with the same as the rpm do the following assuming that the
+tar file is in your home directory
+
+
+  MULTI  USER  SETUP
+:-==================-:
+
+cd /usr/share/
+tar zxvf ~/phplib-1.0.tar.gz
+ln -s phplib-1.0 phplib
+mv phplib/inc/* phplib/ && rmdir phplib/inc
+
+The setup program assumes that you want your virtual host config files
+placed in /etc/httpd/conf/vhosts if it exists or /etc/httpd/conf.d
+it it doesn't.  If you want the virtual hosts in the vhosts folder,
+you can follow these steps.
+
+mkdir /etc/httpd/conf/vhosts
+cat << EOF > /etc/httpd/conf.d/vhosts.conf
+NameVirtualHost *:80
+Include conf/vhosts/*.conf
+EOF
+ 
+If you have installed my backup package, a folder will be created
+/var/spool/backup/mysql into which daily mysqldumps are placed
+The setup program detects the existance of this folder and creates
+a folder alias "/backup", so that backups can be browsed and downloaded.
+A .htaccess file is created to protect this folder from unauthorised
+access.
+
+To create virtual hosts, use the provided python setup
+
+cd /usr/share/phplib
+./setup
+
+
+
+To create the web site manually:-
+
+1.  Setup the website in apache
+2.  create a subfolder under the main html folder called phplib
+    using the  single user setup instructions from above.
+3.  password protect this folder with a .htaccess file
+4.  create a mysql database and import the .sql schema files.
+5.  attempt to run the autogenerator /phplib/autogen.php
+6.  you will be prompted to enter details about the config you created
+7.  autogen will attempt to create /phplib/.htauth.local
+8.  if it fails it will display the contents on the web browser
+    for you to paste into the file manually.
+9.  create a subfolder /phplib/templates
+10. create a subfolder /phplib/autogen
+11. make these files writable by the web server.
+    you may want to employ suphp or suexec if on a shared web server
+
+
