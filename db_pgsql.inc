@@ -9,12 +9,11 @@
  *
  */ 
 
-class PG_Sql {
+class DB_Sql {
   var $Host     = "";
   var $Database = "";
   var $User     = "";
   var $Password = "";
-  var $Port	= 5432;
 
   var $Link_ID  = 0;
   var $Query_ID = 0;
@@ -82,7 +81,7 @@ class PG_Sql {
   }
   
   function next_record() {
-    $this->Record = @pg_fetch_assoc($this->Query_ID, $this->Row++);
+    $this->Record = @pg_fetch_array($this->Query_ID, $this->Row++);
     
     $this->Error = pg_ErrorMessage($this->Link_ID);
     $this->Errno = ($this->Error == "")?0:1;
