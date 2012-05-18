@@ -1,0 +1,3 @@
+<br>
+<h3><a href="<?=$GLOBALS['target']?>"><?=$GLOBALS['title']?></a> - <?=$GLOBALS['LongDescription']?><?=$GLOBALS['edit']?></h3>
+<?=$GLOBALS['HelpText']?>

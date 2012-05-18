@@ -1,0 +1,16 @@
+#Layout {
+        width: 949px;
+        min-height: 600px;
+        margin: 0px auto;
+        background: white;
+}
+body    {
+        background: #ddd;
+}
+
+#header {
+        background: #333 url('../image/logo.png') no-repeat;
+        height: 97px;
+        width: 943px;
+}
+

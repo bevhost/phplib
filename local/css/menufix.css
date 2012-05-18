@@ -1,0 +1,6 @@
+#nav li:hover, #nav li.hover {
+    position: static;
+}
+#nav li ul li {
+    * padding: 0px;
+}

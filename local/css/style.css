@@ -1,0 +1,110 @@
+body {
+	font-family: Arial, Helvetica, verdana, sans-serif;
+}
+h1 {
+        padding: 25px;
+	padding-left: 75px;
+	text-transform: uppercase;
+	margin: 0px;
+        font-size: large;
+	font-weight: bold;
+        color: #0071bc;
+}
+h2 {
+        padding: 25px;
+  	padding-left: 75px;
+  	margin: 0px;
+        font-size: x-large;
+ 	font-weight: bold;
+        color: #0071bc;
+}
+h3 {
+        margin: 0px;
+	padding: 0px;
+	font-size: large;
+	font-weight: bold;
+        color: #0071bc;
+}
+h4 {
+        color: #827916;
+  	text-transform: uppercase;
+} 
+h5{
+        color: #827916;
+}
+a {
+        outline: none;
+}
+ol {
+        color: #827916;
+	font-size: 12px;
+        font-weight: bold;
+	margin-right: 5px;
+} 
+ol p {
+        color: #000;
+	font-weight: normal;
+	font-size: 11px;
+}
+pre {
+	
+}
+
+.error {
+        color: red;
+        font-weight: bold;
+        font-size: larger;
+}
+
+table.btable tr td input {
+
+}
+
+.ipe {
+        border: none;
+        border: 0px;
+}
+.ipeh {
+        display: none;
+}
+.ipeb {
+        display: inline;
+}
+
+.NoticeInformationTextUpdate {
+        color: #144984;
+  font-weight: bold;
+}
+.NoticeAlertTextUpdate {
+        color: #d29618;
+  font-weight: bold;
+}
+.NoticesFooter{
+        padding-left: 2px;
+}
+.btable{
+}
+.table_cell {
+        background-color: #fff;
+        color: #006;
+        font-size: smaller;
+}
+.table_over {
+        background-color: #ddd;
+        color: #006;
+        font-size: smaller;
+}
+
+
+.bggreen        { background-color: #11cd11 ; text-align: center ; color:white }
+.bgred          { background-color: red ; text-align: center ; color:white }
+
+
+
+.bigTextBold {
+        font-size: 18px;
+        font-weight: bold;
+        color: #0071bc;
+}
+
+

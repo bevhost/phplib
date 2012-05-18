@@ -1,0 +1,131 @@
+#!/usr/bin/php
+<?php
+include("phplib/prepend.php");
+
+/* Translate Currency Names Here */
+$names = array(
+		"U.S. Dollar (Noon)"=>"US $",
+		"European Euro"=>"EURO &euro;",
+		"Chinese Renminbi"=>"China Yuan Ren",
+		"U.K. Pound Sterling"=>"Pound Sterling &pound;",
+		"Australian Dollar"=>"Australian $",
+		"New Zealand Dollar"=>"New Zealand $",
+		"Canadian Dollar"=>"Canadian $",
+		"Singapore Dollar"=>"Singapore $",
+		
+	);
+
+/* Currency Codes */
+$codes = array(
+		"U.S. Dollar (Noon)"=>"USD",
+		"Australian Dollar"=>"AUD",
+		"New Zealand Dollar"=>"NZD",
+		"European Euro"=>"EUR",
+		"U.K. Pound Sterling"=>"GBP",
+		"Philippine Peso"=>"PHP",
+		"Singapore Dollar"=>"SGD",
+		"Taiwanese New Dollar"=>"TWD",
+		"Hong Kong Dollar"=>"HKD",
+		"Vietnamese Dong"=>"VND",
+		"Indian Rupee"=>"INR",
+		"Chinese Renminbi"=>"CNY",
+		"Canada Dollar"=>"CAD",
+		"Malaysian Ringgit"=>"MYR",
+		"Swiss Franc"=>"CHF",
+		"Danish Krone"=>"DKK",
+		"Hungarian Forint"=>"HUF",
+		"Japanese Yen"=>"JPY",
+		"Mexican Peso"=>"MXN",
+		"Norwegian Krone"=>"NOK",
+		"Russian Rouble"=>"RUB",
+		"Swedish Krona"=>"SEK",
+		"Thai Baht"=>"THB",
+		"South African Rand"=>"ZAR",
+		"South Korean Won"=>"KRW",
+	);
+
+$symbols = array(
+		"GBP"=>"&pound;",
+		"EUR"=>"&euro;",
+		"CNY"=>"&yen;",
+		"MYR"=>"RM",
+		"PHP"=>"P",
+		"INR"=>"Rs.&nbsp;",
+		"AUD"=>"$",
+		"NZD"=>"$",
+		"USD"=>"$",
+		"SGD"=>"$",
+		"TWD"=>"$",
+		"HKD"=>"$",
+		
+	);
+
+/*
+Copyright © 1995 - 2009, Bank of Canada. 
+Permission is granted to reproduce or cite portions herein, 
+if attribution is given to the Bank of Canada. 
+http://www.bankofcanada.ca/en/contact.html
+http://www.bankofcanada.ca/en/privacy.html
+*/
+
+$db = new $_ENV["DatabaseClass"];
+$local_code = $_ENV["LocalCurrency"];
+$local_currency = array_search($local_code, $codes);
+
+$SQL = "CREATE TABLE IF NOT EXISTS ExchangeRates (
+  `Code` varchar(6) default NULL,
+  `Country` varchar(40) default NULL,
+  `Symbol` varchar(10) default NULL,
+  `OneLocal` float NOT NULL default '0',
+  `OneForeign` float NOT NULL default '0',
+  `LastUpdated` date NOT NULL,
+  `LastChecked` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`Code`)
+)";
+
+$db->query($SQL);
+
+$SQL = "REPLACE INTO ExchangeRates SET Code='%s', Country='%s', ";
+$SQL .= "OneLocal='%s', OneForeign='%s', Symbol='%s', LastUpdated='%s'";
+
+if ($fp = fopen($url = "http://www.bankofcanada.ca/en/financial_markets/csv/exchange_eng.csv","r")) {
+	while (!feof($fp)) {
+		$rates = fgetcsv($fp,4000);
+		if (substr($rates,0,1)!="#") {
+			$i=7;
+			while (!$rates[$i] && $i>1) $i--; {
+				$country = $rates[0];
+				$conv[$country] = $rates[$i];
+			}
+		}
+	}
+	fclose($fp);
+	$conv["Canada Dollar"] = 1;
+	if ($LOCAL = $conv[$local_currency]) {
+		if (!$symbol = $symbols[$local_code]) $symbol = "&curren;";
+		$db->query(sprintf($SQL,$local_code,$local_currency,1,1,$symbol,date("Y-m-d")));
+		$count = 0;
+		foreach($conv as $country => $rate) {
+			switch ($country) {
+				case "Date (<m>/<d>/<year>)": 
+					$date = date("Y-m-d",strtotime($rate));
+					break;
+				default:
+					$country_code = $codes[$country];
+					if (!$symbol = $symbols[$country_code]) $symbol = "&curren;";
+					if ($names[$country]) $country = $names[$country];
+					if ($rate>0 and $country_code>'') {
+						$db->query(sprintf($SQL,$country_code,$country,$LOCAL/$rate,$rate/$LOCAL,$symbol,$date));
+						$count++;
+					}
+			}
+		}
+		$db->query("DELETE FROM ExchangeRates WHERE Code<>'$local_code' AND LastUpdated<'$date'");
+		EventLog("Exchange Rates Updated","$count currencies where updated successfully.","Info");
+	} else {
+		EventLog("Currency Update Failed", "Can't find local currency","Error");
+	}
+} else {
+	Eventlog("Currency Update Failed", "Could not open $url","Error");
+}
+?>

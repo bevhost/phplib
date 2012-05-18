@@ -1,0 +1,135 @@
+<?php
+  $this->form_data->start("pp_transactionsform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE>     <TR><TD>business</TD><TD>
+		<?php $this->form_data->show_element('business'); ?> </TD></TR>
+    <TR><TD>receiver email</TD><TD>
+		<?php $this->form_data->show_element('receiver_email'); ?> </TD></TR>
+    <TR><TD>receiver id</TD><TD>
+		<?php $this->form_data->show_element('receiver_id'); ?> </TD></TR>
+    <TR><TD>invoice</TD><TD>
+		<?php $this->form_data->show_element('invoice'); ?> </TD></TR>
+    <TR><TD>custom</TD><TD>
+		<?php $this->form_data->show_element('custom'); ?> </TD></TR>
+    <TR><TD>memo</TD><TD>
+		<?php $this->form_data->show_element('memo'); ?> </TD></TR>
+    <TR><TD>tax</TD><TD>
+		<?php $this->form_data->show_element('tax'); ?> </TD></TR>
+    <TR><TD>num cart items</TD><TD>
+		<?php $this->form_data->show_element('num_cart_items'); ?> </TD></TR>
+    <TR><TD>payment status</TD><TD>
+		<?php $this->form_data->show_element('payment_status'); ?> </TD></TR>
+    <TR><TD>pending reason</TD><TD>
+		<?php $this->form_data->show_element('pending_reason'); ?> </TD></TR>
+    <TR><TD>reason code</TD><TD>
+		<?php $this->form_data->show_element('reason_code'); ?> </TD></TR>
+    <TR><TD>payment date</TD><TD>
+		<?php $this->form_data->show_element('payment_date'); ?> </TD></TR>
+    <TR><TD>txn id</TD><TD>
+		<?php $this->form_data->show_element('txn_id'); ?> </TD></TR>
+	<input type='hidden' name='id' value='<?php echo $GLOBALS['txn_id']; ?>'>
+    <TR><TD>parent txn id</TD><TD>
+		<?php $this->form_data->show_element('parent_txn_id'); ?> </TD></TR>
+    <TR><TD>txn type</TD><TD>
+		<?php $this->form_data->show_element('txn_type'); ?> </TD></TR>
+    <TR><TD>payment type</TD><TD>
+		<?php $this->form_data->show_element('payment_type'); ?> </TD></TR>
+    <TR><TD>auth id</TD><TD>
+		<?php $this->form_data->show_element('auth_id'); ?> </TD></TR>
+    <TR><TD>auth exp</TD><TD>
+		<?php $this->form_data->show_element('auth_exp'); ?> </TD></TR>
+    <TR><TD>auth amount</TD><TD>
+		<?php $this->form_data->show_element('auth_amount'); ?> </TD></TR>
+    <TR><TD>auth status</TD><TD>
+		<?php $this->form_data->show_element('auth_status'); ?> </TD></TR>
+    <TR><TD>mc gross</TD><TD>
+		<?php $this->form_data->show_element('mc_gross'); ?> </TD></TR>
+    <TR><TD>mc fee</TD><TD>
+		<?php $this->form_data->show_element('mc_fee'); ?> </TD></TR>
+    <TR><TD>mc currency</TD><TD>
+		<?php $this->form_data->show_element('mc_currency'); ?> </TD></TR>
+    <TR><TD>settle amount</TD><TD>
+		<?php $this->form_data->show_element('settle_amount'); ?> </TD></TR>
+    <TR><TD>settle currency</TD><TD>
+		<?php $this->form_data->show_element('settle_currency'); ?> </TD></TR>
+    <TR><TD>remaining settle</TD><TD>
+		<?php $this->form_data->show_element('remaining_settle'); ?> </TD></TR>
+    <TR><TD>exchange rate</TD><TD>
+		<?php $this->form_data->show_element('exchange_rate'); ?> </TD></TR>
+    <TR><TD>payment gross</TD><TD>
+		<?php $this->form_data->show_element('payment_gross'); ?> </TD></TR>
+    <TR><TD>payment fee</TD><TD>
+		<?php $this->form_data->show_element('payment_fee'); ?> </TD></TR>
+    <TR><TD>for auction</TD><TD>
+		<?php $this->form_data->show_element('for_auction'); ?> </TD></TR>
+    <TR><TD>auction buyer id</TD><TD>
+		<?php $this->form_data->show_element('auction_buyer_id'); ?> </TD></TR>
+    <TR><TD>auction closing date</TD><TD>
+		<?php $this->form_data->show_element('auction_closing_date'); ?> </TD></TR>
+    <TR><TD>auction multi item</TD><TD>
+		<?php $this->form_data->show_element('auction_multi_item'); ?> </TD></TR>
+    <TR><TD>first name</TD><TD>
+		<?php $this->form_data->show_element('first_name'); ?> </TD></TR>
+    <TR><TD>last name</TD><TD>
+		<?php $this->form_data->show_element('last_name'); ?> </TD></TR>
+    <TR><TD>payer business name</TD><TD>
+		<?php $this->form_data->show_element('payer_business_name'); ?> </TD></TR>
+    <TR><TD>address name</TD><TD>
+		<?php $this->form_data->show_element('address_name'); ?> </TD></TR>
+    <TR><TD>address street</TD><TD>
+		<?php $this->form_data->show_element('address_street'); ?> </TD></TR>
+    <TR><TD>address city</TD><TD>
+		<?php $this->form_data->show_element('address_city'); ?> </TD></TR>
+    <TR><TD>address state</TD><TD>
+		<?php $this->form_data->show_element('address_state'); ?> </TD></TR>
+    <TR><TD>address zip</TD><TD>
+		<?php $this->form_data->show_element('address_zip'); ?> </TD></TR>
+    <TR><TD>address country</TD><TD>
+		<?php $this->form_data->show_element('address_country'); ?> </TD></TR>
+    <TR><TD>address country code</TD><TD>
+		<?php $this->form_data->show_element('address_country_code'); ?> </TD></TR>
+    <TR><TD>address status</TD><TD>
+		<?php $this->form_data->show_element('address_status'); ?> </TD></TR>
+    <TR><TD>payer email</TD><TD>
+		<?php $this->form_data->show_element('payer_email'); ?> </TD></TR>
+    <TR><TD>payer id</TD><TD>
+		<?php $this->form_data->show_element('payer_id'); ?> </TD></TR>
+    <TR><TD>payer status</TD><TD>
+		<?php $this->form_data->show_element('payer_status'); ?> </TD></TR>
+    <TR><TD>residence country</TD><TD>
+		<?php $this->form_data->show_element('residence_country'); ?> </TD></TR>
+    <TR><TD>subscr date</TD><TD>
+		<?php $this->form_data->show_element('subscr_date'); ?> </TD></TR>
+    <TR><TD>subscr effective</TD><TD>
+		<?php $this->form_data->show_element('subscr_effective'); ?> </TD></TR>
+    <TR><TD>notify version</TD><TD>
+		<?php $this->form_data->show_element('notify_version'); ?> </TD></TR>
+    <TR><TD>verify sign</TD><TD>
+		<?php $this->form_data->show_element('verify_sign'); ?> </TD></TR>
+    <TR><TD>processed by</TD><TD>
+		<?php $this->form_data->show_element('processed_by'); ?> </TD></TR>
+    <TR><TD>processed date</TD><TD>
+		<?php $this->form_data->show_element('processed_date'); ?> 
+                <?php if (!isset($this->form_data->elements['processed_date']['frozen'])) { ?>
+			<a href="javascript:show_cal('pp_transactionsform', 'processed_date');">
+			<img src=/image/cal.gif width=16 height=16 border=0 
+				alt="Click here to pick a date from the calendar"></a>
+                <?php } ?>
+		</TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+                if ($cmd=="View") {
+                        $cmd="Back";
+                        global $id;
+                        echo "<a href=".$sess->url("pp_transactions.php");
+                        echo $sess->add_query(array("cmd"=>"Edit","id"=>$id));
+                        echo ">Edit</a>&nbsp;<a href='".$sess->url("pp_transactions.php")."'>Back</a>";
+                } else {
+                        if ($cmd=="Add") $cmd="Save";
+                        if ($cmd=="Edit") $cmd="Save";
+                        $this->form_data->show_element('submit',$cmd);
+                }
+		?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish();
+?>

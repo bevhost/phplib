@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<?php if ($GLOBALS['pda']) { ?>
+    <style media="all" type="text/css">@import "/css/pda.css";</style>
+    <meta name="viewport" content="width=350">
+<?php } else { ?>
+    <style media="all" type="text/css">@import "/css/all.css";</style>
+<?php } ?>
+    <!--[if lt IE 7]><link rel="stylesheet" type="text/css" href="css/ie7.css" media="screen"/><![endif]-->
+     <link rel="Shortcut Icon" type="image/ico" href="/candy/favicon.ico" />
+       <title>Login</title>
+<script type="text/javascript">
+<!--
+function SetFocus() {
+  var f = document.forms['loginform'];
+  if (f.elements['username'].value != '') {
+      f.elements['password'].focus();
+  } else {
+      f.elements['username'].focus();
+  }
+}
+// -->
+</script>
+</head>
+<body onload='SetFocus();' >
+<!--Page content starts here -->
+<h2>Login</h2>
+
+<p>Secured Area.</p>
+
+<p>To apply <a href="register">Register Now</a>, or if you forgot your details, we can 
+<a href="emailpw">email your password</a> to you.</p>
+
+<form action="<?php
+	$QUERY_STRING=$_SERVER["QUERY_STRING"];
+	print $this->url();
+	$QUERY_STRING=""; ?>" id="loginform" name="loginform" method="post" onsubmit="return jValidate(this);">
+<fieldset class=login>
+<?php
+	foreach($_POST as $k => $v ) {
+		switch ($k) {
+			case "username":
+			case "password":
+			case "loginbutton":
+				break;
+			default:
+				echo "<input type='hidden' name='$k' value='$v' />\n";
+		}
+	}
+?>
+
+<legend>Login Details</legend>
+
+<p><label for="username">User Name: <em class="none">(Required)</em><span class="ast">*</span></label>
+<input type="text" name="username" id="username" 
+   value="<?php if (isset($this->auth["uname"])) print htmlentities($this->auth["uname"]) ?>"
+/>
+</p>
+<p><label for="password">Password: <em class="none">(Required)</em><span class="ast">*</span></label>
+<input type="password" name="password" id="password"/>
+<!--for="password" required="true" datatype="alpha" errorMsg="Please enter your password" --></p>
+<p><label for="rememberme">&nbsp;</label>
+<input type=checkbox value='yes' name='rememberme'> Keep me permanently logged in on this computer</p>
+</fieldset>
+<div class="form-button">
+<input class="button" type="submit" name="loginbutton" value="Login now" />
+<input class="button" type="reset" name="reset" value="Clear Form" />
+</div>
+</form>
+
+
+ <?php if ( isset($_POST["username"]) ): ?>
+ <!-- failed login code -->
+
+   <div id=badlogin><font color=red><b>Either your username or your password
+       are invalid.<br>
+       Please try again!</b></font></div>
+
+ <?php endif ?>
+
+<!--Page content ends here-->
+
+
