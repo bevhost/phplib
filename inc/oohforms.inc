@@ -512,6 +512,5 @@ include($_ENV["libdir"] . "of_checkbox.inc");
 include($_ENV["libdir"] . "of_textarea.inc");
 include($_ENV["libdir"] . "of_htmlarea.inc");
 include($_ENV["libdir"] . "of_file.inc");
-include($_ENV["libdir"] . "of_packed.inc");
 
 ?>
