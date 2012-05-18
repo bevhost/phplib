@@ -2,3 +2,215 @@ phplib
 ======
 
 My fork of PHPLIB by Boris Erdmann, Kristian Koehntopp &amp; Jeffrey Galbraith
+
+
+
+AUTOGENERATOR  for  PHPLIB.  ( David Beveridge <dave at bevhost dot com> )
+:-==========================-:
+
+PHPLIB is a great tool which make's it easy to produce forms, to add, edit & delete data records
+as well as providing an SQL query tool to find records.
+
+Whilst the examples given show how to bolt it all together, there is a huge amount of repetative
+work for each database table, defining form structures, add routings, delete routines etc.
+
+I quickly decided that most of this information could derived from the original SQL structure.
+And so autogen.php was born.  I have now been using it for several years and has gone through
+many enhancements.
+
+What changes for each php file is the table name and the column specifications for the table.
+
+The basic structure of an add/view/edit/copy/delete/search table function is
+
+
+
+page_open
+check view permissions
+
+if submit form
+   check edit permissions
+   if Add/Edit
+      if validate ok
+         save
+      else 
+         reprint form
+      page_close
+   if delete
+      delete
+   page_close
+else
+   if load form
+      get data
+
+if load data
+   if view/delete 
+	freeze for to prevent edit
+   show form
+   page_close
+
+default action
+   show query form
+   define columns to display
+   define map nice column names for display
+   if query form submit
+	set query
+   else
+	set default query
+   do query
+   show result 
+
+page_close
+
+
+This is the basic structure of TableName.php files that are created for every table in the database
+
+In addition, for each table, two more files are created.
+	TableNameform.ihtml		a file to be included whenever you want a form to appear
+					if you want to change the layout of the form edit this file
+	TableName.inc			a file containing the data format setup [column specifications]
+					edit this file if you want to change the data validation rules
+
+
+
+  PHPLIB  Enhancements
+:-====================-:
+
+db_mysql.inc,		fixed metadata - required by autogen.php
+db_odbc.inc		added quote - database specific add slashes function
+			added quote_identifier - same but for columns and table names
+			added get_primary_key - used by autogen.php
+
+db_proxy_client,	New!, allows access via proxy server to database driver on another host
+db_proxy_server		In particular if you require a windows odbc driver and you're on linux.
+
+
+session.inc		made it so that the get/cookie mode is automatic
+			added have_perm function which is accessible when
+			auth/perm classes show login has happened.
+			updated to PHP5
+
+cart.inc		added option field so an item can have colour and/or size options added to items
+
+oohforms.inc		look for $cmd globals to disable javascript form checking on view/delete forms.
+			added of_htmlarea and of_date object types.
+			
+of_htmlarea.inc		New!, uses FCK Editor to create a WYSIWYG html editor.
+
+of_date.inc		New!, uses ajax/php strtotime and javascript date picker for nice date fields
+
+tpl_form.inc		added getblob - allow storage of images in database or on disk
+			added show_image
+			added show_image_href
+			added link - allows relational database links to happen automatically on forms
+			added find_values - function to load a record for form display
+			added save_values - save form data into a record on disk
+			added reload_values - for redisplay form when didn't validate
+			added showChildRecords - show relational data 
+
+table.inc		added add_total - option to sum column and display in title tag
+			added add_insert - add a row to top of table to be used for add row or search
+			added edit - allow rows to be edited in place (uses oohforms)
+			added ipe - allow cells to be edited in place (uses ajax)
+			added align map - user specified column alignment map 
+			added add_extra - created default function for this feature
+			
+sql_query.inc		show list box for columns that are linked to another table.
+			added first, prev, next, last buttons to search dialog.
+
+prepend.php		added Eventlog function
+			added error trapping
+
+
+  Other Goodies added to bundle
+:-=============================-:
+
+smsapi.inc		functions to send SMS message to a mobile cell phone using clickatell
+
+htmlMail.inc		function to send Multipart MIME encoded mail messages with attachements
+
+web.php			CURL wrapper to make opening web pages by php script control easier
+			supports HTTPS sits and sites which require cookies.
+
+paypal.inc		full function paypal class.
+
+paypal.sql		database schema for the paypal class.
+
+currency.inc		multiple currency support and ajax AddToCart functions
+
+update_exchange_rates	php shell script to be placed in cron.daily
+
+LinkedTables.php	Wizard to help developers create one to many database joins.
+
+iso_country_list	table with data to allow dropdown select box for country selection
+
+HTML Editor(s)		HTML Editor teamed up with PHPLIB templates to allow editing of web pages
+			and HTML database fields. FCKeditor or CKeditor (with or without CKfinder)
+
+MenuEditor.php		Menu Editor which allows building of a multi layer menu structure.
+			Integrates with perm class to control view and edit access to each sql table.
+
+ContentEditor.php	HTML Page Editor that uses FCK or CK Editor.  Intgrates with MenuEditor menus.
+
+menus.php		include file to be included in page header to output multi-layer menu.
+
+menu-horiz.css		CSS layout to make the menu appear across the top of the page.
+
+menu-vert.css		CSS layout to make the menu appear down the left hand side of the page.
+
+styles.css		Sample CSS Style sheet.
+
+head.ihtml		Sample Page Header.
+
+foot.ihtml		Sample Page Footer.
+
+setup.py		Console application to assist adding web sites to web server
+			creates user account, apache setup, web directory structure,
+			htaccess files.
+
+
+NOTICE REGARDING EDITOR CHOICE - PHPLIB integrates with 2 different editors.
+
+$_ENV["editor"] tells us which WYSIWYG editor is installed
+    fckeditor,      is a free editor and file uploader that works well in firefox and ie
+    ckeditor,       is a better free editor that works in more browsers but does not have a file uploader build in
+    ckfinder,       is a file uploader for ckeditor, but is not free (see www.ckfinder.com for pricing)
+
+    If you set $_ENV["editor"]='ckfinder' then the editor is ckeditor with ckfinder integrated.
+
+If you try to switch from fck to cf editor you will discover that the image and file folders are not the same.
+So when you open the file browser in the other editor there will be no files visible.
+
+
+  How to use the PHPLIB Autogenerator
+:-===================================-:
+
+Although the Menu Editor and Content Editor allows PHPLIB to be used as a CMS, this is not the main purpose
+for which it can be used.  The PHPLIB autogenerator is designed to take away the repeative work of making 
+form templates and tables definition files required for database applications.
+
+To use autogen your should first define your database schema then run autogen to analyse your tables and 
+create a working application for you to modify.
+
+Sometimes the data for your application already exists.  In this case you can convert the data to a CSV file
+and import it into the database, then run the autogen.
+
+As an example, here is details on how to get an Australian Postcodes table running.
+
+visit http://www1.auspost.com.au/postcodes/
+Click on Postcode Datafile, OK
+Click on Download Full Postcode Database
+Save the file.
+
+Goto /phplib/import.php on your new web site.
+Browse for the .zip file you just downloaded from Australia Post.
+Upload the file.
+Submit for import into SQL.
+
+Goto /phplib/autogen.php
+The files are now created in phplib/autogen/
+copy the .inc and .ihtml files to the phplib folder and any .pho files you want to document root (public_html).
+
+You should now be able to add the .php file to somewhere on the menu in your application.
+You may want to restrict access to just admin to start with. 
+
+
