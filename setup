@@ -1,0 +1,15 @@
+#! /bin/sh
+
+if [ "x$consoletype" == "xpty" ] ; then
+        export LANG=en_AU.UTF8			# We need UTF8 encoding eg: en_US.UTF8
+        echo -ne '\e%G\e[?47h\e%G\e[?47l'	# Force PuTTY into UTF8 mode.
+fi
+
+if [ -f /usr/share/phplib/setup.py ] ; then
+    export PYTHONPATH=/usr/share/phplib/
+    /usr/bin/python /usr/share/phplib/setup.py
+elif [ -f ./setup.py ] ; then
+   export  PYTHONPATH=$PWD/
+   /usr/bin/python ./setup.py
+fi
+
