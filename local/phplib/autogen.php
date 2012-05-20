@@ -266,12 +266,12 @@ echo "<br />\n";
 
 //Process setup.inc for auto_init session management
 $fset = fopen("$outdir/setup.inc","w");
-fwrite($fset,"<?php global \$HTTP_REFERER, \$REMOTE_ADDR, \$HTTP_USER_AGENT, \$cart;
+fwrite($fset,"<?php global \$cart;
 
 \$cart = new My_Cart;
 \$cart->start();
 
-\$db   = new DB_".$db.";
+\$db   = new \$_ENV[\"DatabaseClass\"];
 \$tab  = \"session_stats\";
 
 \$now = date(\"YmdHis\", time());
@@ -280,9 +280,9 @@ fwrite($fset,"<?php global \$HTTP_REFERER, \$REMOTE_ADDR, \$HTTP_USER_AGENT, \$c
   \$sess->name,
   \$sess->id,
   \$now,
-  \$HTTP_REFERER,
-  \$REMOTE_ADDR,
-  \$HTTP_USER_AGENT);
+  \$_SERVER[\"HTTP_REFERER\"],
+  \$_SERVER[\"REMOTE_ADDR\"],
+  \$_SERVER[\"HTTP_USER_AGENT\"]);
 
 \$db->query(\$query);
 ?>\n");
