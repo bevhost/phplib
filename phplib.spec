@@ -45,7 +45,16 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Fri May 18 2012 dave
 - version 0.7
-- Added BACB changes
+- added files db_mysqli.inc, of_password.inc
+- changed pconnect to connect in db_mysql.inc
+- in place search (ips) changes
+- utf-8 fixes
+- can use money_format in table.inc columns using $this->format array
+- changed some split() to explode()
+- changed some ereg() to mb_ereg()
+- added WithSelected code for checkbox column in table.inc
+- added -10 -1 +1 +10 page skip commands to table header
+- allow alignment of columns in table.inc using $this->align array
 
 * Mon Jun 28 2010 dave
 - version 0.6
