@@ -87,7 +87,7 @@ class ".$db."_Auth extends Auth {
     global \$sess;
 
     if(isset(\$_POST['phplib_username'])) {
-      \$this->auth[\"uname\"]=trim(\$_POST['phplib_username']);        ## This provides access for \"loginform.ihtml\"
+      \$this->auth[\"uname\"]=\$_POST['phplib_username'];        ## This provides access for \"loginform.ihtml\"
     }
     
     
@@ -98,7 +98,7 @@ class ".$db."_Auth extends Auth {
                              \"       where username = '%s' \".
                              \"         and password = '%s'\",
                           \$this->database_table,
-                          addslashes(trim(@\$_POST['phplib_username'])),
+                          addslashes(@\$_POST['phplib_username']),
                           addslashes(@\$_POST['phplib_password'])));
 
     while(\$this->db->next_record()) {
