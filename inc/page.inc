@@ -58,7 +58,7 @@ function page_open($feature) {
     ## Load the auto_init-File, if one is specified.
     if (($sess->auto_init != "") && ($sess->in != 1)) {
       $sess->in = 1;
-      include($_ENV["libdir"] . $sess->auto_init);
+      include($_ENV["local"] . $sess->auto_init);
       if ($sess->secure_auto_init != "") {
         $sess->freeze();
       }

@@ -59,7 +59,7 @@ class ".$db."_Session extends Session {
   var \$lifetime       = 0;                 ## 0 = do session cookies, else minutes
   var \$that_class     = \"".$db."_CT_Sql\"; ## name of data storage container
   var \$gc_probability = 5;  
-  var \$auto_init      = \"setup.inc\";
+  var \$auto_init      = \"setup.inc\";		## comment out to disable session logs.
 }
 
 class ".$db."_User extends User {
