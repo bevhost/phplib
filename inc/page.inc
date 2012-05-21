@@ -49,6 +49,12 @@ function page_open($feature) {
       }
     }
 
+    if (class_exists("My_Cart")) {
+	global $cart;
+	$cart = new My_Cart;
+	$cart->start();
+    }
+
     ## Load the auto_init-File, if one is specified.
     if (($sess->auto_init != "") && ($sess->in != 1)) {
       $sess->in = 1;

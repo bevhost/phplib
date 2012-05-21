@@ -266,10 +266,7 @@ echo "<br />\n";
 
 //Process setup.inc for auto_init session management
 $fset = fopen("$outdir/setup.inc","w");
-fwrite($fset,"<?php global \$cart;
-
-\$cart = new My_Cart;
-\$cart->start();
+fwrite($fset,"<?php 
 
 \$db   = new \$_ENV[\"DatabaseClass\"];
 \$tab  = \"session_stats\";
