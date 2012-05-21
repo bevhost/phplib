@@ -64,7 +64,7 @@ function page_open($feature) {
       }
     } 
   }
-  if (!isset($feature["silent"])) include($_ENV["SiteRoot"].'head.ihtml');
+  if (!isset($feature["silent"])) @include($_ENV["SiteRoot"].'head.ihtml');
 }
 
 function page_close($feature="") {
@@ -76,7 +76,7 @@ function page_close($feature="") {
       if (is_object($user)) $user->freeze();
     }
   }
-if (!isset($feature["silent"])) include($_ENV["SiteRoot"].'foot.ihtml');
+  if (!isset($feature["silent"])) @include($_ENV["SiteRoot"].'foot.ihtml');
 }
 
 function sess_load($session) {
