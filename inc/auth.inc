@@ -69,17 +69,6 @@ class Auth {
       $uid = $this->auth["uid"];
       switch ($uid) {
         case "form":
-	 $sql = "Select id, UserName from userinfo WHERE Session='$sess->id'";
-	 $this->db->query($sql);
-	 if ($this->db->next_record()) {
-		$this->auth["uname"] = $this->db->f("UserName");
-		$this->auth["perm"] = "user";
-		$this->auth["uid"] = $this->db->f("id");
-        	$this->auth["exp"] = time() + (60 * $this->lifetime);
-        	$this->auth["refresh"] = time() + (60 * $this->refresh);
-		$this->lifetime = 0;
-		$state = 2;
-	 } else {
           # Login in progress
           if ($$cl) {
             # If $$cl is set, delete all auth info 
@@ -91,7 +80,6 @@ class Auth {
             # Set state to "Login in progress"
             $state = 3;
           }
-         }
          break;
         default:
           # User is authenticated and auth not expired
@@ -102,19 +90,7 @@ class Auth {
       # User is not (yet) authenticated
       $this->unauth();
       $state = 1;
-	$sql = "Select id, UserName from userinfo WHERE Session='$sess->id'";
-	$this->db->query($sql);
-	if ($this->db->next_record()) {
-		$this->auth["uname"] = $this->db->f("UserName");
-		$this->auth["perm"] = "user";
-		$this->auth["uid"] = $this->db->f("id");
-        	$this->auth["exp"] = time() + (60 * $this->lifetime);
-        	$this->auth["refresh"] = time() + (60 * $this->refresh);
-		$this->lifetime = 0;
-		$state = 2;
-	}
     }
-
     switch ($state) {
       case 1:
         # No valid auth info or auth is expired
@@ -259,7 +235,6 @@ class Auth {
   function logout($nobody = "") {
     global $sess;
     $this->db = new $this->database_class;
-    $this->db->query("UPDATE userinfo SET Session='' where UserName='".$this->auth["uname"]."' and id='".$this->auth["uid"]."'");
     $this->db->query("DELETE FROM active_sessions WHERE name='".$sess->name."' and sid='".$sess->id."'");
     $sess->unregister("auth");
     unset($this->auth["uname"]);
@@ -335,6 +310,19 @@ class Auth {
 	global $sess;
 	if ($this->auth["uname"]<>"admin")
 	$this->db->query("DELETE FROM active_sessions WHERE name='".$sess->name."' and sid!='".$sess->id."' and username='".$this->auth["uname"]."'");
+  }
+
+  ##
+  ## Function for force login a user (eg: after forgot password )
+  ##
+
+  function login_user($id,$u,$p="user") {
+	$this->auth["uname"] = $u;
+	$this->auth["perm"] = $p;
+	$this->auth["uid"] = $id;
+	$this->auth["exp"] = time() + (60 * $this->lifetime);
+	$this->auth["refresh"] = time() + (60 * $this->refresh);
+	$this->lifetime = 0;
   }
 
 }
