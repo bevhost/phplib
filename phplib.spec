@@ -30,9 +30,6 @@ install -m 644 README $RPM_BUILD_ROOT/usr/share/phplib/
 install -m 644 inc/* $RPM_BUILD_ROOT/usr/share/phplib/
 install -m 644 examples/* $RPM_BUILD_ROOT/usr/share/phplib/examples/
 mv local $RPM_BUILD_ROOT/usr/share/phplib/
-mv fckeditor $RPM_BUILD_ROOT/usr/share/phplib/
-mv ckeditor $RPM_BUILD_ROOT/usr/share/phplib/
-mv ckfinder $RPM_BUILD_ROOT/usr/share/phplib/
 
 %post
 
