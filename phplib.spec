@@ -29,7 +29,7 @@ install -m 644 setup.py $RPM_BUILD_ROOT/usr/share/phplib/
 install -m 644 README $RPM_BUILD_ROOT/usr/share/phplib/
 install -m 644 inc/* $RPM_BUILD_ROOT/usr/share/phplib/
 install -m 644 examples/* $RPM_BUILD_ROOT/usr/share/phplib/examples/
-mv local $RPM_BUILD_ROOT/usr/share/phplib/
+cp -a local $RPM_BUILD_ROOT/usr/share/phplib/
 
 %post
 
