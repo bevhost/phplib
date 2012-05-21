@@ -1,0 +1,13 @@
+<?php
+$_PHPLIB["BaseName"] = "example";
+$_PHPLIB["DatabaseClass"] = "DB_".$_PHPLIB["BaseName"];
+$_PHPLIB["SessionClass"] = $_PHPLIB["BaseName"]."_Session";
+$_PHPLIB["AuthClass"] = $_PHPLIB["BaseName"]."_Auth";
+$_PHPLIB["PermClass"] = $_PHPLIB["BaseName"]."_Perm";
+class DB_example extends DB_Sql {
+  var $Host     = "localhost";
+  var $Database = "example_db";
+  var $User     = "example_user";
+  var $Password = "my_secret";
+}
+?>
