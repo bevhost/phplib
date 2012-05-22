@@ -66,7 +66,7 @@ function page_open($feature) {
   }
   if (@$_ENV["header"])					/* header set */ 
     if (!isset($feature["silent"]))			/* not disabled */
-      if ($GLOBAL["Field"]) 				/* popup window ? */
+      if ($GLOBALS["Field"]) 				/* popup window ? */
 	include($_ENV["SiteRoot"].$_ENV["pophead"]);
       else						/* normal page */
 	include($_ENV["SiteRoot"].$_ENV["header"]);
