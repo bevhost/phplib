@@ -795,13 +795,13 @@ echo "<!-- $val = $postval -->";
 	$comment = "";
 	$align = "left";
 	$dval = str_replace("\r","",@$data[$val]);
-	if ((!empty($data[$val])) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})/", $data[$val], $regs))) {
-		$output = date("d M Y",strtotime($data[$val]));   /* DD Mmm YYYY */
-		$comment = substr($data[$val],11,10);
-	} else if ((!empty($data[$val])) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})/", $data[$val], $regs))) {
-	   if (date("Y-m-d") == substr($data[$val],0,10)) {
+	if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})/", $dval, $regs))) {
+		$output = date("d M Y",strtotime($dval));   /* DD Mmm YYYY */
+		$comment = substr($dval,11,10);
+	} else if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})/", $dval, $regs))) {
+	   if (date("Y-m-d") == substr($dval,0,10)) {
 		// Date Field (Today)
-      		$output = substr($data[$val],11,10);
+      		$output = substr($dval,11,10);
 	   } else {
 		// Date Field (Not Today)
 		switch ($val) {
@@ -810,32 +810,32 @@ echo "<!-- $val = $postval -->";
 				$output = sprintf("%s/%s %s:%s",$regs[3],$regs[2],$regs[4],$regs[5],$regs[6]);
 				break;
 			case "AcctStopTime":
-				$output = substr($data[$val],11,5);
+				$output = substr($dval,11,5);
 				break;
       			default: 
-				// $output = substr($data[$val],0,10);  /* YYYY-MM-DD */
-				$output = date("d M Y",strtotime($data[$val]));   /* DD Mmm YYYY */
-				$comment = substr($data[$val],11,10);
+				// $output = substr($dval,0,10);  /* YYYY-MM-DD */
+				$output = date("d M Y",strtotime($dval));   /* DD Mmm YYYY */
+				$comment = substr($dval,11,10);
 		}
 	   }
 	   $this->total[$val]=0;
 	} else if ((!empty($dval)) and (preg_match("/([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}/",$dval, $regs))) {
 		// IPv4 Address
 		$align="center";
-		$output = $data[$val];
+		$output = $dval;
 	} else if ((isset($dval)) and ($dval<>".") and (preg_match("/(^[$|-]*[0-9|,|.]+$)/",$dval, $regs))) {
 		// Numeric Field
 		if (!isset($this->total[$val])) $this->total[$val]=0;
-		$number = str_replace(",","",str_replace("$","",$data[$val]));
+		$number = str_replace(",","",str_replace("$","",$dval));
 		$this->total[$val] += $number;
 		switch ($val) {
 			case "AcctSessionTime":
 				$align = "right";
-				$output=TimeStr($data[$val]);
+				$output=TimeStr($dval);
 				break;
 			case "AcctOutputOctets":
 			case "AcctInputOctets":
-				$output=ByteStr($data[$val]);
+				$output=ByteStr($dval);
 				break;
       			default: 
 				$align="right";
@@ -843,7 +843,7 @@ echo "<!-- $val = $postval -->";
 					if ($fmat=$this->format[$val]) $output = money_format($fmat,$dval);
 					else $output=$dval;
 				} else {	
-					if (strpos($dval,".")) $output = number_format($dval,2);
+					if (strpos($number,".")) $output = number_format($number,2);
 					else switch($val) {
 						case "MerchantID":
 						case "Mobile":
@@ -854,7 +854,7 @@ echo "<!-- $val = $postval -->";
 							$output=$dval;
 							break;
 						default:
-							$output = number_format($dval);
+							$output = number_format($number);
 					}
 				}
 				$vval = " $val";
