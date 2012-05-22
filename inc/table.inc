@@ -840,7 +840,7 @@ echo "<!-- $val = $postval -->";
       			default: 
 				$align="right";
 				if (array_key_exists($val,$this->format)) {
-					if ($fmat=$this->format[$val]) $output = money_format($fmat,$dval);
+					if ($fmat=$this->format[$val]) $output = money_format($fmat,$number);
 					else $output=$dval;
 				} else {	
 					if (strpos($number,".")) $output = number_format($number,2);
