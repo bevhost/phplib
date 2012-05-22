@@ -64,7 +64,12 @@ function page_open($feature) {
       }
     } 
   }
-  if (!isset($feature["silent"])) @include($_ENV["SiteRoot"].'head.ihtml');
+  if (@$_ENV["header"])					/* header set */ 
+    if (!isset($feature["silent"]))			/* not disabled */
+      if ($GLOBAL["Field"]) 				/* popup window ? */
+	include($_ENV["SiteRoot"].$_ENV["pophead"]);
+      else						/* normal page */
+	include($_ENV["SiteRoot"].$_ENV["header"]);
 }
 
 function page_close($feature="") {
@@ -76,7 +81,9 @@ function page_close($feature="") {
       if (is_object($user)) $user->freeze();
     }
   }
-  if (!isset($feature["silent"])) @include($_ENV["SiteRoot"].'foot.ihtml');
+  if (@$_ENV["footer"])					/* footer set */ 
+    if (!isset($feature["silent"]))			/* not disabled */
+	include($_ENV["SiteRoot"].$_ENV["footer"]);
 }
 
 function sess_load($session) {

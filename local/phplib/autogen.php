@@ -53,7 +53,11 @@ $_ENV["UserEmailAddressField"] = "Email";
 $_ENV["UserAuthIdField"] = "user_id";
 $_ENV["no_edit"] = array("radacct","pp_transactions","EventLog"); /* tables not to be edited */
 $_ENV["editor"] = "fckeditor";
-$_ENV["HelpDesk"] = " from 9am to 8pm";
+$_ENV["HelpDesk"] = " from 9am to 8pm";	   
+/* html header files are deprecated, autogen codes these, independantly now for more control */
+$_ENV["header"] = "";  #eg "head.inc";	   /* html header file to output as the page_open */
+$_ENV["pophead"] = ""; #eg "pophead.inc";  /* html header file to output when it's a popup */
+$_ENV["footer"] = "";  #eg "foot.inc";	   /* html footer file to output in page_close */
 class DB_'.$BN.' extends DB_Sql {
   var $Host     = "localhost";
   var $Database = "'.$db.'";
