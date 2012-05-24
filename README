@@ -86,8 +86,8 @@ db_odbc.inc		added quote - database specific add slashes function
 
 db_proxy_client,	New!, allows access via proxy server to database driver on 
 			another host
-db_proxy_server		In particular if you require a windows odbc driver and you're 
-			on linux.
+db_proxy_server		In particular if you require a windows odbc driver and 
+			you're on linux.
 
 
 session.inc		made it so that the get/cookie mode is automatic
@@ -107,12 +107,14 @@ of_htmlarea.inc		uses FCK or CK Editor to create a WYSIWYG html editor.
 of_date.inc		uses ajax/php strtotime and javascript date picker 
 			for nice date fields
 
-tpl_form.inc		added getblob - allow storage of images in database or on disk
+tpl_form.inc		added getblob - allow storage of images in database or 
+					on disk
 			added show_image
 			added show_image_href
 			added link - allows relational database links to happen 
 				     automatically on forms
-			added find_values - function to load a record for form display
+			added find_values - function to load a record for form 
+					    display
 			added save_values - save form data into a record on disk
 			added reload_values - for redisplay form when didn't validate
 			added showChildRecords - show relational data 
@@ -193,8 +195,8 @@ NOTICE REGARDING EDITOR CHOICE - PHPLIB integrates with 2 different editors.
 
 $_ENV["editor"] tells us which WYSIWYG editor is installed
  fckeditor,	is a free editor and file uploader that works well in firefox and ie
- ckeditor,	is a better free editor that works in more browsers but does not have 
-	     	a file uploader build in
+ ckeditor,	is a better free editor that works in more browsers but does not
+	     	have a file uploader build in
  ckfinder,	is a file uploader for ckeditor, 
 	     	but is not free (see www.ckfinder.com for pricing)
 
@@ -234,7 +236,7 @@ Goto /phplib/autogen.php
 The files are now created in phplib/autogen/
 copy the .inc and .ihtml files to the phplib folder and any .php files you want to document root (public_html).
 
-You should now be able to add the .php file to somewhere on the menu in your application.
-You may want to restrict access to just admin to start with. 
+You should now be able to add the .php file to somewhere on the menu in your
+application.  You may want to restrict access to just admin to start with. 
 
 
