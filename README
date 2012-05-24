@@ -1,7 +1,7 @@
 phplib
 ======
 
-My fork of PHPLIB by Boris Erdmann, Kristian Koehntopp &amp; Jeffrey Galbraith
+My fork of PHPLIB by Boris Erdmann, Kristian Koehntopp & Jeffrey Galbraith
 
 
 
@@ -22,7 +22,7 @@ and has gone through many enhancements.
 What changes for each php file is the table name and the column specifications for the table.
 
 The basic structure of an add/view/edit/copy/delete/search table function is
-
+This can also be know as a CRUD interface create/retrieve/update/delete
 
 
 page_open
@@ -127,6 +127,8 @@ table.inc		added add_total - option to sum column and display in title
 			added ipe - allow cells to be edited in place (uses ajax)
 			added align map - user specified column alignment map 
 			added add_extra - created default function for this feature
+			added select - function to create SQL queries based on 
+				       the LinkedTables feature
 			
 sql_query.inc		show list box for columns that are linked to another table.
 			added first, prev, next, last buttons to search dialog.
