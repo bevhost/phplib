@@ -42,9 +42,12 @@ class DB_Sql {
 
   /* Quoting Helper - by Dave Beveridge */
   function quote($str) {
+	return "'".$this->escape_string($str)."'";
+  }
+  function escape_string($str) {
 	if (!$this->connect()) return 0; 
 	if (get_magic_quotes_gpc()) $str = stripslashes($str);
-	return "'".mysqli_real_escape_string($this->Link_ID,$str)."'";
+	return mysqli_real_escape_string($this->Link_ID,$str);
   }
   function quote_identifier($str) {
 	$arr = explode(".",$str);
