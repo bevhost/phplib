@@ -1,0 +1,24 @@
+<?php
+  $this->form_data->start("postfix_transportform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE>     <TR><TD></TD><TD>
+		<?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>domain</TD><TD>
+		<?php $this->form_data->show_element('domain'); ?> </TD></TR>
+    <TR><TD>destination</TD><TD>
+		<?php $this->form_data->show_element('destination'); ?> </TD></TR>
+    <tr><td></td><td>the above is ignored when bulk import data is entered below.</td></tr>
+    <tr><td>bulk import</td><td><textarea name=bulk rows=5 cols=70></textarea></td></tr>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+		if ($cmd=="View") $cmd="Back";
+		if ($cmd=="Add") $cmd="Save";
+		if ($cmd=="Edit") $cmd="Save";
+		$this->form_data->show_element('submit',$cmd);
+		?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php $this->form_data->show_element('reset');
+		?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish("/* after */","DoCustomChecks(f);");
+?>

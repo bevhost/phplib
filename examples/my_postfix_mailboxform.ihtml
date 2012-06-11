@@ -1,0 +1,70 @@
+<?php
+  $this->form_data->start("my_postfix_mailboxform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  
+?>
+ <div id=popup></div>
+ <TABLE>     <TR><TD></TD><TD>Enter Mailbox, Password &amp; Full Name
+		<?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>mailbox</TD><TD>
+                <?php   global $email, $domain, $maildir;
+                        $db = new DB_postfix;
+                        $parts = explode("@",$email);
+                        if (($cmd=='View') or ($cmd=='Delete')) {
+				$this->form_data->show_element('email');
+				echo "<input type=hidden name=domain id=domain value='$domain'>\n";
+				echo "<input type=hidden name=mailbox id=mailbox value='".$parts[0]."'>\n";
+                        } else {
+                                echo "<input size=20 name=mailbox id=mailbox value='".$parts[0]."'";
+				echo " onKeyUp='SetFields(this.form);'> @ \n";
+                                echo "<select name=domain id=domain onChange='SetFields(this.form);'>\n";
+				echo "  <option value=0>select...\n";
+                                $db->query("SELECT domain FROM postfix_virtual_domains");
+                                while ($db->next_record()) {
+                                        echo "  <option";
+                                        if ($db->f(0)==@$parts[1]) echo " selected "; else echo " ";
+                                        echo "value='".$db->f(0)."'>".$db->f(0)."\n";
+                                }
+                                echo "</select>\n";
+				echo "<input type=hidden id=OldEmailAcct name=OldEmailAcct value='$email'>\n";
+                                echo "<input type=hidden id=OldMaildir name=OldMaildir value='$maildir'>\n";
+                        }
+                ?> </TD></TR>
+    <TR><TD>password</TD><TD>
+		<?php $this->form_data->show_element('clear');
+			global $clear;
+			echo "<input type=hidden name=oldpassword value='$clear'>";
+		 ?> </TD></TR>
+    <TR><TD>full name</TD><TD>
+		<?php $this->form_data->show_element('name'); ?> </TD></TR>
+    <TR><TD>modified</TD><TD>
+                <?php $this->form_data->show_element('modified'); ?> </TD></TR>
+    <TR><TD>notes</TD><TD>
+                <?php $this->form_data->show_element('notes'); ?> </TD></TR>
+<?php if ($cmd=='Add' or $cmd=='Edit') { ?>
+<tr><td colspan=2>Don't Edit anything below this line unless you know what you are doing<hr></td></tr>
+<?php } ?>
+    <TR><TD>email</TD><TD>
+                <?php $this->form_data->show_element('email'); ?> </TD></TR>
+    <TR><TD>crypt</TD><TD>
+                <?php $this->form_data->show_element('crypt'); ?> </TD></TR>
+    <TR><TD>maildir</TD><TD>
+                <?php $this->form_data->show_element('maildir'); ?> </TD></TR>
+    <TR><TD>quota</TD><TD>
+                <?php $this->form_data->show_element('quota'); ?> </TD></TR>
+<?php if ($cmd=='Add') { ?>
+    <tr><td></td><td>the above is ignored when bulk import data is entered below.</td></tr>
+    <tr><td>bulk import</td><td><textarea name=bulk rows=5 cols=70></textarea></td></tr>
+<?php } ?>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+		if ($cmd=="View") $cmd="Back";
+		if ($cmd=="Add") $cmd="Save";
+		if ($cmd=="Edit") $cmd="Save";
+		$this->form_data->show_element('submit',$cmd);
+		?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php $this->form_data->show_element('reset');
+		?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish("/* after */","DoCustomChecks(f);");
+?>

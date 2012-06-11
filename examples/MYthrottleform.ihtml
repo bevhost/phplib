@@ -1,0 +1,54 @@
+<?php
+  $this->form_data->start("MYthrottleform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE>     <TR><TD></TD><TD>
+		<?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>from</TD><TD>
+		<?php $this->form_data->show_element('_from'); ?> </TD></TR>
+    <TR><TD>count max</TD><TD>
+		<?php $this->form_data->show_element('_count_max'); ?> </TD></TR>
+    <TR><TD>count cur</TD><TD>
+		<?php $this->form_data->show_element('_count_cur'); ?> </TD></TR>
+    <TR><TD>date</TD><TD>
+		<?php $this->form_data->show_element('_date'); 
+		global $_date;
+		echo date("d/m H:m",$_date); ?> </TD></TR>
+    <TR><TD>quota cur</TD><TD>
+		<?php $this->form_data->show_element('_quota_cur'); ?> </TD></TR>
+    <TR><TD>quota max</TD><TD>
+		<?php $this->form_data->show_element('_quota_max'); ?> </TD></TR>
+    <TR><TD>time limit</TD><TD>
+		<?php $this->form_data->show_element('_time_limit'); ?> </TD></TR>
+    <TR><TD>mail size</TD><TD>
+		<?php $this->form_data->show_element('_mail_size'); ?> </TD></TR>
+    <TR><TD>count tot</TD><TD>
+		<?php $this->form_data->show_element('_count_tot'); ?> </TD></TR>
+    <TR><TD>rcpt max</TD><TD>
+		<?php $this->form_data->show_element('_rcpt_max'); ?> </TD></TR>
+    <TR><TD>rcpt cur</TD><TD>
+		<?php $this->form_data->show_element('_rcpt_cur'); ?> </TD></TR>
+    <TR><TD>rcpt tot</TD><TD>
+		<?php $this->form_data->show_element('_rcpt_tot'); ?> </TD></TR>
+    <TR><TD>abuse cur</TD><TD>
+		<?php $this->form_data->show_element('_abuse_cur'); ?> </TD></TR>
+    <TR><TD>abuse tot</TD><TD>
+		<?php $this->form_data->show_element('_abuse_tot'); ?> </TD></TR>
+    <TR><TD>log warn</TD><TD>
+		<?php $this->form_data->show_element('_log_warn'); ?> </TD></TR>
+    <TR><TD>log panic</TD><TD>
+		<?php $this->form_data->show_element('_log_panic'); ?> </TD></TR>
+    <TR><TD>priority</TD><TD>
+		<?php $this->form_data->show_element('_priority'); ?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+		if ($cmd=="View") $cmd="Back";
+		if ($cmd=="Add") $cmd="Save";
+		if ($cmd=="Edit") $cmd="Save";
+		$this->form_data->show_element('submit',$cmd);
+		?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php $this->form_data->show_element('reset');
+		?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish();
+?>

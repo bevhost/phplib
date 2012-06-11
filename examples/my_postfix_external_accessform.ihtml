@@ -1,0 +1,69 @@
+<?php
+  $this->form_data->start("postfix_client_accessform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE>     <TR><TD></TD><TD>
+		<?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>Address</TD><TD>
+                <?php $this->form_data->show_element('address'); ?> </TD></TR>
+    <TR><TD>access</TD><TD>
+		<?php 	global $access;
+			if ($cmd=='View' or $cmd=='Delete') {
+				$this->form_data->show_element('access');
+			} else {
+?><select name=acc>
+<option>select...
+<option value='permit'>permit (Always allow from this host)
+<option value='hold'>place on hold queue for admin release
+<option value='dunno'>dunno, skip to the next acl.
+<option value='reject'>reject with standard or specified message
+<option value='prepend'>prepend specified header
+<option value='550 You must relay via valid server'>550 You must relay via valid server
+<option value='550 User has a new email address'>550 User has a new email address
+<option value='550 Administrative Prohibition'>550 Administrative Prohibition
+
+</select> or 
+<input size=40 name=access id=access value='<?php echo $access."'>\n";
+			} 
+		?> </TD></TR>
+<?php if ($cmd=='Add') { ?>
+    <tr><td></td><td>the above is ignored when bulk import data is entered below.</td></tr>
+<?php } ?>
+    <TR><TD>permit level</TD><TD>
+                <?php $this->form_data->show_element('level'); ?> </TD></TR>
+    <TR><TD>modified</TD><TD>
+                <?php $this->form_data->show_element('modified'); ?> </TD></TR>
+    <TR><TD>notes</TD><TD>
+                <?php $this->form_data->show_element('notes'); ?> </TD></TR>
+<?php if ($cmd=='Add') { ?>
+    <tr><td>bulk import</td><td><textarea name=bulk rows=5 cols=70></textarea></td></tr>
+<?php } else { echo "<input type=hidden name=bulk value=''>"; } ?>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+                if ($cmd=="View") {
+                        $cmd="Back";
+                        global $id;
+                        echo "<a href=".$sess->self_url();
+                        echo $sess->add_query(array("cmd"=>"Edit","id"=>$id));
+                        echo ">Edit</a>&nbsp;<a href=javascript:history.go(-1)>Back</a>";
+                } else {
+                        if ($cmd=="Add") $cmd="Save";
+                        if ($cmd=="Edit") $cmd="Save";
+                        $this->form_data->show_element('submit',$cmd);
+			echo "<br><a href=javascript:history.go(-1)>Back</a>";
+                }
+		?> </TD></TR>
+<tr><td><strong>Standard Errors</strong></td><td><em>Notice the 4xx are temporary and 5xx are permanent<br>
+<small>(sending server should retry later after receiving a 4xx message)</small></em></td></tr>
+	<tr><td>450</td> <td>Requested mail action not taken: mailbox unavailable</td></tr>
+	<tr><td>451</td> <td>Requested action aborted: local error in processing</td></tr>
+	<tr><td>452</td> <td>Requested action not taken: insufficient system storage</td></tr>
+	<tr><td>521</td> <td>&lt;domain&gt; does not accept mail (see rfc1846)</td></tr>
+	<tr><td>530</td> <td>Access denied (???a Sendmailism)</td></tr>
+	<tr><td>550</td> <td>Requested action not taken: mailbox unavailable</td></tr>
+	<tr><td>551</td> <td>User not local; please try &#60;forward-path&#62;</td></tr>
+	<tr><td>552</td> <td>Requested mail action aborted: exceeded storage allocation</td></tr>
+	<tr><td>553</td> <td>Requested action not taken: mailbox name not allowed</td></tr>
+	<tr><td>554</td> <td>Transaction failed</td></tr>
+ </TABLE>
+<?php $this->form_data->finish("/* after */","DoCustomChecks(f);");
+?>

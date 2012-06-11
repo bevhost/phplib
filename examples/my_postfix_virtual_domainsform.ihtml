@@ -1,0 +1,33 @@
+<?php
+  $this->form_data->start("postfix_virtual_domainsform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE>     <TR><TD>id</TD><TD>
+                <?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>domain</TD><TD>
+                <?php   global $domain;
+                        $this->form_data->show_element('domain'); 
+                        if ($cmd=='Delete') echo "<input type=hidden name=domain id=domain value=$domain>";
+                        ?> </TD></TR>
+<?php if ($cmd=='Add') { ?>
+    <tr><td></td><td>the above is ignored when bulk import data is entered below.</td></tr>
+<?php } ?>
+    <TR><TD>modified</TD><TD>
+                <?php $this->form_data->show_element('modified'); ?> </TD></TR>
+    <TR><TD>notes</TD><TD>
+                <?php $this->form_data->show_element('notes'); ?> </TD></TR>
+<?php if ($cmd=='Add') { ?>
+    <tr><td>bulk import</td><td><textarea name=bulk rows=5 cols=70></textarea></td></tr>
+<?php } else { echo "<input type=hidden name=bulk value=''>"; } ?>
+    <TR><TD>&nbsp;</TD><TD> 
+                <?php 
+                if ($cmd=="View") $cmd="Back";
+                if ($cmd=="Add") $cmd="Save";
+                if ($cmd=="Edit") $cmd="Save";
+                $this->form_data->show_element('submit',$cmd);
+                ?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+                <?php $this->form_data->show_element('reset');
+                ?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish("/* after */","DoCustomChecks(f);");
+?>
