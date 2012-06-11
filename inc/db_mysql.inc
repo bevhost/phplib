@@ -42,6 +42,10 @@ class DB_Sql {
   
 
   /* Quoting Helper - by Dave Beveridge */
+  function escape_string($str) {
+	if (get_magic_quotes_gpc()) $str = stripslashes($str);
+	return mysql_real_escape_string($str);
+  }
   function quote($str) {
 	if (get_magic_quotes_gpc()) $str = stripslashes($str);
 	return "'".mysql_real_escape_string($str)."'";
