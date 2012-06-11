@@ -7,18 +7,22 @@ $t = $db->quote($_REQUEST["t"]);
 $f = $db->quote($_REQUEST["f"]);
 $v = $db->quote($_REQUEST["v"]);
 
-$db->query("SELECT * FROM image_data WHERE tablename=$t AND fieldname=$f AND keyvalue=$v");
+$sql = "SELECT * FROM image_data WHERE tablename=$t AND fieldname=$f AND keyvalue=$v";
+$db->query($sql);
 if ($db->next_record()) extract($db->Record);
 else {
+	if (@$dev) { echo $sql; exit; }
 	// write image to disk and analyse to find mime-type if we could be bothered.
-	$mime="image/jpeg";   // or just guess and hope the browser works it out instead.
+	$mimestr="image/jpeg";   // or just guess and hope the browser works it out instead.
+	$image_time = "yesterday";
 }
 
-$t = magicquote($_REQUEST["t"]);
-$f = magicquote($_REQUEST["f"]);
-$k = magicquote($_REQUEST["k"]);
+$k = $db->quote_identifier($_REQUEST["k"]);
+$t = $db->quote_identifier($_REQUEST["t"]);
+$f = $db->quote_identifier($_REQUEST["f"]);
 
-$db->query("SELECT $f FROM $t WHERE $k=$v");
+$sql = "SELECT $f FROM $t WHERE $k=$v";
+$db->query($sql);
 if ($db->next_record()) {
 
 	$image_time = strtotime($image_time);
@@ -52,5 +56,7 @@ if ($db->next_record()) {
 
 	// outputing image    
 	echo $db->Record[0];    
+} else {
+	if (@$dev) { echo $sql; exit; }
 }
 ?>
