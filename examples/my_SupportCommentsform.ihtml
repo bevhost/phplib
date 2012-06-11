@@ -1,0 +1,60 @@
+<?php
+  $this->form_data->start("my_SupportCommentsform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE class=formdata>     <TR><TD></TD><TD>
+		<?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>Ticket No</TD><TD>
+		<?php 	global $TicketNo;
+			echo "<input type=hidden id=TicketNo name=TicketNo value=$TicketNo>$TicketNo";
+		?> </TD></TR>
+    <TR><TD>Time Stamp</TD><TD>
+                <?php 	global $TimeStamp;
+			if (!$TimeStamp) $TimeStamp = date("Y-m-d H:i:s");
+			$this->form_data->elements["TimeStamp"]["ob"]->value = $TimeStamp;
+			$this->form_data->show_element('TimeStamp'); ?>
+                <a href="javascript:show_calendar('document.SupportCommentsform.TimeStamp', document.SupportCommentsform.TimeStamp.value);">
+                <img src=cal.gif width=16 height=16 border=0 alt="Click here to pick a date from the calendar"></a>
+                <a href="javascript:show_help('helpdate.php');" alt="Click here to find out about acceptable date formats">Help</a>
+                </TD></TR>
+    <TR><TD>By User</TD><TD>
+		<?php	global $ByUser;
+			if (!$ByUser) {
+				$this->form_data->elements["ByUser"]["ob"]->value = $auth->auth["uname"];
+			}
+			$this->form_data->show_element('ByUser');
+		?> </TD></TR>
+<?php if ($cmd=="Send") { ?>
+	<input type=hidden name=EMAIL value='<?=$GLOBALS["Mail"]?>'>
+    <TR><TD>Comment to EMAIL<br><?=$GLOBALS["Mail"]?></TD><TD>
+		<textarea id=EMAILTXT name=EMAILTXT onkeyup='updatesms()' rows=10 cols=60><?=strip_tags($GLOBALS["Comment"])?></textarea>
+		</TD></TR>
+<?php if ($GLOBALS["Mobile"]) { ?>
+	<input type=hidden name=MOBILE value='<?=$GLOBALS["Mobile"]?>'>
+    <tr><td>Comment to SMS TO MOBILE<br><?=$GLOBALS["Mobile"]?>
+	<small>ASCII Text Only - No Unicode!</small>
+	</td><td><textarea id=SMSTEXT name=SMSTEXT rows=6 cols=35></textarea></td></tr>
+<?php } ?>
+<SCRIPT type=text/javascript>
+function updatesms() {
+	et = getDivHtml("EMAILTXT");
+	if (et.length<=160) st=et;
+	else st = et.substring(0,160);
+	setDivHtml("SMSTEXT",st);
+}
+updatesms();
+</SCRIPT>
+<?php } else { ?>
+    <TR><TD>Comment</TD><TD>
+		<?php $this->form_data->show_element('Comment'); ?> 
+		</TD></TR>
+<?php } ?>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+		if ($cmd=="View") $cmd="Back";
+		if ($cmd=="Add") $cmd="Save";
+		if ($cmd=="Edit") $cmd="Save";
+		$this->form_data->show_element('submit',$cmd);
+		?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish();
+?>

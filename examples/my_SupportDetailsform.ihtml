@@ -1,0 +1,37 @@
+<?php
+  $this->form_data->start("SupportDetailsform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE class=formdata>     <TR><TD></TD><TD>
+		<?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>Ticket No</TD><TD>
+                <?php   global $TicketNo;
+                        echo "<input type=hidden id=TicketNo name=TicketNo value=$TicketNo>$TicketNo";
+                ?> </TD></TR>
+    <TR><TD>Work Done Details</TD><TD>
+		<?php $this->form_data->show_element('Details'); ?> </TD></TR>
+    <TR><TD>Date/Time Completed</TD><TD>
+		<?php 	global $Completed;
+			if ($cmd=='Add') $Completed=date("Y-m-d H:i:s");
+			$this->form_data->elements["Completed"]["ob"]->value = $Completed;
+			$this->form_data->show_element('Completed'); ?> 
+		<a href="javascript:show_calendar('document.SupportDetailsform.Completed', document.SupportDetailsform.Completed.value);">
+		<img src=cal.gif width=16 height=16 border=0 alt="Click here to pick a date from the calendar"></a>
+		<a href="javascript:show_help('helpdate.php');" alt="Click here to find out about acceptable date formats">Help</a>
+		</TD></TR>
+    <TR><TD>Duration</TD><TD>
+		<?php $this->form_data->show_element('Duration'); ?> minutes</TD></TR>
+    <TR><TD>Charge</TD><TD>
+		<?php $this->form_data->show_element('Charge'); ?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+		if ($cmd=="View") $cmd="Back";
+		if ($cmd=="Add") $cmd="Save";
+		if ($cmd=="Edit") $cmd="Save";
+		$this->form_data->show_element('submit',$cmd);
+		?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php $this->form_data->show_element('reset');
+		?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish("/* after */","DoCustomChecks(f);");
+?>

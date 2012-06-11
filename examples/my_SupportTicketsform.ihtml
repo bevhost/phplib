@@ -1,0 +1,177 @@
+<script>
+function user(name) {
+	document.my_SupportTicketsform.UserName.value=name;
+}
+</script>
+<?php
+  $this->form_data->start("my_SupportTicketsform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  
+  if ($this->errors) foreach($this->errors as $error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $error);  
+echo "<!-- ";
+var_dump($auth);
+echo "-->";
+?>
+ <TABLE class=formdata width=60%>     
+		<?php 	global $LocOptions, $Location, $Status;
+			$this->form_data->show_element('id'); ?>
+    <tr><td>Location</td><td>
+<?php   if ($Status=='Closed') $cmd='View';
+	if (($cmd!='Add') and ($cmd!='Edit')) echo $Location; else { ?>
+	<select name=SrchLocation>
+	<option value=''>Any
+	<?=$LocOptions?>
+	</select>
+<?php } ?>
+		</td></tr>
+    <TR><TD>Room No</TD><TD>
+                <?php $this->form_data->show_element('RoomNo'); ?> </TD></TR>
+    <TR><TD>Other Detail</TD><TD>
+                <?php $this->form_data->show_element('OtherDetail'); ?> </TD></TR>
+    <TR><TD>User Name</TD><TD>
+<?php 			global $AccessLevel, $TicketNo, $EnteredBy, $id, $ContactID; 
+		 	global $LocationID, $UserName;
+			$db = new DB_hotspot;
+			if (!$Location) $Location = "Please search for a valid username above."; 
+			$EB = $auth->auth["uname"];
+			if (empty($UserName)) $UserName = $EB;
+                       	if ($UserName) {
+                                $sql = "Select Name, Location, Mail, ";
+				$sql .= "if(Mobile,Mobile,if(WorkPhone,WorkPhone,HomePhone)) as Phone ";
+				$sql .= "from userinfo where UserName=".$db->quote($UserName);
+				$db->query($sql);
+                                if ($db->next_record()) {
+					extract($db->Record);
+					$FullName = $Name;
+					$Email = $Mail;
+				} else {
+					$FullName = $Phone = $Email = "";
+				}
+                       	} 
+?>
+
+<input name=Location id=Location value='<?=$Location?>' type=hidden>
+<?php 	if ($cmd=='Add' && array_key_exists("UserName",$_GET)) $UserName = $_GET["UserName"];
+	if ($cmd=='Add' || $cmd=='Edit') { 
+	if (empty($UserName)) $UserName = $auth->auth["uname"];
+	
+?>
+<input name=UserName id=UserName size=40 value='<?=$UserName?>'><br>
+<small>UserName should be the person to be updated about this ticket</small><br>
+<?php if (($cmd=='Add') and (!$perm->have_perm("sitecontact"))) { ?>
+<a href=javascript:finduser()>Search</a>&nbsp;
+<a href=javascript:user('unknown');>unknown</a>
+<a href=javascript:user('Unreg_aEzy');>Unreg_aEzy</a>
+<a href=javascript:user('Unreg_APlus');>Unreg_APlus</a>
+<a href=javascript:user('Unreg_Marinanet');>Unreg_Marinanet</a>
+<?php } } else echo $UserName;
+                
+                ?> </TD></TR>
+    <TR><TD>Full Name</TD><TD><div id=FullName><?=$FullName?></div></td></tr>
+    <TR><TD>Phone</TD><TD><div id=Phone><?=$Phone?></div></td></tr>
+    <TR><TD>Email</TD><TD><div id=Email><?=$Email?></div></td></tr>
+    <TR><TD>Short Description<br>of Problem</TD><TD>
+                <?php $this->form_data->show_element('ShortDesc'); ?> </TD></TR>
+    <TR><TD>Status</TD><TD>
+		<?php 	echo "<input type=hidden name=OldStatus value='$Status'>";
+			$this->form_data->show_element('Status'); ?> </TD></TR>
+    <TR><TD>Assigned To</TD><TD>
+                <?php if (($perm->have_perm("sitecontact")) and ($cmd=="Add")) {
+			echo "<input type=hidden name=AssignedTo value='unassigned'>unassigned";
+			} else $this->form_data->show_element('AssignedTo'); ?> </TD></TR>
+    <tr><td>Department</td><td>
+                <?php $this->form_data->show_element('Department'); ?> </td></tr>
+    <TR><TD>Level</TD><TD>
+                <?php $this->form_data->show_element('Level'); ?> </TD></TR>
+    <TR><TD>Severity</TD><TD>
+                <?php $this->form_data->show_element('Severity'); ?> </TD></TR>
+    <TR><TD>Created</TD><TD>
+                <?php 	global $Created;
+			if ($cmd=='Add') $Created=date("Y-m-d H:i:s");
+                        $this->form_data->elements["Created"]["ob"]->value = $Created;
+			$this->form_data->show_element('Created'); 
+			if ($cmd=='Add' or $cmd=='Edit') { ?>
+                <a href="javascript:show_cal('my_SupportTicketsform', 'Created');">
+                <img src=cal.gif width=16 height=16 border=0 alt="Click here to pick a date from the calendar"></a>
+			<?php } ?>
+                </TD></TR>
+<?php if ($cmd!='Add') { ?>
+    <TR><TD>Closed</TD><TD>
+                <?php $this->form_data->show_element('Closed'); ?>
+                <a href="javascript:show_cal('my_SupportTicketsform', 'Closed');">
+                <img src=cal.gif width=16 height=16 border=0 alt="Click here to pick a date from the calendar"></a>
+<?php } ?>
+    <TR><TD>Entered By</TD><TD>
+                <?php 	if ($cmd=='Add') $EnteredBy=$EB;
+			$this->form_data->elements["EnteredBy"]["ob"]->value = $EnteredBy;
+			$this->form_data->freeze(array('EnteredBy'));
+			$this->form_data->show_element('EnteredBy'); ?> </TD></TR>
+<?php
+		$origcmd = $cmd;
+		if ($cmd=="Add") $cmd="Save";
+		if ($cmd=="Edit") $cmd="Save";
+		if ($cmd=="Save") {
+?>
+    <tr><td>Attach</td><td><input type="file" size='30' name='Attach1'></td></tr>
+    <tr><td></td><td><input type="file" size='30' name='Attach2'></td></tr>
+    <tr><td>Comments</td></tr>
+    <tr><td colspan=2>
+<?php
+/*
+    $editor = new FCKeditor('Comment');
+    $editor->BasePath = 'fckeditor/';
+    $editor->Config['EditorAreaCSS'] = "css/style.css";
+    $editor->Config['ToolbarStartExpanded'] = false;
+    $editor->Height = 400;
+    $editor->Width = 550;
+    $editor->Value = "";
+    echo $editor->CreateHtml();
+*/
+ //       $CKEditor = new CKEditor();
+ //       $config = array();
+	//$config['toolbarStartupExpanded'] = false;
+/*
+        $config['toolbar'] = array(
+            array( 'Source', '-', 'Bold', 'Italic', 'Underline', 'Strike' ),
+            array( 'Image', 'Link', 'Unlink', 'Anchor' )
+        );
+        $events['instanceReady'] = 'function (ev) {
+            alert("Loaded: " + ev.editor.name);
+        }';
+        $CKEditor->editor("Comment", "", $config) #, $events);
+*/
+?>
+	<textarea name='Comment' id='Comment' rows='10' cols='160'></textarea>
+	<script>var editor=CKEDITOR.replace("Comment", {
+		toolbarStartupExpanded : false
+		});CKFinder.SetupCKEditor(editor);</script>
+</td></tr>
+
+<?php		} ?>
+
+    <TR><TD>&nbsp;</TD><TD> 
+	<?php 
+		if ($cmd=="View") $cmd="Back";
+		if ($cmd=="Back") {
+			if ($Status=='Closed') {
+				echo "<a href=".$sess->url('SupportTickets.php');
+				echo $sess->add_query(array("submit"=>"ReOpen","id"=>$TicketNo)).">ReOpen Ticket</a> ";
+			} else {
+				echo "<a href=".$sess->url('SupportTickets.php');
+				echo $sess->add_query(array("cmd"=>"Edit","id"=>$TicketNo)).">Edit Ticket Details</a> ";
+				echo "<br><br><a href=".$sess->url('SupportTickets.php');
+				if ($origcmd!='Add')
+				echo $sess->add_query(array("submit"=>"Close","id"=>$TicketNo)).">Close Ticket</a> ";
+			}
+		} else {
+			if ($Status=="Closed") $cmd="Back";
+			$this->form_data->show_element('submit',$cmd);
+			echo "<br><br><a href=".$sess->url('SupportTickets.php');
+			if (($Status!="Closed") and ($origcmd!='Add')) {
+				echo "<br><br><a href=".$sess->url('SupportTickets.php');
+				echo $sess->add_query(array("cmd"=>"Close","id"=>$TicketNo)).">Close Ticket</a> ";
+			}
+		}
+	?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish();
+?>

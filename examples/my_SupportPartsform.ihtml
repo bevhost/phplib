@@ -1,0 +1,34 @@
+<?php
+  $this->form_data->start("my_SupportPartsform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE class=formdata>     <TR><TD></TD><TD>
+		<?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>Ticket No</TD><TD>
+                <?php   global $TicketNo;
+                        echo "<input type=hidden id=TicketNo name=TicketNo value=$TicketNo>$TicketNo";
+                ?> </TD></TR>
+    <TR><TD>Item ID</TD><TD>
+		<?php $this->form_data->show_element('ItemID'); ?> </TD></TR>
+    <TR><TD>Product Code</TD><TD>
+		<?php $this->form_data->show_element('ProductCode'); ?> </TD></TR>
+    <TR><TD>Part No</TD><TD>
+		<?php $this->form_data->show_element('PartNo'); ?> </TD></TR>
+    <TR><TD>Description</TD><TD>
+		<?php $this->form_data->show_element('Description'); ?> </TD></TR>
+    <TR><TD>Quantity</TD><TD>
+		<?php $this->form_data->show_element('Quantity'); ?> </TD></TR>
+    <TR><TD>Price</TD><TD>
+		<?php $this->form_data->show_element('Price'); ?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+		if ($cmd=="View") $cmd="Back";
+		if ($cmd=="Add") $cmd="Save";
+		if ($cmd=="Edit") $cmd="Save";
+		$this->form_data->show_element('submit',$cmd);
+		?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php $this->form_data->show_element('reset');
+		?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish();
+?>
