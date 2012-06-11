@@ -106,8 +106,10 @@ class tpl_form {
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
     if (!$this->database_class) $this->database_class = $_ENV["DatabaseClass"];
     if (!$this->database_class) return;
-    $sql = "select * from LinkedTables where FormName = '$class'";
     $db = new $this->database_class;
+    $db->query("SHOW TABLES LIKE 'LinkedTables'");
+    if (!$db->next_record()) return;
+    $sql = "select * from LinkedTables where FormName = '$class'";
     $db->query($sql);
     while ($db->next_record()) {
 	extract($db->Record);
