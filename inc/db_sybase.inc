@@ -45,6 +45,28 @@ class DB_Sql {
     }
   }
 
+  /* Quoting Helper - by Dave Beveridge */
+  function quote($str) {
+        return "'".$this->escape_string($str)."'";
+  }
+  function escape_string($str) {
+        if (!$this->connect()) return 0;
+        if (get_magic_quotes_gpc()) $str = stripslashes($str);
+        return $this->sybase_escape_string($this->Link_ID,$str);
+  }
+  function quote_identifier($str) {
+        $arr = explode(".",$str);
+        return '"'.implode('"."',$arr).'"';
+  }
+  function qi($str) {
+        $arr = explode(".",$str);
+        return '"'.implode('"."',$arr).'"';
+  }
+  function sybase_escape_string($str) {
+	# Sybase expects a ' to be quoted with a second quote eg '' rather than \'
+	return str_replace("\\'","''",addslashes($str));
+  }
+
   function query($Query_String) {
 
 
