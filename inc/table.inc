@@ -182,7 +182,9 @@ class Table
 
     if (!$this->no_open) $this->table_open($class);
 	if ($this->show_table_heading_row_result($db, $class)) {
+		echo "<tbody>";
       		$rows = $this->show_table_rows_result($db, $class);  
+		echo "</tbody>";
 		$this->show_table_totals_row();
 	}
 	
@@ -344,7 +346,7 @@ class Table
     $d = $this->select_colnames($data);
 
     $row = 0;
-
+    echo "<thead>";
     $this->table_row_open($row, $d, $class);
     $this->set_checkbox_heading($class);
     $this->show_table_heading_cells($data, $class);
@@ -354,6 +356,7 @@ class Table
       $this->table_heading_row_add_extra($data, $class);
 
     $this->table_row_close(0, $class);
+    echo "</thead>";
   }
 
   function table_insert_row($data, $class="")
@@ -794,6 +797,35 @@ echo "<!-- $val = $postval -->";
     {
 	$comment = "";
 	$align = "left";
+
+	$output = $this->format_table_cell($val,$data,$align,$comment,$class);
+
+	if ($output==0 and $class=="total") $output=" ";
+
+	if (@array_key_exists($val,$this->align)) $align = $this->align[$val];
+
+	if (array_key_exists($this->primary_key,$data)) $index=$data[$this->primary_key]; else $index=false;
+
+	$this->table_cell($row, $cell++, $val, $output, $class, $align, $comment, $index);
+    }
+
+    return 1;
+  }
+
+  #==========================================================================
+  # Function : format_table_cell
+  #--------------------------------------------------------------------------
+  # Purpose  : Provides a hook to allow the formatting of data in a cell.
+  #		attempts to have sensible default formatting by guessing data type.
+  # Arguments: $val     - The column name.
+  #            $data    - The data array.
+  #            $align   - The cell alignment (left, center, right).
+  #            $class   - HTML Title for the cell.
+  # Returns  : formatted string
+  # Comments : should be overriden by user class to provide extra functionality.
+  # History  : used ot be built in to show_table_cells
+  #==========================================================================
+  function format_table_cell($val,$data,&$align,&$comment,&$class) {
 	$dval = str_replace("\r","",@$data[$val]);
 	if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})/", $dval, $regs))) {
 		$output = date("d M Y",strtotime($dval));   /* DD Mmm YYYY */
@@ -862,32 +894,14 @@ echo "<!-- $val = $postval -->";
 		}
 	} else { 
 		// Normal Field
-		switch ($val) {
-			case "IPv6P":
-			case "IPv4P":
-				$output = @inet_ntop($data[$val]);
-				break;
-			case "MACP":
-				$output = @implode(":",unpack("H2a/H2b/H2c/H2d/H2e/H2f",$data[$val]));
-				break;
-      			default: 
-				$output = @$data[$val];
-		}
+		$output = $dval;
 	}
 
 	$output = str_replace("(TEST TRANSACTION ONLY)","<b>(TEST)</b>",$output);
-	
-	if ($output==0 and $class=="total") $output=" ";
 
-	if (@array_key_exists($val,$this->align)) $align = $this->align[$val];
+	return $output;
+  }	
 
-	if (array_key_exists($this->primary_key,$data)) $index=$data[$this->primary_key]; else $index=false;
-
-	$this->table_cell($row, $cell++, $val, $output, $class, $align, $comment, $index);
-    }
-
-    return 1;
-  }
 
   #==========================================================================
   # Function : table_cell
@@ -908,8 +922,6 @@ echo "<!-- $val = $postval -->";
     global $debug;
 	if ($debug) echo "table_cell($val)";
    global $PHP_SELF, $DOCUMENT_ROOT;
-   // if ( $class == "default" ) $class="table_cell";	// Added by David Beveridge.
-	$class=""; //dave
     $title="";
     $shown = false;
     if (array_key_exists($key,$this->orig_fields)) $key = $this->orig_fields[$key];
@@ -920,7 +932,6 @@ echo "<!-- $val = $postval -->";
 /*
 	if ($this->form->form_data->elements[$key]["ob"]->multiple) $val = explode(",",$val);
 */
-
 	$this->form->form_data->elements[$key]["ob"]->value=$val;
 	$this->form->form_data->elements[$key]["ob"]->class="ipe";
 	
@@ -1252,8 +1263,7 @@ function ".$this->classname."SaveCell(elem,index) {
 </script>
 ";
 	
-   // printf("<table cellpadding=0 class='btable'><tr><td>\n"); // open border table : by ben	
-    printf("<table%s cellpadding='1' cellspacing='1'>\n", $class?" class='$class'":"");  //cellpadding by ben
+    printf("<table%s >\n", $class?" class='$class'":""); 
 	$this->total = array();
   }
 
