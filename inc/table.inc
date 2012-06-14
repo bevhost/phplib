@@ -309,7 +309,7 @@ class Table
         $this->table_heading_row($db->Record, $class);
         if (isset($this->add_insert))
           $this->table_insert_row($db->Record, $class);
-        $db->seek($db->Row-1);
+#        $db->seek($db->Row-1);	// changed function show_table_rows_result() so this is not required
 	if ($this->check) 
 	  echo "<form method='post' name='$this->checkbox_form_id' id='$this->checkbox_form_id'>\n";
         return 1;
@@ -537,7 +537,13 @@ echo "<!-- $val = $postval -->";
     
     $row = 0;
     
-    while($db->next_record())
+    if ($this->heading) # We already retrieved the first row of data to get the col names
+    {
+      $this->table_row($row, $row, $db->Record, $class);	// better show that first row
+      $row++;
+    }
+    
+    while($db->next_record())					// show the rest of the rows
     {
       ## Process a table row
       $this->table_row($row, $row, $db->Record, $class);
