@@ -5,7 +5,7 @@ $LD = "";
 if ($LD) $LD.="/";
 
 require($LD."db_pdo.inc");    
-$ServerType = "mysql" 		/* change this to match your database eg mysql, odbc, oci8, pgsql */
+$ServerType = "mysql"; 		/* change this to match your database eg mysql, odbc, oci8, pgsql */
 
 error_reporting(E_ALL);
 ini_set('display_errors','On');
