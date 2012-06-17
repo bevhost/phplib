@@ -4,7 +4,8 @@ if (!file_exists($LD="/usr/share/phplib")) $LD="";
 $LD = "";
 if ($LD) $LD.="/";
 
-require($LD."db_pdo.inc");    /* change this to match your database eg mysql, odbc, oci8, pgsql */
+require($LD."db_pdo.inc");    
+$ServerType = "mysql" 		/* change this to match your database eg mysql, odbc, oci8, pgsql */
 
 error_reporting(E_ALL);
 ini_set('display_errors','On');
@@ -63,6 +64,8 @@ class DB_'.$BN.' extends DB_Sql {
   var $Database = "'.$db.'";
   var $User     = "'.$usr.'";
   var $Password = "'.$pwd.'";
+  var $Server   = "'.$ServerType.'";
+  var $charset  = "utf8";
 }
 ?>';
 		if ($idir) $SD = "/$idir";
