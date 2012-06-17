@@ -4,8 +4,7 @@ if (!file_exists($LD="/usr/share/phplib")) $LD="";
 $LD = "";
 if ($LD) $LD.="/";
 
-require($LD."db_mysql.inc");    /* change this to match your database eg mysql, odbc, oci8, pgsql */
-require($LD."db_pgsql.inc");    /* change this to match your database eg mysql, odbc, oci8, pgsql */
+require($LD."db_mysqli.inc");    /* change this to match your database eg mysql, odbc, oci8, pgsql */
 
 error_reporting(E_ALL);
 ini_set('display_errors','On');
@@ -24,7 +23,7 @@ if (!file_exists(".htauth.local")) {
 	if ($db and $usr and $pwd) {
 		$database = new DB_SQL;
 		echo "Testing Credentials..";
-		$database->connect($db,"localhost",$usr,$pwd);  /* Test credientials */
+		$database->connect($db,"localhost",$usr,$pwd);  /* Test credentials */
 		echo "OK<br />\n";
 		$path = explode("/",$_SERVER["DOCUMENT_ROOT"]);
 		$l = count($path)-2;
@@ -53,11 +52,12 @@ $_ENV["UserEmailAddressField"] = "Email";
 $_ENV["UserAuthIdField"] = "user_id";
 $_ENV["no_edit"] = array("radacct","pp_transactions","EventLog"); /* tables not to be edited */
 $_ENV["editor"] = "fckeditor";
-$_ENV["HelpDesk"] = " from 9am to 8pm";	   
+$_ENV["HelpDesk"] = " from 9am to 8pm";
 /* html header files are deprecated, autogen codes these, independantly now for more control */
 $_ENV["header"] = "";  #eg "head.inc";	   /* html header file to output as the page_open */
-$_ENV["pophead"] = ""; #eg "pophead.inc";  /* html header file to output when it's a popup */
+$_ENV["pophead"] = ""; #eg "pophead.inc";  /* html header file to output when it\'s a popup */
 $_ENV["footer"] = "";  #eg "foot.inc";	   /* html footer file to output in page_close */
+
 class DB_'.$BN.' extends DB_Sql {
   var $Host     = "localhost";
   var $Database = "'.$db.'";
@@ -118,6 +118,7 @@ if ($_ENV["SubFolder"]) $_ENV["SiteRoot"] .= $_ENV["SubFolder"] . "/";
 $readonlydb=false;
 
 $db=$_ENV["BaseName"];
+$prefix="";
 #$db = "cdr"; $prefix = "cdr";
 #$db = "syslog"; $prefix = "syslog"; $skip=array('LinkedTables','db_sequence');
 #$db = "postfix"; $prefix = "postfix"; $skip=array('LinkedTables','db_sequence','virt');
@@ -137,6 +138,7 @@ $password=$database->Password;
 $dbase=$database->Database;
 
 $cart_table = "stock_master";
+$atcjs = "";  // add to cart javascript
 
 
 $siteurl=$sitedomainname;
