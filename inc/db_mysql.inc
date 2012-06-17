@@ -18,6 +18,8 @@ class DB_Sql {
   var $Password = "";
   var $ConnectFlag = 0;
 
+  var $charset  = "utf8";
+
   /* public: configuration parameters */
   var $Auto_Free     = 0;     ## Set to 1 for automatic mysql_free_result()
   var $Debug         = 0;     ## Set to 1 for debugging messages.
@@ -102,8 +104,9 @@ class DB_Sql {
         return 0;
       }
 
-      @mysql_query("SET NAMES utf8",$this->Link_ID);
-      @mysql_query("SET CHARACTER SET utf8",$this->Link_ID);
+      if (!mysql_set_charset($this->charset,$this->Link_ID)) {
+	$this->halt("Error loading character set ".$this->charset.": ".$this->Link_ID->error);
+      }
     }
     
     return $this->Link_ID;
