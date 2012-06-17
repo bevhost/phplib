@@ -4,7 +4,7 @@ if (!file_exists($LD="/usr/share/phplib")) $LD="";
 $LD = "";
 if ($LD) $LD.="/";
 
-require($LD."db_mysqli.inc");    /* change this to match your database eg mysql, odbc, oci8, pgsql */
+require($LD."db_pdo.inc");    /* change this to match your database eg mysql, odbc, oci8, pgsql */
 
 error_reporting(E_ALL);
 ini_set('display_errors','On');

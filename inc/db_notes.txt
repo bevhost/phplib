@@ -1,0 +1,19 @@
+Internationalisation
+Different charsets have \ in different places
+ISO-8859-1 and UTF-8 (and others): 0x5c
+Ergo, \' is 0x5c 0x27
+But in Big5 0xbf 0x5c is 縗
+
+So, in Big5…
+http://your.server/script.php?foo=%bf%27;DROP DATABASE mysql;--
+becomes
+縗';DROP DATABASE mysql;--
+
+It turns out that 縗 isn't an escape character
+
+What's happening here?
+If you addslashes to the string 0xbf 0x27,
+It will have a slash inserted into the string to become 0xbf 0x5c 0x27
+
+so if you get your charset wrong you can be in trouble.
+so how to fix it?  Switch to PDO prepared statments.
