@@ -326,6 +326,8 @@ class Session {
   ## a database table
 
   function freeze() {
+    global $auth;
+    unset($auth->db);  // PDO objects can't be serialized and we don't need this anyway
     $str="";
     $arr=array();
     //$this->serialize("this->in", $str);
