@@ -28,7 +28,7 @@ class DB_Sql {
 
   /* public: current error number and error text */
   var $Errno    = 0;
-  var $Error    = "";
+  var $Error    = "Not Connected";
 
   /* public: this is an api revision, not a CVS revision. */
   var $type     = "pdo";
@@ -64,7 +64,7 @@ class DB_Sql {
   }
   function prepare($query = "") {
 	if (!$this->connect()) return false;  
-	$this->$sth = $this->dbh->prepare($query);
+	$this->sth = $this->dbh->prepare($query);
 	return $this->sth;
   }
   function commit() {
@@ -104,13 +104,20 @@ class DB_Sql {
     
       if ($this->Debug) echo "Connecting to $Host as $User<br>\n";
       try{
-        $this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;charset=$this->charset", $User, $Password);
+	switch($this->Server) {
+	    case "sqlite":
+        	$this->dbh = new PDO("$this->Server:$Database");
+		if (!$this->dbh) $this->halt("open($Database) failed.");
+		break;
+	    default:
+        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;charset=$this->charset", $User, $Password);
+	}
       }
       catch(PDOException $e) {
-	$this->halt($e->message);
+	$this->halt($e->getMessage());
       }
       if (!$this->dbh) {
-        $this->halt("connect($Host, $User, \$Password) failed.");
+	$this->halt("connect($Host, $User, \$Password) failed.");
         return 0;
       }
 
@@ -151,7 +158,7 @@ class DB_Sql {
       $this->sth = $this->dbh->query($Query_String);
     }
     catch(PDOException $e) {
-      $this->halt($e->message);
+	$this->halt($e->getMessage());
     }
     #if ($this->sth->rowCount()) { 
     #	$result = $this->sth->setFetchMode(PDO::FETCH_BOTH); /wasn't required, must be default.
@@ -313,30 +320,58 @@ class DB_Sql {
         $this->halt("No table specified.");
         return false;
       }
-      for ($i=0;$i<$stmt->columnCount;$i++) {
+    } else {
+      $q = "SELECT * FROM ".$this->qi($table)." LIMIT 1";
+      $stmt = $this->dbh->query($q);
+    }
+    if ($stmt) {
+#      if (!@$stmt->columnCount()) {
+		$row = $stmt->fetchAll();
+ #     }
+      for ($i=0;$i<$stmt->columnCount();$i++) {
         $res[$i] = $stmt->getColumnMeta($i);
+echo " \n$i:";
+var_dump($res[$i]);
+	if ((array_key_exists("native_type",$res[$i])) and (!array_key_exists("type",$res[$i]))) 
+		$res[$i]["type"] = $res[$i]["native_type"];
+	if (!array_key_exists("type",$res[$i])) {
+		switch (@$res[$i]["pdo_type"]) {
+			case PDO::PARAM_INT: $res[$i]["type"] = "int"; break;
+			case PDO::PARAM_LOB: $res[$i]["type"] = "blob"; break;
+			case PDO::PARAM_STR: $res[$i]["type"] = "string"; break;
+		}
+	}
+	$res[$i]["chars"] = @$res[$i]["len"] ? $res[$i]["len"] : $res[$i]["length"];
+	$count++;
       }
     } else {
       $this->connect();
+      switch ($this->Server) {
+	  case "sqlite":
+		$q = "PRAGMA table_info($table)"; break;
+	  default:
+		$q = "DESCRIBE ".$this->qi($table);
+      }
       try {
-        if (!$stmt = $this->dbh->query("DESCRIBE ".$this->qi($table))) {
+        if (!$stmt = $this->dbh->query($q)) {
           $this->halt("Metadata query failed.");
 	  return false;
 	}
       }
       catch(PDOException $e) {
-	$this->halt($e->message);
+	$this->halt($e->getMessage());
       }
       $res["num_fields"] = $stmt->rowCount();
       $i = 0;
       foreach($stmt as $row) {
         $res[$i]["table"] = $table;
-        $res[$i]["name"]  = $row["Field"];
+        $res[$i]["name"]  = @$row["Field"] ? $row["Field"] : $row["name"];
+	$type = @$row["Type"] ? $row["Type"] : $row["type"];
 	$fattr = "";
-	$pos = strpos ( $row["Type"], "(" );
+	$pos = strpos ( $type, "(" );
         if ( $pos > 0 ) {
-            $ftype = substr ( $row["Type"], 0, $pos );
-            $fsize = substr ( $row["Type"], $pos +1 );
+            $ftype = substr ( $type, 0, $pos );
+            $fsize = substr ( $type, $pos +1 );
             $pos = strpos ( $fsize, ") " );
             if ( $pos > 0 ) {
                 $fattr = substr ( $fsize, $pos +2, strlen ($fsize) -2 -$pos );
@@ -346,15 +381,18 @@ class DB_Sql {
             }
         } else {
             $fsize = "";
-            $ftype = $row["Type"];
+            $ftype = $type;
         }
-	$res[$i]["key"] = $row["Key"];
+	$res[$i]["key"] = @$row["Key"] ? $row["Key"] : $row["pk"];
 	$res[$i]["chars"] = $fsize;
 	$res[$i]["type"] = $ftype;
 	$res[$i]["attr"] = $fattr;   /* eg unsigned */
-	$res[$i]["null"] = $row["Null"];
-	$res[$i]["extra"] = $row["Extra"];
-	$res[$i]["default"] = $row["Default"];
+	if (array_key_exists("notnull",$row)) {
+		if ($row["notnull"]) $null="NO"; else $null="YES";
+	} else $null = $row["Null"];
+	$res[$i]["null"] = $null;
+	$res[$i]["extra"] = @$row["Extra"];
+	$res[$i]["default"] = @$row["Default"] ? $row["Default"] : $row["dflt_value"];
 	$i++;
       }
     }
@@ -366,9 +404,10 @@ class DB_Sql {
   function table_names() {
     $this->connect();
     $i = 0;
+    $res = Array();
     switch($this->Server){
 	case "sqlite":
-		$q = 'SELECT name FROM sqlite_master WHERE type = "table"';
+		$q = "SELECT name FROM sqlite_master WHERE type = 'table'"; break;
 	case "mysql":
 		$q = "SHOW TABLES"; break;
         case "pgsql":
@@ -379,7 +418,8 @@ class DB_Sql {
 		$q = "SELECT table_name FROM information_schema.tables ".
 		     "WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema')";
     }
-    foreach ($this->dbh->query($q) as $row) {
+    if ($stmt = $this->dbh->query($q))
+    foreach ($stmt as $row) {
       $res[$i]["table_name"]      = $row[0];
       $res[$i]["tablespace_name"] = $this->Database;
       $res[$i]["database"]        = $this->Database;
@@ -405,10 +445,12 @@ class DB_Sql {
   }
     
   function getErrorInfo() {
-    $e = $this->dbh->errorInfo();
-    $this->Error = $e[2];
-    $this->Errno = $e[1];
-    $this->ErrCode = $e[0];
+    if (is_object($this->dbh)) {
+      $e = $this->dbh->errorInfo();
+      $this->Error = $e[2];
+      $this->Errno = $e[1];
+      $this->ErrCode = $e[0];
+    }
   }
 
   /* private: error handling */
@@ -437,4 +479,30 @@ class DB_Sql {
   }
 
 }
+
+
+/*  possible postgresql queries.... 
+    from
+    http://scripts.ringsworld.com/content-management/cms/adodb/drivers/adodb-pdo.inc.php.html
+
+    var $metaColumnsSQL = "SELECT a.attname, t.typname, a.attlen, a.atttypmod, a.attnotnull, a.atthasdef, a.attnum 
+        FROM pg_class c,  pg_attribute a, pg_type t 
+        WHERE relkind in ('r', 'v') AND (c.relname='%s' or c.relname = lower('%s')) and a.attname not like '....%%'
+AND a.attnum > 0 AND a.atttypid = t.oid AND a.attrelid = c.oid ORDER BY a.attnum";
+
+    // used when schema defined
+    var $metaColumnsSQL1 = "SELECT a.attname,  t.typname,  a.attlen,  a.atttypmod,  a.attnotnull,  a.atthasdef,  a.attnum 
+FROM pg_class c,  pg_attribute a,  pg_type t,  pg_namespace n 
+WHERE relkind in ('r', 'v') AND (c.relname='%s' or c.relname = lower('%s'))
+ and c.relnamespace=n.oid and n.nspname='%s' 
+    and a.attname not like '....%%' AND a.attnum > 0 
+    AND a.atttypid = t.oid AND a.attrelid = c.oid ORDER BY a.attnum";
+    
+    // get primary key etc -- from Freek Dijkstra
+    var $metaKeySQL = "SELECT ic.relname AS index_name,  a.attname AS column_name, i.indisunique AS unique_key,  i.indisprimary AS primary_key 
+    FROM pg_class bc,  pg_class ic,  pg_index i,  pg_attribute a WHERE bc.oid = i.indrelid AND ic.oid = i.indexrelid AND (i.indkey[0] = a.attnum OR i.indkey[1] = a.attnum OR i.indkey[2] = a.attnum OR i.indkey[3] = a.attnum OR i.indkey[4] = a.attnum OR i.indkey[5] = a.attnum OR i.indkey[6] = a.attnum OR i.indkey[7] = a.attnum) AND a.attrelid = bc.oid AND bc.relname = '%s'";
+    
+*/
+
+
 ?>
