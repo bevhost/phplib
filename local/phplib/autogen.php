@@ -574,6 +574,9 @@ $fkey = "";
 $metadata=$database->metadata($tb_names[$i]);
 
 foreach($metadata as $j => $md) {
+
+    if ($j === "num_fields") continue;
+
     echo "Information for column $j table $tb_names[$i] with key $key_names[$i]:<BR>\n";
 
     $fkey = $md["key"]; 
@@ -823,7 +826,6 @@ WebType:      ".$wtype."
     		if ( isset($fdefault) ) { fwrite($finc,',"value"=>"'.$fdefault.'"'); }
     }
     fwrite($finc,"));\n");
-    $j++;
 } //while fields
 
 
