@@ -1,5 +1,8 @@
 <a href="../">Go back to web site</a></br>
 <?php 
+error_reporting(E_ALL);
+ini_set('display_errors','On');
+
 if (!file_exists($LD="/usr/share/phplib")) $LD="";
 $LD = "";
 if ($LD) $LD.="/";
@@ -7,8 +10,7 @@ if ($LD) $LD.="/";
 require($LD."db_pdo.inc");    
 $ServerType = "mysql"; 		/* change this to match your database eg mysql, odbc, oci8, pgsql */
 
-error_reporting(E_ALL);
-ini_set('display_errors','On');
+echo "<h2>PHPLIB AutoGenerator</h2>\n";
 
 $skip=array();
 
@@ -21,9 +23,10 @@ if ($windir = @$_SERVER["windir"]) {
 }
 if (!file_exists(".htauth.local")) {
 	extract($_REQUEST);
-	if ($db and $usr and $pwd) {
+	if ($db) { ## and $usr and $pwd) {
 		$database = new DB_SQL;
-		echo "Testing Credentials..";
+		$database->Server = $svr;
+		echo "Testing Credentials..$usr@$db";
 		$database->connect($db,"localhost",$usr,$pwd);  /* Test credentials */
 		echo "OK<br />\n";
 		$path = explode("/",$_SERVER["DOCUMENT_ROOT"]);
@@ -64,7 +67,7 @@ class DB_'.$BN.' extends DB_Sql {
   var $Database = "'.$db.'";
   var $User     = "'.$usr.'";
   var $Password = "'.$pwd.'";
-  var $Server   = "'.$ServerType.'";
+  var $Server   = "'.$srv.'";
   var $charset  = "utf8";
 }
 ?>';
@@ -102,6 +105,7 @@ class DB_'.$BN.' extends DB_Sql {
 	<table>
 	<tr><td>domain www.</td><td><input name='dom' value='<?php echo str_replace("www.","",$_SERVER["HTTP_HOST"]); ?>' /></td></tr>
 	<tr><td>install dir</td><td><input name='idir' value='<?php echo $SD; ?>' /> usually blank</td></tr>
+	<tr><td>server type</td><td><input name='svr' value='<?php echo $ServerType; ?>' /> eg: odbc, sqlite</td></tr>
 	<tr><td>database name</td><td><input name='db' value='<?php echo get_current_user(); ?>_db' /></td></tr>
 	<tr><td>database user</td><td><input name='usr' value='<?php echo get_current_user(); ?>_user' /></td></tr>
 	<tr><td>database pass</td><td><input name='pwd' /></td></tr>
@@ -237,7 +241,7 @@ foreach($tables as $i => $table) {
 }
 
 
-if ($_POST["files"]) {
+if (@$_POST["files"]) {
     switch ($database->type) {
       case "mysql":
 	$cmd = "cat $LD".implode(" $LD",$_POST["files"])." | mysql -u$user -p$password $dbase";
@@ -329,7 +333,7 @@ switch ($tb_names[$i]) {
 
 
 
-echo "SHOW FIELDS FROM ".$tb_names[$i]."<br />\n";
+echo "<h2>".$tb_names[$i]."</h2>\n";
 
 
 
@@ -573,7 +577,7 @@ foreach($metadata as $j => $md) {
     echo "Information for column $j table $tb_names[$i] with key $key_names[$i]:<BR>\n";
 
     $fkey = $md["key"]; 
-    $ftype = $md["type"];
+    $ftype = strtolower($md["type"]);
     $PrevWtype = $wtype;
     $fsize = $md["chars"];
     $wtype = $ftype;
@@ -581,11 +585,12 @@ foreach($metadata as $j => $md) {
     $fdefault = $md["default"];
     $fnull = $md["null"];
     $fextra = $md["extra"];
-    $fcomment = $md["comment"];
+    $fcomment = @$md["comment"];	// no metadata functions return table comments AFAIK
     if ($fkey=="PRI") { $PrimaryKey = $fname; }
     if ($fkey=="UNI") { $UniqueKey = $fname; }
     if ( preg_match("/int$/i",$ftype) ) { $wtype = "int"; $fsize=12; }
     if ( preg_match("/text$/i",$ftype) ) { $wtype = "text"; }
+    if ( $ftype=="longlong" ) { $fsize = 18; }
     if ( $ftype=="bigint" ) { $fsize = 18; }
     if ( $ftype=="float" ) { $fsize = 15; }
     if ( $ftype=="mediumtext" ) { $wtype = "html"; } 
@@ -650,6 +655,7 @@ WebType:      ".$wtype."
 		\$this->form_data->show_element('".$fname."');
 		} ?> </td></tr>\n<?php } ?>");
 		break;
+	case "resource":
 	case "nblob":
       		fwrite($fihtml,"    <tr><td>".neatstr($fname)."</td><td> 
 		<?php if ( \$cmd!=\"Add\" ) { \$this->show_image('".$fvname."',\$".$keynames[$i].",'".$tb_names[$i]."','".$key_names[$i]."'); }
@@ -671,6 +677,7 @@ WebType:      ".$wtype."
 		<a href=\"javascript:show_help('helptime.php');\">Help</a>
 		</td></tr>\n");
 		break;
+	case "newdate":
 	case "date":
 	case "timestamp":
 	case "datetime":
@@ -719,6 +726,12 @@ WebType:      ".$wtype."
 		"options"=>array('.$fsize.')');
     		if ( isset($fdefault) ) { fwrite($finc,',"value"=>"'.$fdefault.'"'); }
 		break;
+	case "longlong":
+	case "long":
+	case "short":
+	case "tiny":
+	case "integer":
+	case "int24":
 	case "int":
     		if ($j>0) $fvals .= "'$".$fvname."'";
                 if (strlen($fdisp)>1) $fdisp .= ","; $fdisp .= "\n\t\t\t\"".$fname.'"=>"'.neatstr($fvname).'"';
@@ -758,6 +771,7 @@ WebType:      ".$wtype."
 		"field"=>"'.$fname.'","extrahtml"=>""');
     		if ( isset($fdefault) ) { fwrite($finc,',"value"=>"'.$fdefault.'"'); }
 		break;
+	case "resource":
 	case "lblob":
 	case "mblob":
 	case "tblob":
@@ -770,6 +784,7 @@ WebType:      ".$wtype."
     		if ($j>0) $fvals .= "'$".$fvname."'";
 		fwrite($finc,'"type"=>"hidden","name"=>"'.$fvname.'","field"=>"'.$fname.'","size"=>"'.$fsize.'"');
 		break;
+	case "newdecimal":
 	case "decimal":
 		$ExtraHtml = " onBlur='dollarformat(this)'";
 		$ValidRegex = ',"valid_e"=>"Invalid Price","valid_regex"=>"^[$|-]?[0-9|.]+$"';
@@ -787,11 +802,12 @@ WebType:      ".$wtype."
                 '.$ValidRegex);
                 if ( isset($fdefault) ) { fwrite($finc,',"value"=>"'.$fdefault.'"'); }
 		break;
+	case "newdate":
 	case "date":
 	case "datetime":
 	case "timestamp":
 		$oohtype="date";
-	default:
+	default: /* char,varchar,string,var_string etc */
     		$fquer .= "\n\t\"".$fname."\" => \"".$fname."\"";
     		$fvals .= "'$".$fvname."'";
                 if (strlen($fdisp)>1) $fdisp .= ","; $fdisp .= "\n\t\t\t\"".$fname.'"=>"'.neatstr($fvname).'"';
@@ -917,7 +933,7 @@ fwrite($fphp,"
 	}
 
   // When we hit this page the first time,
-  // there is no $q.
+  // there is no \$q.
   if (!isset(\$q_".$classnames[$i].")) {
     \$q_".$classnames[$i]." = new ".$classnames[$i]."_Sql_Query;     // We make one
     \$q_".$classnames[$i]."->conditions = 1;     // ... with a single condition (at first)
