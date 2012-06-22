@@ -38,6 +38,9 @@ class DB_Sql {
   var $dbh  = 0;
   var $sth = 0;
   
+  function escape_string($str) {
+	return substr(substr($this->quote($str),1),0,-1);
+  }
   function quote($str) {
 	if (!$this->connect()) return 0; 
 	if (get_magic_quotes_gpc()) $str = stripslashes($str);
