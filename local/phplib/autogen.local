@@ -1,5 +1,6 @@
 <?php
 
+$PermStr = "";
 $PermCount = 1;
 foreach (explode(",",$_ENV["Perms"]) as $p) {
         $PermStr .=  "\n\t\t\t\t\"$p\"  \t  =>   $PermCount,";
@@ -86,27 +87,26 @@ class ".$db."_Auth extends Auth {
   function auth_validatelogin() {
     global \$sess;
 
-    if(isset(\$_POST['phplib_username'])) {
-      \$this->auth[\"uname\"]=\$_POST['phplib_username'];        ## This provides access for \"loginform.ihtml\"
-    }
-    
-    
     \$uid = false;
-    
-    \$this->db->query(sprintf(\"select user_id, perms \".
-                             \"        from %s \".
-                             \"       where username = '%s' \".
-                             \"         and password = '%s'\",
-                          \$this->database_table,
-                          addslashes(@\$_POST['phplib_username']),
-                          addslashes(@\$_POST['phplib_password'])));
 
-    while(\$this->db->next_record()) {
+    if(isset(\$_POST['phplib_username'])) {
+      \$this->auth[\"uname\"]=trim(\$_POST['phplib_username']);        ## This provides access for \"loginform.ihtml\"
+    
+      \$this->db->query(sprintf(\"select user_id, perms \".
+                             \"   from %s \".
+                             \"   where username = %s \".
+                             \"   and password = %s \",
+                          \$this->database_table,
+                          $this->db->quote(\$_POST['phplib_username']),
+                          $this->db->quote(\$_POST['phplib_password'])));
+
+      while(\$this->db->next_record()) {
 	\$uid = \$this->db->f(\"user_id\");
 	\$this->auth[\"perm\"] = \$this->db->f(\"perms\");
         global \$loggedIn;
         \$loggedIn = \"TimeOutDetect\";
         \$sess->register(\"loggedIn\");
+      }
     }
     return \$uid;
   }
