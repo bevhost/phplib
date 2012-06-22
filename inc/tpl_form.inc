@@ -229,7 +229,10 @@ class tpl_form {
 		}
 		$name = $_FILES[$fieldname]['name'];
 		$extension = image_type_to_extension($type);
-		$data = $db->quote(file_get_contents($_FILES[$fieldname]['tmp_name']));
+		if ($db->type=="pdo")
+			$data = file_get_contents($_FILES[$fieldname]['tmp_name']);
+		else
+			$data = $db->quote(file_get_contents($_FILES[$fieldname]['tmp_name']));
 		if (!empty($key)) $sql = "UPDATE"; else $sql = "INSERT INTO";
 		$sql .= " image_data SET ";
 		$sql .= "tablename = '".magicquote($tablename)."',";
@@ -538,6 +541,7 @@ TODO: Change this to have some AJAX to handle larger lists.
           // during Add or Copy $newval should be empty
           // during update (eg Edit, AddToCart, Delete) $oldval
 
+	  $data = Array();
 	  switch ($action) {
 	    case "AddToCart":
 		if ($newval) $cart->add_item($newval,$qty,$euid);
@@ -556,6 +560,7 @@ TODO: Change this to have some AJAX to handle larger lists.
                 } else {
                         $sql = "INSERT INTO $table SET ";
                 }
+		$pdo = $sql;
 		$count = 0;
                 for (reset($this->form_data->elements);
                  $elrec = current($this->form_data->elements);
@@ -567,50 +572,77 @@ TODO: Change this to have some AJAX to handle larger lists.
                         if ($el->name=="form_name") $type="skip";
                         if (isset($el->no_edit)) $type="skip";
 			if ($el->extrahtml == " onBlur='dollarformat(this)'") $el->value = str_replace("$","",$el->value);
-                        if ($el->name <> $key) {
+                        if ((isset($el->field)) and ($el->name <> $key)) {
+			  $label = ":".$el->name;
                           switch ($type) {
                             case "skip":
                             case "submit":
                                 break;
                             case "file":
                                 if (substr($_FILES[$el->field]["type"],0,6)=="image/") {
-                                        if ($count>0) $sql .= ", ";
-					$sql .= $db->qi($el->field)." = '".$this->getblob($el->field)."'";
+                                        if ($count>0) { $sql .= ", "; $pdo .= ", "; }
+					$data[$label] = $this->getblob($el->field);				
+					$sql .= $db->qi($el->field)." = '".$data[$label]."'";
+					$pdo .= $db->qi($el->field)." = $label";
 					$imagekeys[] = $GLOBALS["blob_key"];
                                         $count++;
                                 }
                                 break;
 			    case "date":
-                                if ($count>0) $sql .= ", ";
+                                if ($count>0) { $sql .= ", "; $pdo .= ", "; }
+			  	$data[$label] = $el->value;
 				$sql .= $db->qi($el->field)." = '".date("Y-m-d H:i:s",strtotime($el->value))."'";
+				$pdo .= $db->qi($el->field)." = $label";
                                 $count++;
 				break;
                             case "checkbox":
                                 /* perhaps this should be triggered on $el->multiple instead (dave), so it would apply to select multiple as well not just checkbox*/
 				if (isset($el->value)) {$el->value = implode($el->value,",");}
+				/* flow into default case on purpose */
                             default:
-                                if ($count>0) $sql .= ", ";
+                                if ($count>0) { $sql .= ", "; $pdo .= ", "; }
+			  	$data[$label] = $el->value;
 				$sql .= $db->qi($el->field)." = '".magicquote($el->value)."'";
+				$pdo .= $db->qi($el->field)." = $label";
                                 $count++;
                                 break;
                           }
                         }
                 }
-		if ($oldval) $sql .= " WHERE ".$db->qi($this->key)." = '".magicquote($oldval)."'";
-		EventLog("SQL - $action",$sql,"Info");
-		$db->query($sql);
-		if ($newval) {
-			if (count($imagekeys)) $this->save_image_keys($imagekeys,$newval);
-			return $newval;
-		} else {
-			$db->query("SELECT LAST_INSERT_ID()");
-			if ($db->next_record()) {
-				$id = $db->f(0);
-				if (count($imagekeys)) $this->save_image_keys($imagekeys,$id);
-				return $id;
-			}
-			else return false;
+		if ($oldval) { 
+			$sql .= " WHERE ".$db->qi($this->key)." = '".magicquote($oldval)."'";
+			$pdo .= " WHERE ".$db->qi($this->key)." = :$key";
+			$data[":$key"] = $oldval;
 		}
+		if ($db->type=="pdo") {
+			EventLog("PDO - $action",$pdo."\n".var_export($data,true),"Info");
+			$st = $db->prepare($pdo);
+			if (!$st->execute($data)) {
+				$err = var_export($st->errorInfo(),true);
+				echo "<h4>$err</h4>";
+				EventLog("PDO - Failed",var_export($err,true),"Error");
+			}
+		} else {
+			EventLog("SQL - $action",$sql,"Info");
+			$db->query($sql);
+		}
+		$id = false;
+		if ($newval) {
+			$id = $newval;
+		} else {
+			if ($db->type=="pdo") {
+				$id=$db->lastInsertId();
+			} else {
+				$db->query("SELECT LAST_INSERT_ID()");
+				if ($db->next_record()) {
+					$id = $db->f(0);
+				}
+			}
+		}
+		if ($id) {
+			if (count($imagekeys)) $this->save_image_keys($imagekeys,$id);
+		}
+		return $id;
           } //switch
         }
 
@@ -639,8 +671,11 @@ TODO: Change this to have some AJAX to handle larger lists.
         }
         if (!$id) return false;
 	if (!$key) $key = empty($this->key_field) ? $this->key : $this->key_field;
+	if (($key=="id") and !ctype_digit($id)) {
+		die("Invalid data - expected numeric value");
+	} else $id = $db->quote($id);
 	if (!$table) $table=$this->table;
-	$sql = "SELECT * FROM ".$db->qi($table)." WHERE ".$db->qi($key)."='".$id."';";
+	$sql = "SELECT * FROM ".$db->qi($table)." WHERE ".$db->qi($key)."=".$id;
         $db->query($sql);
         if (!$db->next_record()) { 
 		#echo "Record not found ($key=$id)"; 
@@ -717,6 +752,21 @@ TODO: Change this to have some AJAX to handle larger lists.
     }
   }
 
+  # check to see if the field is a date or part thereof
+  # convert to correct format
+  function DateCheck(&$str) {
+	$orig=$str;
+	if (strlen($str)==3 and in_array($str,explode(",","jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec"))) {
+		$s = strtotime($str);
+		if (date('Y-m')<date('Y-m',$s)) $str=date('Y-m',strtotime("$str last year"));
+		else $str = date('Y-m',$s);
+	} else {
+		if ($date = strtotime($str)) $str=date("Y-m-d",$date);
+	}
+#	if (!strpos($orig,date('D',strtotime($str)))) $str=str_replace(date('-d',strtotime($str)),'-',$str);
+  }
+
+
   # When add_insert line of table (or any form) is used as a search function,
   # This will create an SQL query to search for items like this.
   function search() {
@@ -738,6 +788,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 			if (array_key_exists("oper_$k",$_POST)) {
 				$condition = $_POST["oper_$k"];
 				$data = $_POST[$k];
+				$this->DateCheck($data);
                         	$value = $this->db->quote($data);
                         } else {
 				if (is_array($data = $_POST[$k])) {
@@ -746,8 +797,11 @@ TODO: Change this to have some AJAX to handle larger lists.
 					if (substr($data,0,1)=="$") $data = substr($data,1);
 				}
 	                        $condition = substr($data,0,1);
-                        	$value = $this->db->quote(substr($data,1));
-                        	$nvalue = $this->db->quote("%".substr($data,1)."%");
+				$therest = substr($data,1);
+				$this->DateCheck($therest);
+				$this->DateCheck($data);
+                        	$value = $this->db->quote($therest);
+                        	$nvalue = $this->db->quote("%".$therest."%");
 			}
 			$tf =  $this->db->qi($this->table).".".$this->db->qi($f); /* table.field */
                         switch($condition) {
