@@ -315,7 +315,7 @@ class DB_Sql {
     $count = 0;
     $id    = 0;
     $res   = array();
-
+    $stmt  = false;
 
     // if no $table specified, assume that we are working with a query
     // result
@@ -325,28 +325,58 @@ class DB_Sql {
         $this->halt("No table specified.");
         return false;
       }
+##################################################################################
+## This section causes it to prefer pdo metadata functions over DESCRIBE table.
+## Unfortunately, it's broken, as it can't tell the difference between TEXT & BLOB
+## If your database server does not support DESCRIBE, you may turn this back on.
+## Also does not return default values or auto_increment data.
+## pdo_type retuned was always 2 (PDO::PARAM_STR) in my testing.
+## PHP MANUAL STATES "getColumnMeta() Warning: This function is EXPERIMENTAL. 
+## The behaviour of this function, its name, and surrounding documentation may 
+## change without notice in a future release of PHP. 
+## This function should be used at your own risk."
+/*
     } else {
       $q = "SELECT * FROM ".$this->qi($table)." LIMIT 1";
       $stmt = $this->dbh->query($q);
+*/
+##################################################################################
     }
     if ($stmt) {
-#      if (!@$stmt->columnCount()) {
+      if (!@$stmt->columnCount()) {
 		$row = $stmt->fetchAll();
- #     }
+      }
       for ($i=0;$i<$stmt->columnCount();$i++) {
         $res[$i] = $stmt->getColumnMeta($i);
-echo " \n$i:";
-var_dump($res[$i]);
-	if ((array_key_exists("native_type",$res[$i])) and (!array_key_exists("type",$res[$i]))) 
-		$res[$i]["type"] = $res[$i]["native_type"];
+	if (true) {
+		echo " \n$i:<pre>";
+		var_dump($res[$i]);
+		echo "</pre>";
+	}
+	if ((array_key_exists("native_type",$res[$i])) and (!array_key_exists("type",$res[$i]))) {
+		$res[$i]["type"] = strtolower($res[$i]["native_type"]);
+	}
 	if (!array_key_exists("type",$res[$i])) {
 		switch (@$res[$i]["pdo_type"]) {
-			case PDO::PARAM_INT: $res[$i]["type"] = "int"; break;
-			case PDO::PARAM_LOB: $res[$i]["type"] = "blob"; break;
-			case PDO::PARAM_STR: $res[$i]["type"] = "string"; break;
+			case PDO::PARAM_INT: $res[$i]["type"] = "int";    break;	# 1
+			case PDO::PARAM_STR: $res[$i]["type"] = "string"; break;	# 2
+			case PDO::PARAM_LOB: $res[$i]["type"] = "blob";   break;	# 3
 		}
 	}
-	$res[$i]["chars"] = @$res[$i]["len"] ? $res[$i]["len"] : $res[$i]["length"];
+	if ((array_search("blob",$res[$i]["flags"])!==false) and ($res[$i]["pdo_type"] == PDO::PARAM_STR)) {
+		$res[$i]["type"]="text"; 
+	}
+	$res[$i]["default"]="";		// pdo metadata does not return default value.
+	$res[$i]["extra"]="";		// or auto_increment?
+	$res[$i]["comment"]="";
+	$res[$i]["key"]="";
+	if (array_search("primary_key",$res[$i]["flags"])!==false) $res[$i]["key"]="PRI"; 
+	if (array_search("multiple_key",$res[$i]["flags"])!==false) $res[$i]["key"]="MUL"; 
+	if (array_search("unique_key",$res[$i]["flags"])!==false) $res[$i]["key"]="UNI"; 
+	if (array_search("not_null",$res[$i]["flags"])!==false) $res[$i]["null"]="NO"; 
+	else $res[$i]["null"]="YES"; 
+	$len = @$res[$i]["len"] ? $res[$i]["len"] : $res[$i]["length"];
+	$res[$i]["chars"] = $len / 3;	## this / 3 might only be for utf-8;
 	$count++;
       }
     } else {
@@ -388,16 +418,20 @@ var_dump($res[$i]);
             $fsize = "";
             $ftype = $type;
         }
-	$res[$i]["key"] = @$row["Key"] ? $row["Key"] : $row["pk"];
+	$res[$i]["key"] = array_key_exists("Key",$row) ? $row["Key"] : $row["pk"];
 	$res[$i]["chars"] = $fsize;
+	$res[$i]["len"] = $fsize;
 	$res[$i]["type"] = $ftype;
 	$res[$i]["attr"] = $fattr;   /* eg unsigned */
 	if (array_key_exists("notnull",$row)) {
-		if ($row["notnull"]) $null="NO"; else $null="YES";
-	} else $null = $row["Null"];
+		if ($row["notnull"]) $null="NO"; else $null="YES"; // sqlite
+	} else 
+	if (array_key_exists("Null",$row)) {
+		 $null = @$row["Null"];		// MySQL DESCRIBE
+	}
 	$res[$i]["null"] = $null;
 	$res[$i]["extra"] = @$row["Extra"];
-	$res[$i]["default"] = @$row["Default"] ? $row["Default"] : $row["dflt_value"];
+	$res[$i]["default"] = array_key_exists("Default",$row) ? $row["Default"] : $row["dflt_value"];
 	$i++;
       }
     }
