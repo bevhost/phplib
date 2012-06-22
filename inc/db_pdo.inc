@@ -102,14 +102,15 @@ class DB_Sql {
     /* establish connection, select database */
     if ( ! $this->dbh ) {
     
-      if ($this->Debug) echo "Connecting to $Host as $User<br>\n";
       try{
 	switch($this->Server) {
 	    case "sqlite":
+      		if ($this->Debug) echo "Opening $Database<br>\n";
         	$this->dbh = new PDO("$this->Server:$Database");
 		if (!$this->dbh) $this->halt("open($Database) failed.");
 		break;
 	    default:
+      		if ($this->Debug) echo "Connecting to $Host as $User<br>\n";
         	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;charset=$this->charset", $User, $Password);
 	}
       }
@@ -151,6 +152,10 @@ class DB_Sql {
     };
 
     if ($this->Debug) echo "Connected";
+
+    if ($this->Server=="sqlite") {
+	$Query_String = str_replace("now()","date('now')",$Query_String);
+    }
 
     if ($this->Debug)
       printf("Debug: query = %s<br>\n", $Query_String);
