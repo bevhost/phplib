@@ -545,7 +545,11 @@ class Session {
         header("Location: ". $PROTOCOL. "://".$host.$url);
         exit;
     }
-    if ($_SERVER["HTTP_HOST"]) @list($this->cookie_domain,$port_no) = explode(":",$_SERVER["HTTP_HOST"]);
+    if (array_key_exists("HTTP_HOST",$_SERVER)) {
+	$host = explode(":",$_SERVER["HTTP_HOST"]);
+	$this->cookie_domain = $host[0];
+	if (isset($host[1])) $port_no = $host[1];
+    }
     $this->set_container();
     $this->set_tokenname();
     $this->put_headers();
