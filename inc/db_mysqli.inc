@@ -17,6 +17,8 @@ class DB_Sql {
   var $User     = "";
   var $Password = "";
 
+  var $charset  = "utf8";
+
   /* public: configuration parameters */
   var $Auto_Free     = 0;     ## Set to 1 for automatic mysqli_free_result()
   var $Debug         = 0;     ## Set to 1 for debugging messages.
@@ -101,8 +103,8 @@ class DB_Sql {
       }
 	
       /* change character set to utf8 */
-      if (!mysqli_set_charset($this->Link_ID, "utf8")) {
-          $this->halt("Error loading character set utf8");
+      if (!mysqli_set_charset($this->Link_ID, $this->charset)) {
+          $this->halt("Error loading character set ".$this->charset);
       }
     }
     return $this->Link_ID;
