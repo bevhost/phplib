@@ -98,12 +98,13 @@ class Sql_Query {
 
   # deprecated use the same function in tpl_form
   function search($form_elements) {
+	$db = new $this->database_class;
         $query = "";
         foreach ($form_elements as $k=>$v) {
 		if (($f = @$v["ob"]->field)   		// has an sql field
 		  and (!empty($_POST[$k]))) {		// and was POSTed.
                         if ($query) $query .= " AND ";
-                        $query .= $this->db->qi($f)." LIKE '%".$_POST[$k]."%'";
+                        $query .= $db->qi($f)." LIKE '%".$_POST[$k]."%'";
                 }
         }
 	return $query;
@@ -120,6 +121,7 @@ class Sql_Query {
   ##
   function selection($name, $option, $old = "", $trans = "", $class = "MyForm") {
 
+    $db = new $this->database_class;
     $base = $this->base;
     $res  = "";
     if ( $class == "query" ) $class="query_cell"; 		// Added by David Beveridge
@@ -130,8 +132,8 @@ class Sql_Query {
     reset($option);
     while(list($k, $v) = each($option)) {
       if (($trans == "" && $old == $v)
-       || ($trans != "" && $old == $this->db->qi($k)." desc")
-       || ($trans != "" && $old == $this->db->qi($k)) 
+       || ($trans != "" && $old == $db->qi($k)." desc")
+       || ($trans != "" && $old == $db->qi($k)) 
        || ($trans != "" && $old == htmlspecialchars_decode($k))
        || ($trans != "" && $old == $k)) {
         $selected = " selected";
@@ -184,8 +186,8 @@ class Sql_Query {
     if (empty($this->database_class)) {
 	$this->database_class = $_ENV["DatabaseClass"];
     }
-    $this->db = new $this->database_class;
-    $this->db2 = new $this->database_class;
+    $db = new $this->database_class;
+    $db2 = new $this->database_class;
 
     global $sess, $sortorder, $QUERY_STRING;
 
@@ -202,19 +204,19 @@ class Sql_Query {
 
     $form = str_replace("_Sql_Query","form",$this->classname);
     $sql = "SELECT  FieldName, LinkTable, LinkField, LinkDesc, LinkCondition FROM LinkedTables WHERE FormName='$form' ";
-    $this->db->query($sql);
+    $db->query($sql);
     $lf = Array();
-    while ($this->db->next_record()) {
-	extract($this->db->Record);
-	$sql = "SELECT ".$this->db->qi($LinkField).", ".$this->db->qi($LinkDesc)." FROM ".$this->db->qi($LinkTable);
+    while ($db->next_record()) {
+	extract($db->Record);
+	$sql = "SELECT ".$db->qi($LinkField).", ".$db->qi($LinkDesc)." FROM ".$db->qi($LinkTable);
 	if ($LinkCondition) {
 		eval("\$LinkCondition = \"$LinkCondition\";");
 		$sql .= " WHERE $LinkCondition";
 	}
-	$this->db2->query($sql);
-	while ($this->db2->next_record()) {
-		$v = addslashes($this->db2->f(0));
-		$l = $this->db2->f(1);
+	$db2->query($sql);
+	while ($db2->next_record()) {
+		$v = addslashes($db2->f(0));
+		$l = $db2->f(1);
 		@$lf[$FieldName].="<option value='".$v."'>".$l."</option>";
 	}
     }
@@ -293,21 +295,22 @@ $class='MyForm';
     $val = str_replace("`","",@$GLOBALS[$base]["input_".$i]);
     $sql = "SELECT LinkTable, LinkField, LinkDesc, LinkCondition FROM LinkedTables WHERE FormName='$form' ";
     $sql .= "and FieldName='$fn'";
-    $this->db->query($sql);
-	if ($this->db->next_record()) {
-	    extract($this->db->Record);
-	    $sql = "SELECT ".$this->db->qi($LinkField).", ".$this->db->qi($LinkDesc)." FROM ".$this->db->qi($LinkTable);
+    $db = new $this->database_class;
+    $db->query($sql);
+	if ($db->next_record()) {
+	    extract($db->Record);
+	    $sql = "SELECT ".$db->qi($LinkField).", ".$db->qi($LinkDesc)." FROM ".$db->qi($LinkTable);
 	    if ($LinkCondition) {
 	            eval("\$LinkCondition = \"$LinkCondition\";");
 	            $sql .= " WHERE $LinkCondition";
 	    }
-	    $this->db->query($sql);
-	    if ($this->db->num_rows()) {
+	    $db->query($sql);
+	    if ($db->num_rows()) {
 	    	$chooser = "'>";
-	    	while ($this->db->next_record()) {
+	    	while ($db->next_record()) {
 	            $chooser .= "<option ";
-		    if ($val==$this->db->f(0)) $chooser .= "selected ";
-		    $chooser .= "value='".$this->db->f(0)."'>".$this->db->f(1)."</option>";
+		    if ($val==$db->f(0)) $chooser .= "selected ";
+		    $chooser .= "value='".$db->f(0)."'>".$db->f(1)."</option>";
 	    	}
     		$chooser .= "</select>";
     	    }
@@ -380,14 +383,14 @@ $class='MyForm';
     $qq = "";
  
 
-    if (!isset($this->db)) {
+    if (!isset($db)) {
       if (!$this->database_class) {
 	$this->database_class = $_ENV["DatabaseClass"];
       }
-      $this->db = new $this->database_class;
-      $this->db2 = new $this->database_class;
+      $db = new $this->database_class;
+      $db2 = new $this->database_class;
     }
-    if ($this->table) $tt = $this->db->qi($this->table).".";
+    if ($this->table) $tt = $db->qi($this->table).".";
     for($i=1; $i<=$this->conditions; $i++) {
       ## Only create conditions for used input fields
       if (@$GLOBALS[$base]["input_".$i] == "")
@@ -398,7 +401,7 @@ $class='MyForm';
         $qq .= sprintf(" %s ", str_replace("`","",@$GLOBALS[$base]["conj_".$i]));
       
       ## Handle "like"
-echo "<!-- ".$GLOBALS[$base]["comp_".$i]." -->";
+#echo "<!-- ".$GLOBALS[$base]["comp_".$i]." -->";
       if ((@$GLOBALS[$base]["comp_".$i] == "`like`") || (@$GLOBALS[$base]["comp_".$i] == "`not like`") 
 	  || (@$GLOBALS[$base]["comp_".$i] == "like") || (@$GLOBALS[$base]["comp_".$i] == "not like"))
         $v = "%".@$GLOBALS[$base]["input_".$i]."%";
