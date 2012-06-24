@@ -128,6 +128,10 @@ class DB_Sql {
       if (phpversion()<"5.3.6") $this->dbh->exec("SET NAMES $this->charset");
       if ($this->Server=='mysql') $this->dbh->query("SET SESSION sql_mode='ANSI'");
 	
+      if ($this->Server=="sqlite") {
+	  $this->dbh->sqliteCreateFunction('now','_sql_now',0);
+      }
+
     }
     return $this->dbh;
   }
@@ -155,10 +159,6 @@ class DB_Sql {
     };
 
     if ($this->Debug) echo "Connected";
-
-    if ($this->Server=="sqlite") {
-	$Query_String = str_replace("now()","date('now')",$Query_String);
-    }
 
     if ($this->Debug)
       printf("Debug: query = %s<br>\n", $Query_String);
@@ -546,5 +546,10 @@ WHERE relkind in ('r', 'v') AND (c.relname='%s' or c.relname = lower('%s'))
     
 */
 
+# The SQLITE driver has the ability to call PHP functions inside it's SQL statments
+# very handy for creating functions that SQLITE doesn't have
+# see above use of $this->dbh->sqliteCreateFunction() to map these functions.
+#
+function _sql_now() { return date("Y-m-d H:i:s"); }
 
 ?>
