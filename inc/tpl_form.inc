@@ -107,9 +107,8 @@ class tpl_form {
     if (!$this->database_class) $this->database_class = $_ENV["DatabaseClass"];
     if (!$this->database_class) return;
     $db = new $this->database_class;
-    $db->query("SHOW TABLES LIKE 'LinkedTables'");
-    if (!$db->next_record()) return;
-    $sql = "select * from LinkedTables where FormName = '$class'";
+    if (!$fk = $_ENV["MyForeignKeys"]) return;  # No automatic table linking
+    $sql = "select * from $fk where FormName = '$class'";
     $db->query($sql);
     while ($db->next_record()) {
 	extract($db->Record);
