@@ -296,13 +296,14 @@ class Session {
       case "object":
         ## $$var is an object. Enumerate the slots and serialize them.
         eval("\$k = \$${var}->classname; \$l = reset(\$${var}->persistent_slots);");
-        $str.="\$$var = new $k; ";
-        while ( $l ) {
-          ## Structural recursion.
-          $this->serialize($var."->".$l, $str);
-          eval("\$l = next(\$${var}->persistent_slots);");
+        if ($k) {
+          $str.="\$$var = new $k; ";
+          while ( $l ) {
+            ## Structural recursion.
+            $this->serialize($var."->".$l, $str);
+            eval("\$l = next(\$${var}->persistent_slots);");
+          }
         }
-
       break;
       default:
         ## $$var is an atom. Extract it to $l, then generate code.
@@ -332,7 +333,6 @@ class Session {
     $arr=array();
     //$this->serialize("this->in", $str);
     //$this->serialize("this->pt", $str);
-
     reset($this->pt);
     while ( list($thing) = each($this->pt) ) {
       $thing=trim($thing);
@@ -532,23 +532,23 @@ class Session {
   }
 
   function start($sid = "") {
-    $host = $_SERVER["HTTP_HOST"];
-    if (!strpos($host,'.')) {
+    if (array_key_exists("HTTP_HOST",$_SERVER)) {
+      $host = $_SERVER["HTTP_HOST"];
+      if (!strpos($host,'.')) {			// if local part only, (no domain)
         if ( isset($HTTPS) && $HTTPS == 'on' ) {
           $PROTOCOL='https';
         } else {
           $PROTOCOL='http';
         }
-        $host .= $this->get_domain();
+        $host .= $this->get_domain();		// find my domain and append it.
         $url = $this->self_url();
         header("Status: 302 Moved Temporarily");
         header("Location: ". $PROTOCOL. "://".$host.$url);
         exit;
-    }
-    if (array_key_exists("HTTP_HOST",$_SERVER)) {
-	$host = explode(":",$_SERVER["HTTP_HOST"]);
-	$this->cookie_domain = $host[0];
-	if (isset($host[1])) $port_no = $host[1];
+      }  
+      $host = explode(":",$host);		// else have fqdn, look for port
+      $this->cookie_domain = $host[0];
+      if (isset($host[1])) $port_no = $host[1];
     }
     $this->set_container();
     $this->set_tokenname();
