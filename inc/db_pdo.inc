@@ -109,7 +109,7 @@ class DB_Sql {
 	switch($this->Server) {
 	    case "sqlite":
       		if ($this->Debug) echo "Opening $Database<br>\n";
-        	$this->dbh = new PDO("$this->Server:$Database");
+        	$this->dbh = new PDO("$this->Server:$Database", null, null, array(PDO::ATTR_PERSISTENT => true));
 		if (!$this->dbh) $this->halt("open($Database) failed.");
 		break;
 	    default:
