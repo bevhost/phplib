@@ -73,7 +73,7 @@ function page_open($feature) {
 }
 
 function page_close($feature="") {
-  global $sess, $user, $_ENV, $CO;
+  global $sess, $user;
 
   if (isset($sess)) {
     $sess->freeze();
