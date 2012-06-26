@@ -28,7 +28,7 @@ class of_htmlarea extends of_element {
     $this->setup_element($a);
   }
 
-  function self_get($val,$which, $count) {
+  function self_get($val,$which, &$count) {
 
     if ($_ENV["editor"]=='fckeditor') return $this->fck_self_get($val,$which, $count);
 
