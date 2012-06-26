@@ -125,11 +125,43 @@ class DB_Sql {
         return 0;
       }
 
-      if (phpversion()<"5.3.6") $this->dbh->exec("SET NAMES $this->charset");
-      if ($this->Server=='mysql') $this->dbh->query("SET SESSION sql_mode='ANSI'");
-	
-      if ($this->Server=="sqlite") {
-	  $this->dbh->sqliteCreateFunction('now','_sql_now',0);
+      switch ($this->Server) {
+	case "mysql":
+	  $this->dbh->query("SET SESSION sql_mode='ANSI'");
+          if (phpversion()<"5.3.6") $this->dbh->exec("SET NAMES $this->charset");
+	  break;
+	case "sqlite":
+	  if ($this->Debug) echo "Creating sqlite functions...";
+	  $this->dbh->sqliteCreateFunction('now',function() { return date('Y-m-d H:i:s');},0);
+	  $this->dbh->sqliteCreateFunction('year',function() { return date('Y');},0);
+	  $this->dbh->sqliteCreateFunction('month',function() { return date('n');},0);
+	  $this->dbh->sqliteCreateFunction('day',function() { return date('j');},0);
+	  $this->dbh->sqliteCreateFunction('hour',function() { return date('G');},0);
+	  $this->dbh->sqliteCreateFunction('minute',function() { return date('i');},0);
+	  $this->dbh->sqliteCreateFunction('second',function() { return date('s');},0);
+	  $this->dbh->sqliteCreateFunction('unix_timestamp',function($string='') { return strtotime($string);});
+	  $this->dbh->sqliteCreateFunction('compress','gzcompress');
+	  $this->dbh->sqliteCreateFunction('uncompress','gzuncompress');
+	  $this->dbh->sqliteCreateFunction('length', 'strlen', 1);
+	  $this->dbh->sqliteCreateFunction('substring', function($string, $from, $length) { 
+		return substr($string, $from - 1, $length); },3);
+	  $this->dbh->sqliteCreateFunction('md5', 'md5', 1);
+	  $this->dbh->sqliteCreateFunction('pow', 'pow', 2);
+	  $this->dbh->sqliteCreateFunction('rand', '_sql_rand');
+	  $this->dbh->sqliteCreateFunction('if', function($condition, $expr1, $expr2 = NULL) { 
+		return $condition ? $expr1 : $expr2; });
+	  $this->dbh->sqliteCreateFunction('concat', function() { 
+		$args = func_get_args(); return implode('', $args); });
+	  $this->dbh->sqliteCreateFunction('concat_ws', function () { 
+		$args = func_get_args(); $sep = array_shift($args); return implode($sep, $args); });
+	  $this->dbh->sqliteCreateFunction('greatest', '_sql_greatest');
+	  $this->dbh->sqliteCreateFunction('least', '_sql_least');
+	  $this->dbh->sqliteCreateFunction('regexp', function($pattern, $value) { 
+		#mb_internal_encoding('UTF-8'); // multibyte character encoding
+		#mb_regex_encoding('UTF-8');	// should be set at the application level
+		return (false !== mb_ereg($pattern, $value)) ? 1 : 0;
+	  });
+	  break;
       }
 
     }
@@ -158,7 +190,7 @@ class DB_Sql {
       return 0; /* we already complained in connect() about that. */
     };
 
-    if ($this->Debug) echo "Connected";
+    if ($this->Debug) echo "Still Connected, ";
 
     if ($this->Debug)
       printf("Debug: query = %s<br>\n", $Query_String);
@@ -403,8 +435,8 @@ class DB_Sql {
       $i = 0;
       foreach($stmt as $row) {
         $res[$i]["table"] = $table;
-        $res[$i]["name"]  = @$row["Field"] ? $row["Field"] : $row["name"];
-	$type = @$row["Type"] ? $row["Type"] : $row["type"];
+        $res[$i]["name"]  = array_key_exists('Field',$row) ? $row["Field"] : $row["name"];
+	$type = array_key_exists('Type',$row) ? $row["Type"] : $row["type"];
 	$fattr = "";
 	$pos = strpos ( $type, "(" );
         if ( $pos > 0 ) {
@@ -430,10 +462,10 @@ class DB_Sql {
 		if ($row["notnull"]) $null="NO"; else $null="YES"; // sqlite
 	} else 
 	if (array_key_exists("Null",$row)) {
-		 $null = @$row["Null"];		// MySQL DESCRIBE
+		 $null = $row["Null"];		// MySQL DESCRIBE
 	}
 	$res[$i]["null"] = $null;
-	$res[$i]["extra"] = @$row["Extra"];
+	$res[$i]["extra"] = array_key_exists('Extra',$row) ? $row["Extra"] : "";
 	$res[$i]["default"] = array_key_exists("Default",$row) ? $row["Default"] : $row["dflt_value"];
 	$i++;
       }
@@ -498,9 +530,9 @@ class DB_Sql {
   /* private: error handling */
   function halt($msg) {
     $this->getErrorInfo();
-    if ($this->Debug) echo "MySQL Error(".$this->ErrCode."):".$this->Errno." ".$this->Error.$msg;
+    if ($this->Debug) echo $this->Server."(pdo) error(".$this->ErrCode."):".$this->Errno." ".$this->Error.$msg;
     if (function_exists("EventLog")) {
-      EventLog("MySQL Error(".$this->ErrCode."):".$this->Errno." ".$this->Error,$msg,"Error");
+      EventLog($this->Server."(pdo) error(".$this->ErrCode."):".$this->Errno." ".$this->Error,$msg,"Error");
     }
     if ($this->Halt_On_Error == "no")
       return;
@@ -550,6 +582,24 @@ WHERE relkind in ('r', 'v') AND (c.relname='%s' or c.relname = lower('%s'))
 # very handy for creating functions that SQLITE doesn't have
 # see above use of $this->dbh->sqliteCreateFunction() to map these functions.
 #
-function _sql_now() { return date("Y-m-d H:i:s"); }
-
+function _sql_rand($seed = NULL) {
+    if (isset($seed)) { mt_srand($seed); }
+    return mt_rand() / mt_getrandmax();
+}
+function _sql_least() {
+    $args = func_get_args();
+    foreach ($args as $k => $v) {
+      if (!isset($v)) { unset($args); }
+    }
+    if (count($args)) { return min($args); }
+    else { return NULL; }
+}
+function _sql_greatest() {
+    $args = func_get_args();
+    foreach ($args as $k => $v) {
+      if (!isset($v)) { unset($args); }
+    }
+    if (count($args)) { return max($args); }
+    else { return NULL; }
+}
 ?>
