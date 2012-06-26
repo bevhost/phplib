@@ -288,6 +288,7 @@ class form {
 		$save = "enableSave(this);";
 		$valid = "";
 	  }
+	  if (!array_key_exists('extrahtml',$el)) $el['extrahtml'] = '';
     	  if ($t=="of_checkbox") {
 		$t = "of_text";
    		if (!isset($enum_sets)) {
@@ -301,7 +302,7 @@ class form {
 			$enum_sets++;
 		}
     	  } else {
-	        @$el["extrahtml"] .= " onblur='$save' onfocus='this.select();'$valid";
+	        $el["extrahtml"] .= " onblur='$save' onfocus='this.select();'$valid";
 	  }
     }
     // translate names like $foo[int] to $foo{int} so that they can cause no
