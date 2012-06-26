@@ -430,8 +430,8 @@ class Table
     	if (isset($this->extra_html[$val])) $this->form->form_data->elements[$val]["ob"]->extrahtml=$this->extra_html[$val];
     }
     if (array_key_exists($val,$_POST)) $this->form->form_data->elements[$val]["ob"]->value = $_POST[$val];
-    $postval = @$_POST[$val];
-echo "<!-- $val = $postval -->";
+    $postval = array_key_exists($val,$_POST) ? $_POST[$val] : "";
+#echo "<!-- $val = $postval -->";
     $this->form->form_data->show_element($val);
     $this->table_cell_close($class);
   }
@@ -832,7 +832,7 @@ echo "<!-- $val = $postval -->";
   # History  : used ot be built in to show_table_cells
   #==========================================================================
   function format_table_cell($val,$data,&$align,&$comment,&$class) {
-	$dval = str_replace("\r","",@$data[$val]);
+	$dval = array_key_exists($val,$data) ? str_replace("\r","",$data[$val]) : "";
 	if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})/", $dval, $regs))) {
 		$output = date("d M Y",strtotime($dval));   /* DD Mmm YYYY */
 		$comment = substr($dval,11,10);
