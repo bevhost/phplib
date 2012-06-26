@@ -9,6 +9,7 @@
  *
  */ 
 
+
 class Sql_Query {
   var $classname = "Sql_Query";  ## Persistence Support
   var $persistent_slots = array(
@@ -170,11 +171,19 @@ class Sql_Query {
   ## single global instruction and the field name can be easily
   ## exploded into component names and numbers.
 
+
   function makename($base, $att, $num) {
     return sprintf("%s[%s_%d]", $base, $att, $num);
   }
   function makeid($base, $att, $num) {
     return sprintf("%s%s_%d", $base, $att, $num);
+  }
+
+  function param_nq($base,$index) {
+    return array_key_exists($index,$GLOBALS[$base]) ? str_replace("`","",$GLOBALS[$base][$index]) : "";
+  }
+  function param($base,$index) {
+    return array_key_exists($index,$GLOBALS[$base]) ? $GLOBALS[$base][$index] : "";
   }
 
   ## form:
@@ -190,6 +199,10 @@ class Sql_Query {
     $db2 = new $this->database_class;
 
     global $sess, $sortorder, $QUERY_STRING;
+
+    if (!array_key_exists($base,$GLOBALS)) {
+	$GLOBALS[$base] = array();
+    }
 
     $QUERY_STRING="";
     ##
@@ -208,6 +221,7 @@ class Sql_Query {
     $lf = Array();
     while ($db->next_record()) {
 	extract($db->Record);
+	$lf[$FieldName]="";
 	$sql = "SELECT ".$db->qi($LinkField).", ".$db->qi($LinkDesc)." FROM ".$db->qi($LinkTable);
 	if ($LinkCondition) {
 		eval("\$LinkCondition = \"$LinkCondition\";");
@@ -217,7 +231,7 @@ class Sql_Query {
 	while ($db2->next_record()) {
 		$v = addslashes($db2->f(0));
 		$l = $db2->f(1);
-		@$lf[$FieldName].="<option value='".$v."'>".$l."</option>";
+		$lf[$FieldName].="<option value='".$v."'>".$l."</option>";
 	}
     }
 ?><script type='text/javascript'>
@@ -268,7 +282,7 @@ $class='MyForm';
         $res .= sprintf("  %s<br />\n", 
           $this->selection($this->makename($base, "conj", $i),
                            array("and" => $this->dict[$this->lang]["and"], "or" => $this->dict[$this->lang]["or"]),
-                           @$GLOBALS[$base]["conj_".$i], 
+                           $this->param($base,"conj_".$i), 
                            "on",
                            $class));
       }
@@ -278,7 +292,7 @@ $class='MyForm';
         $this->selection(
           $this->makename($base, "sel", $i), 
           $option, 
-          @$GLOBALS[$base]["sel_".$i], 
+          $this->param($base,"sel_".$i), 
           $this->translate, 
           $class));
         
@@ -287,12 +301,12 @@ $class='MyForm';
         $this->selection(
           $this->makename($base, "comp", $i), 
           $this->compare, 
-          @$GLOBALS[$base]["comp_".$i], 
+          $this->param($base,"comp_".$i), 
           "on", 
           $class));
     $chooser="";
-    $fn = str_replace("`","",@$GLOBALS[$base]["sel_".$i]);
-    $val = str_replace("`","",@$GLOBALS[$base]["input_".$i]);
+    $fn = $this->param_nq($base,"sel_".$i);
+    $val = $this->param_nq($base,"input_".$i);
     $sql = "SELECT LinkTable, LinkField, LinkDesc, LinkCondition FROM LinkedTables WHERE FormName='$form' ";
     $sql .= "and FieldName='$fn'";
     $db = new $this->database_class;
@@ -323,7 +337,7 @@ $class='MyForm';
       $res .= sprintf("<input type=\"text\" name=\"%s\" value=\"%s\" size=\"%d\" maxlength=\"%d\"%s />\n",
       //  ($class)?" class=$class":"",
         $this->makename($base, "input", $i),
-        @$GLOBALS[$base]["input_".$i],
+        $this->param($base,"input_".$i),
         $this->input_size,
         $this->input_max,
         ($cell_class)?" class=\"$cell_class\"":"");
@@ -393,20 +407,19 @@ $class='MyForm';
     if ($this->table) $tt = $db->qi($this->table).".";
     for($i=1; $i<=$this->conditions; $i++) {
       ## Only create conditions for used input fields
-      if (@$GLOBALS[$base]["input_".$i] == "")
+      if ($this->param($base,"input_".$i) == "")
         continue;
 
       ## If necessary, add conjunction
       if (!empty($qq))
-        $qq .= sprintf(" %s ", str_replace("`","",@$GLOBALS[$base]["conj_".$i]));
+        $qq .= sprintf(" %s ", $this->param_nq($base,"conj_".$i));
       
       ## Handle "like"
 #echo "<!-- ".$GLOBALS[$base]["comp_".$i]." -->";
-      if ((@$GLOBALS[$base]["comp_".$i] == "`like`") || (@$GLOBALS[$base]["comp_".$i] == "`not like`") 
-	  || (@$GLOBALS[$base]["comp_".$i] == "like") || (@$GLOBALS[$base]["comp_".$i] == "not like"))
-        $v = "%".@$GLOBALS[$base]["input_".$i]."%";
+      if (($this->param_nq($base,"comp_".$i) == "like") || ($this->param_nq($base,"comp_".$i) == "not like"))
+        $v = "%".$this->param($base,"input_".$i)."%";
       else {
-        $v = @$GLOBALS[$base]["input_".$i];
+        $v = $this->param($base,"input_".$i);
         if (strpos(@$GLOBALS[$base]["sel_".$i],"Date")) {
           $c = count(explode("/",$v));
           if ($c==2) {
@@ -424,7 +437,7 @@ $class='MyForm';
       ## Create subcondition
       $qq .= sprintf("%s %s '%s'",
               $tt.$GLOBALS[$base]["sel_".$i],
-	      str_replace("`","",$GLOBALS[$base]["comp_".$i]),
+	      $this->param_nq($base,"comp_".$i),
               $v);
     }
  
