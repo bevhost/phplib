@@ -79,25 +79,25 @@ class CT_Sql {
     $username = addslashes( empty($auth->auth["uname"]) ? "unknown" : $auth->auth["uname"]);
 
     $now = date("YmdHis", time());
-    $uquery = sprintf("update %s set val=compress('%s'), changed='%s' where sid='%s' and name='%s'",
+    $uquery = sprintf("update %s set val='%s', changed='%s' where sid='%s' and name='%s'",
       $this->database_table,
       $str,
       $now,
       $id,
       $name);
-    $squery = sprintf("select count(*) from `%s` where val=compress('%s') and changed='%s' and sid='%s' and name='%s'",
+    $squery = sprintf("select count(*) from `%s` where val='%s' and changed='%s' and sid='%s' and name='%s'",
       $this->database_table,
       $str,
       $now,
       $id,
       $name);
-    $iquery = sprintf("insert into %s ( sid, name, val, changed ) values ('%s', '%s', compress('%s'), '%s')",
+    $iquery = sprintf("insert into %s ( sid, name, val, changed ) values ('%s', '%s', '%s', '%s')",
       $this->database_table,
       $id,
       $name,
       $str,
       $now);
-    $rquery = sprintf("replace into %s ( sid, name, val, changed, username ) values ('%s', '%s', compress('%s'), '%s', '%s')",
+    $rquery = sprintf("replace into %s ( sid, name, val, changed, username ) values ('%s', '%s', '%s', '%s', '%s')",
       $this->database_table,
       $id,
       $name,
@@ -153,7 +153,7 @@ class CT_Sql {
       $this->database_engine);
     $PrevState = $this->db->Halt_On_Error;
     $this->db->Halt_On_Error = "no";
-    $this->db->query(sprintf("select uncompress(val) as cval, val from %s where sid  = '%s' and name = '%s'",
+    $this->db->query(sprintf("select val from %s where sid  = '%s' and name = '%s'",
       $this->database_table,
       $id,
       addslashes($name)));
@@ -163,9 +163,7 @@ class CT_Sql {
       $this->db->query($cquery);
     } else
     if ($this->db->next_record()) {
-      $val  = $this->db->f("val");
-      $cval = $this->db->f("cval");
-      $str = $cval ? $cval : $val;
+      $str  = $this->db->f("val");
       $str2 = base64_decode( $str );
 
       //if ( ereg("^".$name.":.*", $str2) ) {
