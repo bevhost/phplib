@@ -27,6 +27,7 @@ class DB_Sql {
   var $Row;
 
   /* public: current error number and error text */
+  var $ErrCode  = 0;
   var $Errno    = 0;
   var $Error    = "Not Connected";
 
