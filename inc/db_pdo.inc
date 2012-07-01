@@ -113,6 +113,9 @@ class DB_Sql {
         	$this->dbh = new PDO("$this->Server:$Database", null, null, array(PDO::ATTR_PERSISTENT => true));
 		if (!$this->dbh) $this->halt("open($Database) failed.");
 		break;
+	    case "pgsql";
+        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User, $Password);
+		break;
 	    default:
       		if ($this->Debug) echo "Connecting to $Host as $User<br>\n";
         	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;charset=$this->charset", $User, $Password);
@@ -348,10 +351,12 @@ class DB_Sql {
 
   /* public: return table metadata */
   function metadata($table = "", $full = false) {
-    $count = 0;
-    $id    = 0;
-    $res   = array();
-    $stmt  = false;
+    $count   = 0;
+    $id      = 0;
+    $res     = array();
+    $stmt    = false;
+    $hasdef  = false;
+    $attnums = array();
 
     // if no $table specified, assume that we are working with a query
     // result
@@ -384,7 +389,7 @@ class DB_Sql {
       }
       for ($i=0;$i<$stmt->columnCount();$i++) {
         $res[$i] = $stmt->getColumnMeta($i);
-	if (true) {
+	if (false) {
 		echo " \n$i:<pre>";
 		var_dump($res[$i]);
 		echo "</pre>";
@@ -418,8 +423,17 @@ class DB_Sql {
     } else {
       $this->connect();
       switch ($this->Server) {
+	  case "pgsql":
+		$q = "SELECT a.attname AS name, t.typname AS type, a.attlen AS len, 
+				a.atttypmod, a.attnotnull AS notnull, a.atthasdef, a.attnum  
+        		FROM pg_class c,  pg_attribute a, pg_type t  
+        		WHERE relkind in ('r', 'v') AND (c.relname='$table' or c.relname = lower('$table')) 
+			AND a.attname not like '....%' AND a.attnum > 0 AND a.atttypid = t.oid AND a.attrelid = c.oid 
+			ORDER BY a.attnum"; 
+		break;
 	  case "sqlite":
-		$q = "PRAGMA table_info($table)"; break;
+		$q = "PRAGMA table_info($table)"; 
+		break;
 	  default:
 		$q = "DESCRIBE ".$this->qi($table);
       }
@@ -432,9 +446,11 @@ class DB_Sql {
       catch(PDOException $e) {
 	$this->halt($e->getMessage());
       }
-      $res["num_fields"] = $stmt->rowCount();
+    #  $res["num_fields"] = $stmt->rowCount();
       $i = 0;
+#echo "<h1>$table</h1>";
       foreach($stmt as $row) {
+#var_dump($row);
         $res[$i]["table"] = $table;
         $res[$i]["name"]  = array_key_exists('Field',$row) ? $row["Field"] : $row["name"];
 	$type = array_key_exists('Type',$row) ? $row["Type"] : $row["type"];
@@ -454,8 +470,11 @@ class DB_Sql {
             $fsize = "";
             $ftype = $type;
         }
-	$res[$i]["key"] = array_key_exists("Key",$row) ? $row["Key"] : $row["pk"];
+	if (array_key_exists("Key",$row)) $res[$i]["key"] = $row["Key"];
+	if (array_key_exists("pk",$row)) $res[$i]["key"] = $row["pk"];
 	$res[$i]["chars"] = $fsize;
+	if ((array_key_exists("atttypmod",$row)) and ($row["atttypmod"]>0)) $res[$i]["chars"] = $row["atttypmod"];
+	if (array_key_exists("attnum",$row)) $attnums[$row["attnum"]] = $i;
 	$res[$i]["len"] = $fsize;
 	$res[$i]["type"] = $ftype;
 	$res[$i]["attr"] = $fattr;   /* eg unsigned */
@@ -467,11 +486,22 @@ class DB_Sql {
 	}
 	$res[$i]["null"] = $null;
 	$res[$i]["extra"] = array_key_exists('Extra',$row) ? $row["Extra"] : "";
-	$res[$i]["default"] = array_key_exists("Default",$row) ? $row["Default"] : $row["dflt_value"];
+	if ((array_key_exists("atthasdef",$row)) and ($row["atthasdef"])) $hasdef = true;
+	if (array_key_exists("Default",$row)) $res[$i]["default"] = $row["Default"];
+	if (array_key_exists("dflt_value",$row)) $res[$i]["default"] = $row["dflt_value"];
 	$i++;
       }
+      if ($hasdef) { # postgres
+	$stmt = $this->dbh->query("SELECT d.adnum as num,  d.adsrc as def from pg_attrdef d,  pg_class c 
+				   WHERE d.adrelid=c.oid and c.relname='$table' order by d.adnum");
+	foreach($stmt as $row) {
+		$num = $attnums[$row["num"]];
+		$def = $row["def"];
+		$res[$num]["default"] = $def;
+		if (substr($def,0,8)=='nextval(') $res[$num]["extra"] = "auto_increment";
+	}
+      }
     }
-
     return $res;
   }
 
@@ -486,13 +516,16 @@ class DB_Sql {
 	case "mysql":
 		$q = "SHOW TABLES"; break;
         case "pgsql":
-		$q = "SELECT * FROM pg_catalog.pg_tables"; break;
+		$q = "SELECT c.relname FROM pg_catalog.pg_class c
+			LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+			WHERE c.relkind IN ('r','') AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
+			AND pg_catalog.pg_table_is_visible(c.oid);"; 
+		break;
 	case "oracle":
 		$q = "SELECT table_name FROM tabs"; break;
 	default:
 		$q = "SELECT table_name FROM information_schema.tables ".
-		     "WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema')";
-    }
+		     "WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema')"; }
     if ($stmt = $this->dbh->query($q))
     foreach ($stmt as $row) {
       $res[$i]["table_name"]      = $row[0];
@@ -506,6 +539,16 @@ class DB_Sql {
   function primary_key($table) {
     $this->connect();
     switch($this->Server){
+        case "pgsql":
+	  $q = "SELECT 	a.attname AS column_name, ic.relname AS index_name, 
+			i.indisunique AS unique_key, i.indisprimary AS primary_key 
+    		FROM pg_class bc,  pg_class ic,  pg_index i,  pg_attribute a 
+		WHERE bc.oid = i.indrelid AND ic.oid = i.indexrelid 
+		AND i.indisprimary
+		AND (i.indkey[0] = a.attnum OR i.indkey[1] = a.attnum OR i.indkey[2] = a.attnum OR i.indkey[3] = a.attnum 
+		  OR i.indkey[4] = a.attnum OR i.indkey[5] = a.attnum OR i.indkey[6] = a.attnum OR i.indkey[7] = a.attnum) 
+		AND a.attrelid = bc.oid AND bc.relname = ".$this->quote($table);
+		break;
 	case "sqlite":
 		return "rowid";
 	default:
@@ -560,22 +603,17 @@ class DB_Sql {
     from
     http://scripts.ringsworld.com/content-management/cms/adodb/drivers/adodb-pdo.inc.php.html
 
-    var $metaColumnsSQL = "SELECT a.attname, t.typname, a.attlen, a.atttypmod, a.attnotnull, a.atthasdef, a.attnum 
-        FROM pg_class c,  pg_attribute a, pg_type t 
-        WHERE relkind in ('r', 'v') AND (c.relname='%s' or c.relname = lower('%s')) and a.attname not like '....%%'
-AND a.attnum > 0 AND a.atttypid = t.oid AND a.attrelid = c.oid ORDER BY a.attnum";
 
     // used when schema defined
     var $metaColumnsSQL1 = "SELECT a.attname,  t.typname,  a.attlen,  a.atttypmod,  a.attnotnull,  a.atthasdef,  a.attnum 
-FROM pg_class c,  pg_attribute a,  pg_type t,  pg_namespace n 
-WHERE relkind in ('r', 'v') AND (c.relname='%s' or c.relname = lower('%s'))
- and c.relnamespace=n.oid and n.nspname='%s' 
-    and a.attname not like '....%%' AND a.attnum > 0 
-    AND a.atttypid = t.oid AND a.attrelid = c.oid ORDER BY a.attnum";
+		FROM pg_class c,  pg_attribute a,  pg_type t,  pg_namespace n 
+		WHERE relkind in ('r', 'v') AND (c.relname='%s' or c.relname = lower('%s'))
+			 and c.relnamespace=n.oid and n.nspname='%s' 
+			    and a.attname not like '....%%' AND a.attnum > 0 
+		AND a.atttypid = t.oid AND a.attrelid = c.oid 
+		ORDER BY a.attnum";
     
     // get primary key etc -- from Freek Dijkstra
-    var $metaKeySQL = "SELECT ic.relname AS index_name,  a.attname AS column_name, i.indisunique AS unique_key,  i.indisprimary AS primary_key 
-    FROM pg_class bc,  pg_class ic,  pg_index i,  pg_attribute a WHERE bc.oid = i.indrelid AND ic.oid = i.indexrelid AND (i.indkey[0] = a.attnum OR i.indkey[1] = a.attnum OR i.indkey[2] = a.attnum OR i.indkey[3] = a.attnum OR i.indkey[4] = a.attnum OR i.indkey[5] = a.attnum OR i.indkey[6] = a.attnum OR i.indkey[7] = a.attnum) AND a.attrelid = bc.oid AND bc.relname = '%s'";
     
 */
 
