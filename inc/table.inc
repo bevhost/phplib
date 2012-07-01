@@ -44,7 +44,6 @@
 class Table
 {
   var $classname = "Table";              ## Persistence Support
-
   var $checkbox_menu = array('Print');
   var $checkbox_form_id = 'ResultsTable';
   var $check = false;                    ## if set, create checkboxes named 
@@ -1160,7 +1159,8 @@ class Table
     if (!isset($db) && !$db)
       return 0;
     
-    if ($db->num_rows() > 0)
+   // if ($db->num_rows() > 0)    # in pdo, this does not work for all databases.
+    if (is_object($db)) 
       return 1;   
 
     return 0;
