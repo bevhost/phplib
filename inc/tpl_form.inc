@@ -323,8 +323,20 @@ class tpl_form {
     if (($form_name == $this->classname) || $this->has_defaults) {
       $this->form_data->load_defaults();
     }
-    include("phplib/".$this->classname.".ihtml");
-
+    $file = "phplib/".$this->classname.".ihtml";
+    if (file_exists($file)) include($file);
+    else {
+    	$file = "phplib/autogen/".$this->classname.".ihtml";
+    	if (file_exists($file)) include($file);
+    	else {
+    	    $file = "phplib/autogen/".$_ENV["autogen"].'/'.$this->classname.".ihtml";
+    	    if (file_exists($file)) include($file);
+    	    else {
+		EventLog("form file not found for ".$this->classname,"","Error");
+		// maybe die here.
+	    }
+	}
+    }
     return true;
   }
 
@@ -781,7 +793,8 @@ TODO: Change this to have some AJAX to handle larger lists.
 	# except if there are spaces and or other special chars in the sql fieldname.
 	#
         foreach ($this->form_data->elements as $k=>$v) {
-                if (($f = @$v["ob"]->field)             // has an sql field
+                if (isset($v["ob"]->field) 
+		  and ($f = $v["ob"]->field)             // has an sql field
                   and (!empty($_POST[$k]))) {           // and was POSTed.
                         if ($query) $query .= " AND ";
 			if (array_key_exists("oper_$k",$_POST)) {
