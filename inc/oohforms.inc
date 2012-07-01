@@ -433,7 +433,8 @@ class form {
     }
     while ($elrec) {
       $el = $elrec["ob"];
-      $el->marshal_dispatch(@$this->method,"self_load_defaults");
+      #$el->marshal_dispatch(@$this->method,"self_load_defaults");
+      $el->marshal_dispatch(false,"self_load_defaults");
       $this->elements[$el->name]["ob"] = $el;  // no refs -> must copy back
       if ($deflist) {
         next($deflist);
