@@ -424,6 +424,7 @@ class tpl_form {
   function show_item() {
   }
 
+
   /* 
   Allow all the values for a dropdown list box (of_select) to be retreived from another table.
   Table - Which table stores the linked data (LinkTable)
@@ -513,6 +514,41 @@ TODO: Change this to have some AJAX to handle larger lists.
 	    ));
   }
 
+
+
+
+  # work out if a date has changed on the form from the old value;
+  # old is the previous value, new is the submitted form value;
+  function valid_date($old,$new,$type) {
+    $ok = false;				// start with nothing
+    $dt = '0000-00-00 00:00:00';
+    if ($new) {  				// something there
+	if ($ok=strtotime($new)) {  		// and it makes sense?
+	    $dt = date("Y-m-d H:i:s",$ok);	// format it
+	}
+    }
+    $old_dt = date("Y-m-d H:i:s",strtotime($old));
+    if ($dt == $old_dt) {
+	return $old;	// if it evaluates to the same thing return old value unchanged.
+    }
+    $d = substr($dt,0,10);			// date part
+    $t = substr($dt,11,8);			// time part
+    switch ($type) {
+	case "time":
+	case "nulltime":
+		return $ok ? $t : $old; break;  // return old if new is not ok
+	case "date":
+	case "nulldate":
+		return $ok ? $d : $old; break;
+	case "nulltimestamp":
+	case "nulldatetime":
+	case "timestamp":
+	case "datetime":
+	default:
+		return $ok ? $dt : $old; break;
+    }
+  }
+
 	# Save the current record in the form to a record in the database table.
         // requires that all defined fields are present in form OR no_edit is set.
         // requires that key field is 'id' OR 'id' is hidden field equal to old_key value.
@@ -528,17 +564,19 @@ TODO: Change this to have some AJAX to handle larger lists.
         // When the primary key is not 'id' it is visible and can be changed.
 
 
-        function save_values($table="",$key="id",$action="") {
+        function save_values($Table="",$key="id",$action="") {
+	  global $auth;
 	  $db = new $this->database_class;
           if (! is_object($this->form_data)) {
             $this->setup();
           }
-	  if (!$table) $table=$this->table;
-	  $table = $db->quote_identifier($table);
+	  if (!$Table) $Table=$this->table;
+	  $table = $db->quote_identifier($Table);
           if (!$action) $action=$_POST['submit'] ? $_POST['submit'] : @$GLOBALS['submit'];
 
 	  $val = array_key_exists($key,$_POST) ? $_POST[$key] : @$GLOBALS[$key];
 
+	  $id = false;
           // In tables where the primary key is 'id' and it is a hidden field, it cannot be changed.
           // In tables where the primary key is not 'id' it's value can be changed.
           //    - these tables should not be used for images or referenced by database relations.
@@ -547,8 +585,10 @@ TODO: Change this to have some AJAX to handle larger lists.
           // $key is the new key submitted in the post (always "id")
           // $this->key is the original primary key (often "id", could be anything)
           // only during an Edit operation should these values be different
-	  $oldval = array_key_exists($key,$_POST) ? $_POST[$key] : @$GLOBALS[$key];  // a copy of the primary key in the web form
-	  $newval = array_key_exists($this->key,$_POST) ? $_POST[$this->key] : @$GLOBALS[$this->key];  // primary key in database
+	  $gv = array_key_exists($key,$GLOBALS) ? $GLOBALS[$key] : ""; // global value used if no _POST
+	  $oldval = array_key_exists($key,$_POST) ? $_POST[$key] : $gv;  // a copy of the primary key in the web form
+	  $gv = array_key_exists($this->key,$GLOBALS) ? $GLOBALS[$this->key] : ""; 
+	  $newval = array_key_exists($this->key,$_POST) ? $_POST[$this->key] : $gv;  // primary key in database
           // during Add or Copy $newval should be empty
           // during update (eg Edit, AddToCart, Delete) $oldval
 
@@ -566,78 +606,110 @@ TODO: Change this to have some AJAX to handle larger lists.
 		break;
 	    default:
 		$imagekeys = Array();
+		$checkOld = false;
 		if ($oldval) {
+			if (array_key_exists("_old_record_values",$_POST)) {
+				$old = unserialize(gzuncompress(base64_decode($_POST["_old_record_values"])));
+				if (is_array($old) and count($old)) $checkOld = true;
+var_dump($old);
+			}
                         $sql = "UPDATE $table SET ";
                 } else {
-                        $sql = "INSERT INTO $table SET ";
+                        $sql = "INSERT INTO $table ";
                 }
 		$pdo = $sql;
+		$was = $fields = $values = $labels = "";
 		$count = 0;
                 for (reset($this->form_data->elements);
                  $elrec = current($this->form_data->elements);
                  next($this->form_data->elements))
                 {
                         $el = $elrec["ob"];
-			$el->value = array_key_exists($el->name,$_POST) ? $_POST[$el->name] : @$GLOBALS[$el->name];
+	  		$gv = array_key_exists($el->name,$GLOBALS) ? $GLOBALS[$el->name] : ""; 
+			$el->value = array_key_exists($el->name,$_POST) ? $_POST[$el->name] : $gv;
                         $type = substr($el->type,3);
                         if ($el->name=="form_name") $type="skip";
                         if (isset($el->no_edit)) $type="skip";
 			if ($el->extrahtml == " onBlur='dollarformat(this)'") $el->value = str_replace("$","",$el->value);
                         if ((isset($el->field)) and ($el->name <> $key)) {
 			  $label = ":".$el->name;
+			  $diff = true;
                           switch ($type) {
                             case "skip":
                             case "submit":
                                 break;
                             case "file":
                                 if (substr($_FILES[$el->field]["type"],0,6)=="image/") {
-                                        if ($count>0) { $sql .= ", "; $pdo .= ", "; }
 					$data[$label] = $this->getblob($el->field);				
-					$sql .= $db->qi($el->field)." = '".$data[$label]."'";
-					$pdo .= $db->qi($el->field)." = $label";
 					$imagekeys[] = $GLOBALS["blob_key"];
                                         $count++;
-                                }
+                                } else {
+					$data[$label] = $old[$el->name];   // no new file, keep old value.
+				}
                                 break;
 			    case "date":
-                                if ($count>0) { $sql .= ", "; $pdo .= ", "; }
+				$data[$label] = $this->valid_date($old[$el->name],$el->value,$el->valid_regex);
+				break;
+			    case "select":
+				if ($oldval>0 and $old[$el->name]=='' and $el->value=='0') $el->value='';	//weirdness - requires investigation
 			  	$data[$label] = $el->value;
-				$sql .= $db->qi($el->field)." = '".date("Y-m-d H:i:s",strtotime($el->value))."'";
-				$pdo .= $db->qi($el->field)." = $label";
-                                $count++;
+#				echo "<h3>$el->name</h3>";
+#				echo "old:".$old[$el->name]." new:".$el->value;	
+#				echo "<br>";
 				break;
                             case "checkbox":
                                 /* perhaps this should be triggered on $el->multiple instead (dave), so it would apply to select multiple as well not just checkbox*/
 				if (isset($el->value)) {$el->value = implode($el->value,",");}
 				/* flow into default case on purpose */
                             default:
-                                if ($count>0) { $sql .= ", "; $pdo .= ", "; }
 			  	$data[$label] = $el->value;
-				$sql .= $db->qi($el->field)." = '".magicquote($el->value)."'";
-				$pdo .= $db->qi($el->field)." = $label";
-                                $count++;
                                 break;
                           }
+			  if ($checkOld) {
+				if (!array_key_exists($el->name,$old)) $old[$el->name]="not present";	// should not happen
+				if ($old[$el->name]==$data[$label]) $diff = false;
+			  }
+			  if ($diff) {
+			    if ($oldval) { 	#UPDATE
+				if ($count>0) { $sql .= ", "; $pdo .= ", "; $was .= ", "; }
+				$sql .= $db->qi($el->field)." = ".$db->quote($data[$label]);
+				$pdo .= $db->qi($el->field)." = $label";
+				$was .= $el->name."=".$old[$el->name];
+			    } else { 		#INSERT
+				if ($count>0) { $fields .= ", "; $values .= ", "; $labels .= ", "; }
+				$fields .= $db->qi($el->field);
+				$values .= $db->quote($data[$label]);
+				$labels .= $label;
+			    }
+			    $count++;
+			  } else unset($data[$label]);
                         }
                 }
+	    if ($count>0) {
 		if ($oldval) { 
-			$sql .= " WHERE ".$db->qi($this->key)." = '".magicquote($oldval)."'";
+			$sql .= " WHERE ".$db->qi($this->key)." = ".$db->quote($oldval);
 			$pdo .= " WHERE ".$db->qi($this->key)." = :$key";
 			$data[":$key"] = $oldval;
+		} else {
+			$sql .= "($fields) VALUES ($values)";
+			$pdo .= "($fields) VALUES ($labels)";
 		}
 		if ($db->type=="pdo") {
 			EventLog("PDO - $action",$pdo."\n".var_export($data,true),"Info");
-			$st = $db->prepare($pdo);
-			if (!$st->execute($data)) {
+			if (!$st = $db->prepare($pdo)) {
+			    $db->getErrorInfo();
+			    EventLog("PDO - Prepare Failed ".$db->ErrCode,$db->Error);
+			} else { 
+			    if (!$st->execute($data)) {
 				$err = var_export($st->errorInfo(),true);
 				echo "<h4>$err</h4>";
 				EventLog("PDO - Failed",var_export($err,true),"Error");
+			    }
 			}
 		} else {
 			EventLog("SQL - $action",$sql,"Info");
 			$db->query($sql);
 		}
-		$id = false;
 		if ($newval) {
 			$id = $newval;
 		} else {
@@ -653,8 +725,19 @@ TODO: Change this to have some AJAX to handle larger lists.
 		if ($id) {
 			if (count($imagekeys)) $this->save_image_keys($imagekeys,$id);
 		}
-		return $id;
-          } //switch
+	    } #if count
+	    else echo "Nothing Changed.. ";
+          } //switch $action
+	  if ($id and array_key_exists("LogSqlTo",$_ENV)) {
+	     if ($db->type=="pdo") {
+		$ip = array_key_exists("REMOTE_ADDR",$_SERVER) ? $_SERVER["REMOTE_ADDR"] : "127.0.0.1";
+		if (!$st=$db->prepare('INSERT INTO '.$db->qi($_ENV["LogSqlTo"]).' ("UserName","Table","At","SQL","Was","IP") VALUES (?,?,?,?,?,?)')) 
+			EventLog("sql log bad prep", $_ENV["LogSqlTo"]);
+		if (!$st->execute(array($auth->auth["uname"],$Table,date("Y-m-d H:i:s"),$sql,$was,$ip))) 
+			EventLog("sql log bad exec",$sql." Was:".$was);
+	     }
+	  }
+	  return $id;
         }
 
 	# If a form did not validate before saving, then reload the form with the values 

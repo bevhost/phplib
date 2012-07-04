@@ -22,7 +22,8 @@ class of_element {
   var $format=false;		// see php money_format()
 
   function marshal_dispatch($m,$func) {   
-    $value = array_key_exists($this->name,$_POST) ? $_POST[$this->name] : @$GLOBALS[$this->name];
+    $v = array_key_exists($this->name,$GLOBALS) ? $GLOBALS[$this->name] : "";
+    $value = array_key_exists($this->name,$_POST) ? $_POST[$this->name] : $v;
 //    if ($this->type <> "of_file") echo "<!-- MD type:$this->type name:$this->name method:$m func:$func v:$value -->\n";
     return $this->$func($value);
   }
@@ -230,7 +231,7 @@ class form {
 	$old[$el->name] = $el->value;
       }
       $str .= sprintf("<input type=\"hidden\" name=\"_old_record_values\" value=\"%s\" />\n", 
-		base64_encode(gzencode(serialize($old))));
+		base64_encode(gzcompress(serialize($old))));
     }
 
     $str .= "\n</form>\n";
