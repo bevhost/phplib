@@ -481,7 +481,7 @@ class form {
       $this->elements[$el->name]["frozen"]=1;
       if ($flist) {
         next($flist);
-        $elrec = @$this->elements[current($flist)];
+        $elrec = current($flist) ? $this->elements[current($flist)] : false;
       } else {
         next($this->elements);
         $elrec = current($this->elements);
