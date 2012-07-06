@@ -477,7 +477,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 		else $options[] = array("value"=>$NullValue,"label"=>$NullDesc);
 	}
 	$count = 0;
-#echo "<!-- $sql -->";
+	#echo "<!-- $sql -->";
         $db->query($sql);
         while ($db->next_record()) {
 		if ($count++>200) break;
@@ -565,7 +565,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 
 
         function save_values($Table="",$key="id",$action="") {
-	  global $auth;
+	  global $auth, $dev;
 	  $db = new $this->database_class;
           if (! is_object($this->form_data)) {
             $this->setup();
@@ -611,7 +611,13 @@ TODO: Change this to have some AJAX to handle larger lists.
 			if (array_key_exists("_old_record_values",$_POST)) {
 				$old = unserialize(gzuncompress(base64_decode($_POST["_old_record_values"])));
 				if (is_array($old) and count($old)) $checkOld = true;
-var_dump($old);
+				if ($dev) {
+					echo "<table><tr><td><h2>Before</h2>";
+					var_dump($old);
+					echo "</td><td><h2>After</h2>";
+					var_dump($_POST);
+					echo "</td></tr></table>";
+				}
 			}
                         $sql = "UPDATE $table SET ";
                 } else {
@@ -625,8 +631,17 @@ var_dump($old);
                  next($this->form_data->elements))
                 {
                         $el = $elrec["ob"];
-	  		$gv = array_key_exists($el->name,$GLOBALS) ? $GLOBALS[$el->name] : ""; 
-			$el->value = array_key_exists($el->name,$_POST) ? $_POST[$el->name] : $gv;
+			$noValue = false;
+			if (array_key_exists($el->name,$_POST)) {
+				$el->value = $_POST[$el->name];
+			} else {
+				if (array_key_exists($el->name,$GLOBALS)) {
+					$el->value = $GLOBALS[$el->name];
+				} else {
+					$el->value = "";
+					$noValue = true;
+				}
+			}
                         $type = substr($el->type,3);
                         if ($el->name=="form_name") $type="skip";
                         if (isset($el->no_edit)) $type="skip";
@@ -651,22 +666,19 @@ var_dump($old);
 				$data[$label] = $this->valid_date($old[$el->name],$el->value,$el->valid_regex);
 				break;
 			    case "select":
-				if ($oldval>0 and $old[$el->name]=='' and $el->value=='0') $el->value='';	//weirdness - requires investigation
-			  	$data[$label] = $el->value;
-#				echo "<h3>$el->name</h3>";
-#				echo "old:".$old[$el->name]." new:".$el->value;	
-#				echo "<br>";
-				break;
+				if ($oldval>0 and $old[$el->name]=='' and $el->value=='0') $el->value='';
+				/* flow into checkbox & default case on purpose */
                             case "checkbox":
-                                /* perhaps this should be triggered on $el->multiple instead (dave), so it would apply to select multiple as well not just checkbox*/
-				if (isset($el->value)) {$el->value = implode($el->value,",");}
+			  	$data[$label] = $el->value;
+				if (is_array($el->value)) {$el->value = implode($el->value,",");}
 				/* flow into default case on purpose */
                             default:
 			  	$data[$label] = $el->value;
                                 break;
                           }
-			  if ($checkOld) {
-				if (!array_key_exists($el->name,$old)) $old[$el->name]="not present";	// should not happen
+			  if ($checkOld) {  // Is the new value different from the old one?
+				if ($noValue) $diff = false;	// no new value given.
+				if (!array_key_exists($el->name,$old)) $old[$el->name]="not present";	// no old value, should not happen
 				if ($old[$el->name]==$data[$label]) $diff = false;
 			  }
 			  if ($diff) {
