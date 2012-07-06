@@ -76,6 +76,7 @@ class of_select extends of_element {
     }
     if (!$found) {
 	if (!empty($val)) $str .= "<option selected value='$val'>$val\n";
+	else $str .= "<option selected value=''>Unspecified\n";
     }
     $str .= "</select>";
     global $sess;
