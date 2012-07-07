@@ -619,7 +619,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 					echo "</td></tr></table>";
 				}
 			}
-                        $sql = "UPDATE $table SET ";
+                        $sql = "UPDATE $table SET \n";
                 } else {
                         $sql = "INSERT INTO $table ";
                 }
@@ -683,7 +683,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 			  }
 			  if ($diff) {
 			    if ($oldval) { 	#UPDATE
-				if ($count>0) { $sql .= ", "; $pdo .= ", "; $was .= ", "; }
+				if ($count>0) { $sql .= ", \n"; $pdo .= ", "; $was .= ", \n"; }
 				$sql .= $db->qi($el->field)." = ".$db->quote($data[$label]);
 				$pdo .= $db->qi($el->field)." = $label";
 				$was .= $el->name."=".$old[$el->name];
@@ -699,12 +699,13 @@ TODO: Change this to have some AJAX to handle larger lists.
                 }
 	    if ($count>0) {
 		if ($oldval) { 
-			$sql .= " WHERE ".$db->qi($this->key)." = ".$db->quote($oldval);
+			$sql .= " \nWHERE ".$db->qi($this->key)." = ".$db->quote($oldval);
 			$pdo .= " WHERE ".$db->qi($this->key)." = :$key";
 			$data[":$key"] = $oldval;
 		} else {
 			$sql .= "($fields) VALUES ($values)";
 			$pdo .= "($fields) VALUES ($labels)";
+			$was = "";  // do not need old values for an insert
 		}
 		if ($db->type=="pdo") {
 			EventLog("PDO - $action",$pdo."\n".var_export($data,true),"Info");
