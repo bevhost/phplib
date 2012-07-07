@@ -39,11 +39,13 @@ class of_date extends of_text {
     switch ($this->valid_regex) {
             case 'nulltimestamp':
             case 'nulldatetime':
+    		if ($v=='0000-00-00 00:00:00') $v='';
 		if ($v) $v = str_replace("12:00:00 AM","",$this->date_format("D, d M Y h:i:s A",$v)); break;
 	    case 'timestamp':
 	    case 'datetime':
 		if ($v) $v = str_replace("12:00:00 AM","",$this->date_format("D, d M Y h:i:s A",$v)); break;
             case 'nulldate':
+    		if ($v=='0000-00-00') $v='';
 		if ($v) $v = $this->date_format("D, d M Y",$v); break;
 	    case 'date':
 		$v = $this->date_format("D, d M Y",$v); break;
