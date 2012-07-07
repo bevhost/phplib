@@ -290,6 +290,8 @@ class form {
 		$valid = "";
 	  }
 	  if (!array_key_exists('extrahtml',$el)) $el['extrahtml'] = '';
+	  if (array_key_exists('cols',$el)) $el['cols'] /= 2;
+	  if (array_key_exists('rows',$el)) $el['rows'] /= 2;
     	  if ($t=="of_checkbox") {
 		$t = "of_text";
    		if (!isset($enum_sets)) {
