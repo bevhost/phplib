@@ -744,9 +744,9 @@ TODO: Change this to have some AJAX to handle larger lists.
 	  if ($id and array_key_exists("LogSqlTo",$_ENV)) {
 	     if ($db->type=="pdo") {
 		$ip = array_key_exists("REMOTE_ADDR",$_SERVER) ? $_SERVER["REMOTE_ADDR"] : "127.0.0.1";
-		if (!$st=$db->prepare('INSERT INTO '.$db->qi($_ENV["LogSqlTo"]).' ("UserName","Table","At","SQL","Was","IP") VALUES (?,?,?,?,?,?)')) 
+		if (!$st=$db->prepare('INSERT INTO '.$db->qi($_ENV["LogSqlTo"]).' ("UserName","Table","At","SQL","Was","IP","Key") VALUES (?,?,?,?,?,?,?)')) 
 			EventLog("sql log bad prep", $_ENV["LogSqlTo"]);
-		if (!$st->execute(array($auth->auth["uname"],$Table,date("Y-m-d H:i:s"),$sql,$was,$ip))) 
+		if (!$st->execute(array($auth->auth["uname"],$Table,date("Y-m-d H:i:s"),$sql,$was,$ip,$id))) 
 			EventLog("sql log bad exec",$sql." Was:".$was);
 	     }
 	  }
@@ -772,11 +772,13 @@ TODO: Change this to have some AJAX to handle larger lists.
 
   # Load a record from the database table into the form values.
   function find_values($id,$key="",$table="") {
+	global $auth;
 	$db = new $this->database_class;
         if (! is_object($this->form_data)) {
           $this->setup();
         }
         if (!$id) return false;
+	$ID = $id;
 	if (!$key) $key = empty($this->key_field) ? $this->key : $this->key_field;
 	if (($key=="id") and !ctype_digit($id)) {
 		die("Invalid data - expected numeric value");
@@ -788,6 +790,8 @@ TODO: Change this to have some AJAX to handle larger lists.
 		#echo "Record not found ($key=$id)"; 
 		return; 
 	}
+	$count = 0;
+	$was = "";
         for (reset($this->form_data->elements);
                 $elrec = current($this->form_data->elements);
                 next($this->form_data->elements)) {
@@ -814,7 +818,23 @@ TODO: Change this to have some AJAX to handle larger lists.
 		}
           }
           $$vn = $this->form_data->elements[$el->name]["ob"]->value;
+	  if (substr($el->type,-4)<>"area" and $el->type<>"of_file" and $el->name<>"form_name" and $el->name<>"Password" and $el->type<>"of_password") {
+	     if ($el->value) {
+          	if ($count>0) $was .= ", ";
+	  	$was .= $el->name."=".substr($el->value,0,30);
+		$count++;
+	     }
+	  }
         }
+	if ($ID and array_key_exists("LogSqlTo",$_ENV)) {
+	     if ($db->type=="pdo") {
+		if (is_object($auth)) {
+			$ip = array_key_exists("REMOTE_ADDR",$_SERVER) ? $_SERVER["REMOTE_ADDR"] : "127.0.0.1";
+			$st=$db->prepare('INSERT INTO '.$db->qi($_ENV["LogSqlTo"]).' ("UserName","Table","At","SQL","Was","IP","Key") VALUES (?,?,?,?,?,?,?)'); 
+			$st->execute(array($auth->auth["uname"],$table,date("Y-m-d H:i:s"),$sql,$was,$ip,$ID)); 
+		}
+	     }
+	}
 	return true;
   }
 

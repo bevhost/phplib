@@ -1,7 +1,7 @@
 Summary: php library
 Name: phplib
 Version: 1.0
-Release: 7
+Release: 8
 License: GNU Library or Lesser General Public License (LGPL)
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-root
@@ -13,7 +13,7 @@ Packager: David Beveridge <david@beveridge.id.au>
 A library that provides session managent, authentication, permission
 control, tables, forms, form elements, templating and sql query builder.
 Compatible with a wide range of databases including MySQL, ODBC, Oracle,
-Postgres, MSSQL etc.
+Postgres, MSSQL, Sybase, SQLite etc.
 
 %prep
 %setup -q
@@ -40,6 +40,15 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/phplib/*
 
 %changelog
+* Sat Jul 07 2012 dave
+- version 0.8
+- added file db_pdo.inc, with support for prepared statements
+- changed tpl_form save_values to only save changed fields
+- changed tpl_form to optionally log SQL save_values
+- removed lots of @error skips
+- now use _ENV['ForeignKeys']="LinkedTables"
+- fixed null date bug, now actually allows a null date.
+
 * Fri May 18 2012 dave
 - version 0.7
 - added files db_mysqli.inc, of_password.inc

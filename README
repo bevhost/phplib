@@ -79,6 +79,12 @@ In addition, for each table, two more files are created.
   PHPLIB  Enhancements
 :-====================-:
 
+db_pdo.inc		New!, driver for PHP Data Objects - highly recommended.
+			allows prepared statements to completely avoid 
+			SQL injection attacks.
+
+db_mysqli.inc		New!, driver for Mysql Improved PHP.
+
 db_mysql.inc,		fixed metadata - required by autogen.php
 db_odbc.inc		added quote - database specific add slashes function
 			added quote_identifier - same but for columns and table names

@@ -420,7 +420,6 @@ class Table
 	$val = $this->orig_fields[$val];
     }
     if (preg_match("/Search/",$this->add_insert_buttons)) {
-	$this->form->form_data->elements[$val]["ob"] = new of_element;
 	$this->form->form_data->elements[$val]["ob"]->class="ips";
 	$this->form->form_data->elements[$val]["ob"]->value=""; // Prevent default value from showing.
     	if (isset($this->extra_html[$val])) $this->form->form_data->elements[$val]["ob"]->extrahtml=$this->extra_html[$val];
