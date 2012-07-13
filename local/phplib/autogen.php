@@ -6,7 +6,7 @@ ini_set('display_errors','On');
 if (!file_exists($LD="/usr/share/phplib")) $LD="";
 $LD = "";
 if ($LD) $LD.="/";
-
+$LD='/usr/share/phplib/';
 require($LD."db_pdo.inc");    
 $ServerType = "mysql"; 		/* change this to match your database eg mysql, odbc, oci8, pgsql */
 
@@ -125,14 +125,14 @@ $_ENV["SiteRoot"] = $_ENV["DocRoot"] . "/";
 if ($_ENV["SubFolder"]) $_ENV["SiteRoot"] .= $_ENV["SubFolder"] . "/";
 $readonlydb=false;
 
-$db=$_ENV["BaseName"];
-$prefix="";
-#$db = "cdr"; $prefix = "cdr";
-#$db = "syslog"; $prefix = "syslog"; $skip=array('LinkedTables','db_sequence');
-#$db = "postfix"; $prefix = "postfix"; $skip=array('LinkedTables','db_sequence','virt');
-#$db = "policyd"; $prefix = "policy"; $skip=array('EventLog','LinkedTables','auth_user'); 
-#$db = "traffic"; $prefix = "traffic";
-#$db = "kayako"; $prefix = "kayako"; $chop="sw"; $readonlydb = true;
+if (array_key_exists("autogen",$_ENV)) {
+	$db = $_ENV["autogen"];
+	$prefix = $_ENV["autogen"];
+} else {
+	$db = $_ENV["BaseName"];
+	$prefix="";
+}
+$skip=array('LinkedTables','db_sequence','auth_user','active_sessions');
 
 $sitedomainname=$_SERVER["SERVER_NAME"];
 
@@ -158,6 +158,18 @@ if (!file_exists($outdir)) {
 	echo "<p>$outdir</p>";
 	exit;
 }
+if (array_key_exists("autogen",$_ENV)) {
+	$outdir .= "/". $_ENV['autogen'];
+	if (!file_exists($outdir)) {
+		try {
+			mkdir($outdir);
+		}
+		catch (Exception $e) {
+			echo "<h3>Cannot make $outdir</h3>";
+			echo $e->getMessage();
+		}
+	}
+}
 if (!is_writeable($outdir)) {
 	echo "<h3>Output directory exists but it not writeable by '$owner'</h3>";
 	echo "<h4>Please make writeable by '$owner'</h4>";
@@ -172,6 +184,7 @@ if (!is_writeable($outdir)) {
 	exit;
 }
 echo "Files will be output to $outdir\n";
+
 
 echo "$sitedomainname<br /><br />\n";
 echo "<p>Use this command to move the generated files into production...<br />\n";
@@ -580,16 +593,17 @@ foreach($metadata as $j => $md) {
 
     echo "Information for column $j table $tb_names[$i] with key $key_names[$i]:<BR>\n";
 
-    $fkey = $md["key"]; 
+    $fkey = @$md["key"]; 
     $ftype = strtolower($md["type"]);
     $PrevWtype = $wtype;
     $fsize = $md["chars"];
     $wtype = $ftype;
     $fname = $md["name"];
-    $fdefault = $md["default"];
+    $fdefault = @$md["default"];
     $fnull = $md["null"];
     $fextra = $md["extra"];
     $fcomment = @$md["comment"];	// no metadata functions return table comments AFAIK
+if ($fcomment) echo "<h1>xyzzy: $fcomment</h1>";
     if ($fkey=="PRI") { $PrimaryKey = $fname; }
     if ($fkey=="UNI") { $UniqueKey = $fname; }
     if ( preg_match("/int$/i",$ftype) ) { $wtype = "int"; $fsize=12; }
@@ -769,6 +783,8 @@ WebType:      ".$wtype."
                 break;
 	case "text":
     		$fvals .= "'$".$fvname."'";
+                if (strlen($fdisp)>1) $fdisp .= ","; $fdisp .= "\n\t\t\t\"".$fname.'"=>"'.neatstr($fvname).'"';
+                if (strlen($fcols)>1) $fcols .= ","; $fcols .= "\n\t\t\t\"".$fname.'"';
 		$DataModifierRead .= "\$".$fname." = stripslashes(\$".$fvname.");\n";
 		$DataModifierWrite .= "\$".$fname." = addslashes(\$".$fvname.");\n";
 		fwrite($finc,'"type"=>"textarea","name"=>"'.$fvname.'","rows"=>"5","cols"=>"50",
