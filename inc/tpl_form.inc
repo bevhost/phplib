@@ -107,7 +107,8 @@ class tpl_form {
     if (!$this->database_class) $this->database_class = $_ENV["DatabaseClass"];
     if (!$this->database_class) return;
     $db = new $this->database_class;
-    if (!$fk = $_ENV["MyForeignKeys"]) return;  # No automatic table linking
+    if (array_key_exists("MyForeignKeys",$_ENV)) $fk=$_ENV["MyForeignKeys"]; else $fk=false;
+    if (!$fk) return;  # No automatic table linking
     $sql = "select * from $fk where FormName = '$class'";
     $db->query($sql);
     while ($db->next_record()) {
@@ -599,9 +600,11 @@ TODO: Change this to have some AJAX to handle larger lists.
 		break;
 	    case "Delete":
                 if ($oldval) {
-                        $sql = "DELETE FROM $table WHERE ".$db->qi($key)."='".magicquote($oldval)."'";
+                        $sql = "DELETE FROM $table WHERE ".$db->qi($key)."=".$db->quote($oldval);
 			EventLog("SQL - Delete",$sql);
 			$db->query($sql);
+			$id = $oldval;
+			$was = "";
 		}
 		break;
 	    default:
@@ -681,6 +684,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 				if (!array_key_exists($el->name,$old)) $old[$el->name]="not present";	// no old value, should not happen
 				if ($old[$el->name]==$data[$label]) $diff = false;
 			  }
+			  if ($el->no_edit) $diff = false;
 			  if ($diff) {
 			    if ($oldval) { 	#UPDATE
 				if ($count>0) { $sql .= ", \n"; $pdo .= ", "; $was .= ", \n"; }
