@@ -97,8 +97,8 @@ class ".$db."_Auth extends Auth {
                              \"   where username = %s \".
                              \"   and password = %s \",
                           \$this->database_table,
-                          $this->db->quote(\$_POST['phplib_username']),
-                          $this->db->quote(\$_POST['phplib_password'])));
+                          \$this->db->quote(\$_POST['phplib_username']),
+                          \$this->db->quote(\$_POST['phplib_password'])));
 
       while(\$this->db->next_record()) {
 	\$uid = \$this->db->f(\"user_id\");
