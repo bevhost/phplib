@@ -1495,6 +1495,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 		if (strlen($perm)>2) {
 			$perm = $sess->have_perm($perm);  // convert string question to boolean answer.
 		}
+		if ($key)
 		if ($perm) {
 			if ($count==0) echo "<td class='ae' nowrap>"; else echo " ";
 			$count++;
