@@ -114,7 +114,8 @@ class DB_Sql {
 		if (!$this->dbh) $this->halt("open($Database) failed.");
 		break;
 	    case "pgsql";
-        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User, $Password);
+        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User);
+ #       	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User, $Password);
 		break;
 	    default:
       		if ($this->Debug) echo "Connecting to $Host as $User<br>\n";
@@ -434,6 +435,19 @@ class DB_Sql {
 	  case "sqlite":
 		$q = "PRAGMA table_info($table)"; 
 		break;
+          case "mssql":
+		$q = "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, COLLATION_NAME,
+			CHARACTER_SET_NAME, IS_NULLABLE, COLUMN_DEFAULT 
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE TABLE_SCHEMA=".$this->quote($this->Database)." AND TABLE_NAME=".$this->quote($table);
+		break;
+          case "mysql":
+		$q = "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, COLLATION_NAME, 
+			EXTRA, COLUMN_COMMENT, COLUMN_KEY, PRIVILEGES, COLUMN_TYPE,
+			CHARACTER_SET_NAME, IS_NULLABLE, COLUMN_DEFAULT
+			FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE TABLE_SCHEMA=".$this->quote($this->Database)." AND TABLE_NAME=".$this->quote($table);
+		break;
 	  default:
 		$q = "DESCRIBE ".$this->qi($table);
       }
@@ -452,8 +466,11 @@ class DB_Sql {
       foreach($stmt as $row) {
 #var_dump($row);
         $res[$i]["table"] = $table;
-        $res[$i]["name"]  = array_key_exists('Field',$row) ? $row["Field"] : $row["name"];
-	$type = array_key_exists('Type',$row) ? $row["Type"] : $row["type"];
+	if (array_key_exists('DATA_TYPE',$row))   $type = $row['DATA_TYPE'];	// information_schema sql standard
+	if (array_key_exists('IS_NULLABLE',$row)) $null = $row['IS_NULLABLE'];  // information_schema sql standard
+	if (array_key_exists('COLUMN_TYPE',$row)) $type = $row['COLUMN_TYPE'];	// information_schema mysql
+	if (array_key_exists('type',$row))        $type = $row['type'];		// sqlite & pgsql
+	if (array_key_exists('Type',$row))        $type = $row['Type'];		// mysql describe
 	$fattr = "";
 	$pos = strpos ( $type, "(" );
         if ( $pos > 0 ) {
@@ -470,25 +487,40 @@ class DB_Sql {
             $fsize = "";
             $ftype = $type;
         }
-	if (array_key_exists("Key",$row)) $res[$i]["key"] = $row["Key"];
-	if (array_key_exists("pk",$row)) $res[$i]["key"] = $row["pk"];
 	$res[$i]["chars"] = $fsize;
-	if ((array_key_exists("atttypmod",$row)) and ($row["atttypmod"]>0)) $res[$i]["chars"] = $row["atttypmod"];
-	if (array_key_exists("attnum",$row)) $attnums[$row["attnum"]] = $i;
+	if ((array_key_exists("atttypmod",$row)) and ($row["atttypmod"]>0)) $res[$i]["chars"] = $row["atttypmod"]; //pgsql
+	if (array_key_exists("attnum",$row)) $attnums[$row["attnum"]] = $i; //pgsql
 	$res[$i]["len"] = $fsize;
 	$res[$i]["type"] = $ftype;
 	$res[$i]["attr"] = $fattr;   /* eg unsigned */
-	if (array_key_exists("notnull",$row)) {
-		if ($row["notnull"]) $null="NO"; else $null="YES"; // sqlite
+	if (array_key_exists("notnull",$row)) {	
+		if ($row["notnull"]) $null="NO"; else $null="YES"; // sqlite & pgsql
 	} else 
 	if (array_key_exists("Null",$row)) {
 		 $null = $row["Null"];		// MySQL DESCRIBE
 	}
 	$res[$i]["null"] = $null;
-	$res[$i]["extra"] = array_key_exists('Extra',$row) ? $row["Extra"] : "";
 	if ((array_key_exists("atthasdef",$row)) and ($row["atthasdef"])) $hasdef = true;
+	// mysql
+	if (array_key_exists('Field',$row)) $res[$i]['name'] = $row['Field'];
 	if (array_key_exists("Default",$row)) $res[$i]["default"] = $row["Default"];
+	if (array_key_exists("Key",$row)) $res[$i]["key"] = $row["Key"];
+	$res[$i]["extra"] = array_key_exists('Extra',$row) ? $row["Extra"] : "";
+	// sqlite
+	if (array_key_exists('name',$row)) $res[$i]['name'] = $row['name'];
+	if (array_key_exists("pk",$row)) $res[$i]["key"] = $row["pk"];
 	if (array_key_exists("dflt_value",$row)) $res[$i]["default"] = $row["dflt_value"];
+	// Information_Schema values...
+	if (array_key_exists('COLUMN_NAME',$row)) $res[$i]['name'] = $row['COLUMN_NAME'];
+	if (array_key_exists('DATA_TYPE',$row)) $res[$i]['type'] = $row['DATA_TYPE'];
+	if (array_key_exists('CHARACTER_MAXIMUM_LENGTH',$row)) $res[$i]['len'] = $row['CHARACTER_MAXIMUM_LENGTH'];
+	if (array_key_exists('COLUMN_DEFAULT',$row)) $res[$i]['default'] = $row['COLUMN_DEFAULT'];
+	if (array_key_exists('COLLATION_NAME',$row)) $res[$i]['collation'] = $row['COLLATION_NAME'];
+	if (array_key_exists('CHARACTER_SET_NAME',$row)) $res[$i]['charset'] = $row['CHARACTER_SET_NAME'];
+	if (array_key_exists('EXTRA',$row)) $res[$i]['extra'] = $row['EXTRA'];			// mysql only
+	if (array_key_exists('COLUMN_KEY',$row)) $res[$i]['key'] = $row['COLUMN_KEY'];	        // mysql only
+	if (array_key_exists('PRIVILEGES',$row)) $res[$i]['priv'] = $row['PRIVILEGES'];  	// mysql only
+	if (array_key_exists('COLUMN_COMMENT',$row)) $res[$i]['comment'] = $row['COLUMN_COMMENT']; // mysql only
 	$i++;
       }
       if ($hasdef) { # postgres
@@ -511,6 +543,8 @@ class DB_Sql {
     $i = 0;
     $res = Array();
     switch($this->Server){
+	case "sybase":
+		$q = "SELECT name FROM sysobjects WHERE type='U'"; break;
 	case "sqlite":
 		$q = "SELECT name FROM sqlite_master WHERE type = 'table'"; break;
 	case "mysql":
