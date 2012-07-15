@@ -240,12 +240,12 @@ foreach($tables as $i => $table) {
     	$classnames[$j] = str_replace("-","",$tbnames[$j]);
 	$key_names[$j] = $database->primary_key($tbname);
 	if (!$key_names[$j]) {
-		$key_names[$j]="id";
-    		echo $tb_names[$j] . " has no primary key. Assuming 'id' will be created.<BR>";
+    		echo $tb_names[$j] . " has no primary key.<BR>";
+    		$keynames[$j] = false;
 	} else {
     		echo $tb_names[$j] . " indexed by ".$key_names[$j]. "<BR>";
+    		$keynames[$j] = valid_name($key_names[$j]);
 	}
-    	$keynames[$j] = valid_name($key_names[$j]);
 	$j++;
 #	$md = $database->metadata($tbname);
 #	var_dump($md);
@@ -366,7 +366,7 @@ fwrite($finc,"<?php
 class $classnames[$i]form extends tpl_form {
   var \$table = \"$tb_names[$i]\";
   var \$key = \"$keynames[$i]\";
-  var \$key_field = \"$key_names[$i]\";
+  var \$key_field = \"$key_names[$i]\"; # if different to \$key
   var \$classname = \"$classnames[$i]form\";
   var \$database_class = \"DB_$db\";
 
@@ -413,6 +413,11 @@ if (\$export_results) {
 }
 check_view_perms();
 ".$KeyExtra."
+
+\$f = new ".$classnames[$i]."form;
+
+");
+if ($keynames[$i]) fwrite($fphp,"
 if (\$WithSelected) {
         check_edit_perms();
         switch (\$WithSelected) {
@@ -446,9 +451,6 @@ if (\$WithSelected) {
         page_close();
         exit;
 }
-
-
-\$f = new ".$classnames[$i]."form;
 
 if (\$submit) {
   switch (\$submit) {".$AddToCart."
@@ -522,6 +524,12 @@ if (window.opener) {
     }
 }
 
+");
+else fwrite($fphp,"
+include(\"search.php\");
+");
+
+fwrite($fphp,"
 if (\$export_results) \$f->setup();
 else \$f->javascript();
 
@@ -575,6 +583,7 @@ $DataModifierWrite = "";
 $fvals = "";
 $fcols = "";
 $fdisp = "";
+$fquer = "";
 $fnams = "";
 $fglob = "";
 $ptype = "";
@@ -602,7 +611,10 @@ foreach($metadata as $j => $md) {
     $fdefault = @$md["default"];
     $fnull = $md["null"];
     $fextra = $md["extra"];
-    $fcomment = @$md["comment"];	// no metadata functions return table comments AFAIK
+    $fcharset = @$md["charset"];
+    $fcomment = @$md["comment"];
+    $fcollation = @$md["collation"];
+    $fpriv = @$md["priv"];	// eg: select,insert,update,references
 if ($fcomment) echo "<h1>xyzzy: $fcomment</h1>";
     if ($fkey=="PRI") { $PrimaryKey = $fname; }
     if ($fkey=="UNI") { $UniqueKey = $fname; }
@@ -712,7 +724,7 @@ WebType:      ".$wtype."
 		break;
 	default :
 		fwrite($fihtml,"    <tr><td>".neatstr($fname)."</td><td>
-		<?php \$this->form_data->show_element('".$fvname."'); ?> </td></tr>\n");
+		<?php \$this->form_data->show_element('".$fvname."'); ?> $fcomment</td></tr>\n");
       }
 
 
@@ -1072,7 +1084,9 @@ fwrite($fphp,"
 #      \"ip_addr\"=>\"inet_aton\",  
 #      );
 
-  if (strpos(strtolower(\$query),\"order by\")===false) \$query .= \" order by \".\$f->order_by(\$sortorder);
+  if (strpos(strtolower(\$query),\"order by\")===false) {
+	if (\$so=\$f->order_by(\$sortorder)) \$query .= \" order by \".\$so;
+  }
 
   \$query .= \" LIMIT \".\$q_".$classnames[$i]."->start_row.\",\".\$q_".$classnames[$i]."->row_count;
 
