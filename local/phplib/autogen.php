@@ -55,6 +55,7 @@ $_ENV["UserDetailsTable"] = "Contacts";
 $_ENV["UserEmailAddressField"] = "Email";
 $_ENV["UserAuthIdField"] = "user_id";
 $_ENV["MyForeignKeys"] = "LinkedTables";  /* table that stores associations for drop down boxes on forms */
+$_ENV["MyForeignKeysDB"] = $_ENV["DatabaseClass"];
 $_ENV["no_edit"] = array("radacct","pp_transactions","EventLog"); /* tables not to be edited */
 $_ENV["editor"] = "fckeditor";
 $_ENV["HelpDesk"] = " from 9am to 8pm";

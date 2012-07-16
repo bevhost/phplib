@@ -106,7 +106,7 @@ class tpl_form {
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
     if (!$this->database_class) $this->database_class = $_ENV["DatabaseClass"];
     if (!$this->database_class) return;
-    $db = new $this->database_class;
+    $db = new $_ENV["MyForeignKeysDB"];
     if (array_key_exists("MyForeignKeys",$_ENV)) $fk=$_ENV["MyForeignKeys"]; else $fk=false;
     if (!$fk) return;  # No automatic table linking
     $sql = "select * from $fk where FormName = '$class'";
@@ -856,10 +856,10 @@ TODO: Change this to have some AJAX to handle larger lists.
     $class = substr($this->classname,0,-4);
     if (strtolower(substr($class,0,3))=="my_") $class=substr($class,3);
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
-    if (!$this->database_class) $this->database_class = $_ENV["DB_class"];
+    if (!$this->database_class) $this->database_class = $_ENV["DatabaseClass"];
     if (!$this->database_class) return;
-    $sql = "select * from LinkedTables where LinkTable = '$class' Group By FormName";
-    $db = new $this->database_class;
+    $sql = "select * from ".$_ENV["MyForeignKeys"]." where LinkTable = '$class' Group By FormName";
+    $db = new $_ENV["MyForeignKeysDB"];
     $db2 = new $this->database_class;
     $db->query($sql);
     while ($db->next_record()) {
@@ -868,13 +868,28 @@ TODO: Change this to have some AJAX to handle larger lists.
 	$table = $childclass."Table";
 	$fields =  $childclass."_fields";
 	echo "<!-- showchildren $formname $table -->\n";
-    	if (!class_exists($table)) include("phplib/$childclass.inc");
+    	if (!class_exists($table)) {
+		$file = "phplib/$childclass.inc";
+    		if (file_exists($file)) include($file);
+    		else {
+        		$file = "phplib/autogen/$childclass.inc";
+        		if (file_exists($file)) include($file);
+        		else {
+        		    $file = "phplib/autogen/".$_ENV["autogen"]."/$childclass.inc";
+        		    if (file_exists($file)) include($file);
+        		    else {
+        		        EventLog("class declaration file not found for $childclass","Error");
+        		        // maybe die here.
+        		    }
+        		}
+		}
+	}
         $t = new $table;
 	if (empty($GLOBALS[$fields])) $t->fields = $t->default; else $t->fields = $GLOBALS[$fields];
         $f = new $formname;
         $f->form_data = new form;
         $f->setup_fields();
-        $sql = $t->select($f).sprintf("`%s`='%s' ",$db->f("FieldName"),$GLOBALS[$db->f("LinkField")])." LIMIT 0,100";
+        $sql = $t->select($f).sprintf("%s.%s=%s ",$db2->qi($childclass),$db2->qi($db->f("FieldName")),$db2->quote($GLOBALS[$db->f("LinkField")]))." OFFSET 0 LIMIT 100";
         $t->heading = "on";
         $t->add_extra = "$childclass.php";
 	unset($t->fields["submit"]);
@@ -967,7 +982,8 @@ TODO: Change this to have some AJAX to handle larger lists.
 		$desc = " desc";
 		$sortorder = substr($sortorder,0,-5);
 	}
-	if (!$sortorder) $sortorder = "id";
+	if (!$sortorder) $sortorder = $this->key;
+ 	if (!$sortorder) return false;
 	if (substr($sortorder,0,2)=="_t") $field = $sortorder; else
 	$field = $this->form_data->elements[$sortorder]["ob"]->field;
 	if (!empty($this->sort_function_maps[$field]))

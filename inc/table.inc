@@ -1526,22 +1526,20 @@ echo "<!-- hidden end -->\n";
     $this->orig_fields = Array();
     if (strtolower(substr($class,0,3))=="my_") $class=substr($class,3);
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
-    if (empty($this->database_class)) $this->database_class = $_ENV["DatabaseClass"];
-    if (!$this->database_class) return;
-    $db = new $this->database_class;
+    $db = new $_ENV["MyForeignKeysDB"];
     $sql_table = $db->qi($this->sql_table);
     $select = "SELECT $sql_table.*";
     $from = "FROM $sql_table";
     $where = "WHERE ";
     if (!$this->edit) {
-      $sql = "select * from LinkedTables where FormName = '$class'";
+      $sql = "select * from ".$_ENV["MyForeignKeys"]." where FormName = '$class'";
       $tc = 0;
       $db->query($sql);
       while ($db->next_record()) {
         extract($db->Record);
 	$q_FieldName = $db->qi($FieldName);
 	$q_LinkField = $db->qi($LinkField);
-	if (in_array($FieldName,$this->fields)) {
+	if (($LinkDesc) and (in_array($FieldName,$this->fields))) {
 		$tc++;
 		$table = "_t$tc";
 		$select .= ", $table.$LinkDesc AS $table$LinkDesc";
