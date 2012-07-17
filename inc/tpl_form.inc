@@ -684,7 +684,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 				if (!array_key_exists($el->name,$old)) $old[$el->name]="not present";	// no old value, should not happen
 				if ($old[$el->name]==$data[$label]) $diff = false;
 			  }
-			  if ($el->no_edit) $diff = false;
+			  if (isset($el->no_edit)) $diff = false;
 			  if ($diff) {
 			    if ($oldval) { 	#UPDATE
 				if ($count>0) { $sql .= ", \n"; $pdo .= ", "; $was .= ", \n"; }
