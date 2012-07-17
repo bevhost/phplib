@@ -9,12 +9,50 @@
  *
  */ 
 
-$QUERY_STRING="";
+//setup php for working with Unicode data
+mb_internal_encoding('UTF-8');
+mb_http_output('UTF-8');
+mb_http_input('UTF-8');
+mb_language('uni');
+mb_regex_encoding('UTF-8');
+ob_start('mb_output_handler');
+ini_set('default_charset', 'UTF-8');
+ini_set('magic_quotes_gpc', 0);
+ini_set("arg_separator.input",";&");
+setlocale(LC_ALL, 'en_AU.UTF-8');
+date_default_timezone_set("Australia/Sydney");
+
+$testip = "129.168.1.100"; // NPD
+$REMOTE_ADDR = @$_SERVER["REMOTE_ADDR"];
+if (($REMOTE_ADDR==$testip) or ($REMOTE_ADDR=="124.191.215.55") or (@$_ENV["SiteRoot"] == "/var/www/hsdev/public_html/")) { 
+ 	$dev=true; 
+} else {
+ 	$dev=false;
+}
+#$dev=true;
+if ($dev) {
+	ini_set('display_errors', 'On');
+	if (array_key_exists("HTTP_HOST",$_SERVER)) ini_set('html_errors', 'On');
+	else ini_set('html_errors', 'Off');
+	ini_set('docref_root','http://au.php.net/manual/en/');
+	error_reporting(E_ALL); 		// will report all errors
+	set_error_handler('my_error_handler');
+} else {
+	error_reporting(E_ALL^E_NOTICE);	// will report all errors
+	error_fatal(E_ALL^E_NOTICE);		// will die on any error except E_NOTICE
+	ini_set('display_errors', 'Off');
+	set_error_handler('my_error_handler');
+}
 
 $_ENV["local"] = getcwd()."/phplib/";
 if (!file_exists($_ENV["libdir"] = "/usr/share/phplib/")) $_ENV["libdir"] = $_ENV["local"];
 
-require($_ENV["libdir"] . "db_mysql.inc");  /* Change this to match your database. */
+$time = microtime();
+$time = explode(" ", $time);
+$time = $time[1] + $time[0];
+$_page_start_time = $time;
+
+require($_ENV["libdir"] . "db_pdo.inc");  /* Change this to match your database. */
 require($_ENV["libdir"] . "ct_sql.inc");    /* Change this to match your data storage container */
 require($_ENV["libdir"] . "session.inc");   /* Required for everything below.      */
 require($_ENV["libdir"] . "auth.inc");      /* Disable this, if you are not using authentication. */
@@ -30,7 +68,10 @@ include($_ENV["libdir"] . 'table.inc');
 include($_ENV["libdir"] . 'sqlquery.inc');
 include($_ENV["libdir"] . 'template.inc');
 
-include($_ENV["libdir"] . 'fckeditor/fckeditor.php');
+if ($_ENV["editor"]=="fckeditor") include("/usr/share/phplib/fckeditor/fckeditor.php");
+if ($_ENV["editor"]=="ckeditor") include("/usr/share/phplib/ckeditor/ckeditor.php");
+if ($_ENV["editor"]=="ckfinder") include("/usr/share/phplib/ckeditor/ckeditor.php");
+
 
 /* Additional require statements go before this line */
 
@@ -44,6 +85,40 @@ require($_ENV["libdir"] . "page.inc");	/* Required, contains the page management
 
 #require($_ENV['libdir'] . 'htmlMail.php');	/* for sending MIME encoded email messages. */
 #require($_ENV['libdir'] . 'web.php');	/* for access web pages with cookies etc. */
+
+function get_request_values($varlist) {
+        $vars = explode(",",$varlist);
+        foreach($vars as $v) {
+                if (isset($_REQUEST[$v])) {
+			if (is_array($_REQUEST[$v])) $GLOBALS[$v]=$_REQUEST[$v];
+			else $GLOBALS[$v]=to_utf8($_REQUEST[$v]);
+			if ($v=="submit") {
+				/* Pages with $_ENV["AllowPostWithoutReferer"] set will always pass */
+				$ok = array_key_exists("AllowPostWithoutReferer",$_ENV) ? true : false;	
+				if (array_key_exists("HTTP_REFERER",$_SERVER)) {
+					$proto = array_key_exists("HTTPS",$_SERVER) ? "https://" : "http://" ;
+					$ref = strtolower($proto.$_SERVER["HTTP_HOST"]);
+					if (substr(strtolower($_SERVER["HTTP_REFERER"]),0,strlen($ref))==$ref) { $ok=true; }
+				}
+				if (!$ok) {
+				#	die("Suspected CSRF Attack");
+				}
+			}
+                } else {
+                        if (!isset($GLOBALS[$v])) $GLOBALS[$v]=false;
+                }
+        }
+        if (!is_array($GLOBALS[$v])) $GLOBALS["q_".$v]="'".addslashes($GLOBALS[$v])."'";  // can't use database specific yet, not defined.
+}
+
+ini_set('unserialize_callback_func', 'mycallback'); // set your callback_function
+function mycallback($classname) 
+{
+	$classname = str_replace("_Sql_Query","",$classname);
+	$inc_file = $_ENV["local"].$classname.".inc";
+	require_once($inc_file);
+}
+
 
 function EventLog($Description,$ExtraInfo="",$Level="Info") {
         global $PHP_SELF, $argv, $REMOTE_ADDR, $auth;
@@ -59,6 +134,16 @@ function EventLog($Description,$ExtraInfo="",$Level="Info") {
         $sql .= "ExtraInfo = '".addslashes($ExtraInfo)."'";
         $db->query($sql);
 } 
+
+$db = new $_ENV["DatabaseClass"];
+
+function magicquote($str) {   // hangover from addslashes 
+	global $db;
+	if (!$db->connect()) return 0;
+        return substr(substr($db->escape_string($str),1),0,-1);
+}
+
+
 
 function neatstr($InpStr)
 {
@@ -143,7 +228,7 @@ function MenuPage($page) {
                 $heading = $db->f(0);
                 $db->query("Select * from menu where parent='$page' order by position");
                 while ($db->next_record()) {
-                    extract($db->Record)
+                    extract($db->Record);
 		    $edit = "";
                     $ok = false;
                     if ($perm->have_perm("admin")) {
@@ -168,8 +253,13 @@ function MenuPage($page) {
 }
 
 function my_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
+    global $dev;
     $errno = $errno & error_reporting();
-    if($errno == 0) return;
+    if ((!$dev) and ($errno == 0)) return;
+    if (error_reporting() === 0) {
+        // continue script execution, skipping standard PHP error handler
+        return true;
+    }
     if(!defined('E_STRICT'))            define('E_STRICT', 2048);
     if(!defined('E_RECOVERABLE_ERROR')) define('E_RECOVERABLE_ERROR', 4096);
     switch($errno){
@@ -201,12 +291,25 @@ function my_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
             $detail .= "<br>\n";
         }
     }
+    $self = $_SERVER["PHP_SELF"];
+    if ($dev) {
+	if (isset($php_errormsg)) echo "<h1>$php_errormsg</h1>";
+	echo "<h3>PHP BackTrace for $errstr in $errfile on line $errline</h3>$detail<pre>";
+	var_dump($errcontext);
+    }
     $error=EventLog($msg,serialize($errcontext),"Error");
     if ($detail) EventLog("PHP BackTrace for $errstr in $errfile on line $errline",$detail,"Error");
     if(isset($GLOBALS['error_fatal'])){
         if($GLOBALS['error_fatal'] & $errno)
+		if ($self=="api.php") {
+			$xmlstr = "<?xml version='1.0' standalone='yes'?><api><errors></errors></api>";
+			$xml = new SimpleXMLElement($xmlstr);
+			$xml->errors->addChild("error","Call Support and Quote Event ID $error");
+			echo str_replace("><",">\n<",$xml->asXML());
+			exit;
+		} else
                 die("<br><br><big><b>Oops, well this is embarrassing! &nbsp; An error has occurred:</b>
-                        <br>Please quote $error if calling helpdesk ".$_ENV["HelpDesk"]."</big>");
+                        <br>Please quote <b>Event ID $error</b> if calling helpdesk on 1300 739 822 from 9am to 8pm</big>");
     }
 }
 
@@ -218,6 +321,44 @@ function error_fatal($mask = NULL){
     }
     return $GLOBALS['error_fatal'];
 }
+
+
+function to_utf8( $string ) { 
+// From http://w3.org/International/questions/qa-forms-utf-8.html 
+    if ( preg_match('%^(?: 
+      [\x09\x0A\x0D\x20-\x7E]            # ASCII 
+    | [\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte 
+    | \xE0[\xA0-\xBF][\x80-\xBF]         # excluding overlongs 
+    | [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}  # straight 3-byte 
+    | \xED[\x80-\x9F][\x80-\xBF]         # excluding surrogates 
+    | \xF0[\x90-\xBF][\x80-\xBF]{2}      # planes 1-3 
+    | [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15 
+    | \xF4[\x80-\x8F][\x80-\xBF]{2}      # plane 16 
+)*$%xs', $string) ) { 
+        return $string; 
+    } else { 
+        return iconv( 'CP1252', 'UTF-8', $string); 
+    } 
+} 
+
+function show_audit_trail($id,$table='') {
+	echo "<h3>Audit Trail</h3>\n";
+	if (!$table) $table = substr($_SERVER["PHP_SELF"],1,-4);
+	$db = new $_ENV["DatabaseClass"];
+        $t = new Table;
+        $t->heading = "on";
+        $t->add_extra = array("View"=>array("target"=>$_ENV["LogSqlTo"].".php"));
+        $t->fields = array( "UserName", "Table", "SQL", "Was", "At", "IP");
+        $t->map_cols = array( "UserName"=>"User Name", "Table"=>"Table", "SQL"=>"Database transaction", 
+				"Was"=>"Old Values", "At"=>"Date,TimeStamp", "IP"=>"IP Addr");
+        $sql = "SELECT * FROM ".$db->qi($_ENV["LogSqlTo"])." WHERE ".$db->qi('Table')."='$table' AND ".
+		$db->qi('Key')."='$id' AND `SQL` LIKE 'UPDATE%' order by id desc limit 0,50";
+	$db->query($sql);
+        if ($t->show_result($db, "default")==50) {
+                echo "<a href=".$sess->url($_ENV["LogSqlTo"].".php").$sess->add_query(array("Table"=>$table,"Key"=>$id)).">Show More Audit Logs</a>\n";
+        }
+}
+
 
 error_reporting(E_ALL^E_NOTICE);      // will report all errors
 set_error_handler('my_error_handler');

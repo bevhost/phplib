@@ -15,10 +15,10 @@
 <!--
 function SetFocus() {
   var f = document.forms['loginform'];
-  if (f.elements['username'].value != '') {
-      f.elements['password'].focus();
+  if (f.elements['phplib_username'].value != '') {
+      f.elements['phplib_password'].focus();
   } else {
-      f.elements['username'].focus();
+      f.elements['phplib_username'].focus();
   }
 }
 // -->
@@ -41,8 +41,8 @@ function SetFocus() {
 <?php
 	foreach($_POST as $k => $v ) {
 		switch ($k) {
-			case "username":
-			case "password":
+			case "phplib_username":
+			case "phplib_password":
 			case "loginbutton":
 				break;
 			default:
@@ -53,16 +53,16 @@ function SetFocus() {
 
 <legend>Login Details</legend>
 
-<p><label for="username">User Name: <em class="none">(Required)</em><span class="ast">*</span></label>
-<input type="text" name="username" id="username" 
+<p><label for="phplib_username">User Name: <em class="none">(Required)</em><span class="ast">*</span></label>
+<input type="text" name="phplib_username" id="phplib_username" 
    value="<?php if (isset($this->auth["uname"])) print htmlentities($this->auth["uname"]) ?>"
 />
 </p>
-<p><label for="password">Password: <em class="none">(Required)</em><span class="ast">*</span></label>
-<input type="password" name="password" id="password"/>
-<!--for="password" required="true" datatype="alpha" errorMsg="Please enter your password" --></p>
-<p><label for="rememberme">&nbsp;</label>
-<input type=checkbox value='yes' name='rememberme'> Keep me permanently logged in on this computer</p>
+<p><label for="phplib_password">Password: <em class="none">(Required)</em><span class="ast">*</span></label>
+<input type="password" name="phplib_password" id="phplib_password"/>
+<!--for="phplib_password" required="true" datatype="alpha" errorMsg="Please enter your password" --></p>
+<p><label for="phplib_rememberme">&nbsp;</label>
+<input type=checkbox value='yes' name='phplib_rememberme'> Keep me permanently logged in on this computer</p>
 </fieldset>
 <div class="form-button">
 <input class="button" type="submit" name="loginbutton" value="Login now" />
