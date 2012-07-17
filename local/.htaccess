@@ -1,0 +1,32 @@
+
+IndexIgnore .htaccess */.??* *~ *# */HEADER* */README* */_vti*
+
+<Limit GET POST>
+order deny,allow
+deny from all
+allow from all
+</Limit>
+<Limit PUT DELETE>
+order deny,allow
+deny from all
+</Limit>
+AuthName phplib.github.com
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+ErrorDocument 404 /error-404.php
+ErrorDocument 403 /error-403.php
+
+RewriteBase /
+
+RewriteRule ^(.*)/(.*)\.html$ $1/$2.html [L,NC]
+RewriteRule ^(.*)\.html$ template.php?page=$1 [L,NC]
+RewriteRule ^register$ register.php
+RewriteRule ^admin$ MenuEditor.php
+
+
+</IfModule>
+
+RewriteCond %{HTTP_HOST} ^www\.thisname\.com\.au$
+RewriteRule ^/?$ "http\:\/\/www\.thatname\.com\.au\/" [R=301,L]
+
