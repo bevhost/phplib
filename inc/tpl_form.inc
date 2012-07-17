@@ -565,13 +565,15 @@ TODO: Change this to have some AJAX to handle larger lists.
         // When the primary key is not 'id' it is visible and can be changed.
 
 
-        function save_values($Table="",$key="id",$action="") {
+        function save_values($Table="",$key="",$action="") {
 	  global $auth, $dev;
 	  $db = new $this->database_class;
           if (! is_object($this->form_data)) {
             $this->setup();
           }
 	  if (!$Table) $Table=$this->table;
+	  if (!$key) $key=$this->key;
+	  if (!$key) $key="id";
 	  $table = $db->quote_identifier($Table);
           if (!$action) $action=$_POST['submit'] ? $_POST['submit'] : @$GLOBALS['submit'];
 
