@@ -29,7 +29,7 @@ if (($REMOTE_ADDR==$testip) or ($REMOTE_ADDR=="124.191.215.55") or (@$_ENV["Site
 } else {
  	$dev=false;
 }
-#$dev=true;
+$dev=true;
 if ($dev) {
 	ini_set('display_errors', 'On');
 	if (array_key_exists("HTTP_HOST",$_SERVER)) ini_set('html_errors', 'On');
@@ -52,6 +52,24 @@ $time = explode(" ", $time);
 $time = $time[1] + $time[0];
 $_page_start_time = $time;
 
+if (array_key_exists("widemode",$_REQUEST)) $GLOBALS["widemode"]=$_REQUEST["widemode"];
+
+$DOCUMENT_ROOT = $_SERVER["DOCUMENT_ROOT"];
+get_request_values("id,cmd,submit,rowcount,sortorder,sortdesc,startingwith,start,prev,next,last,cond,EditMode,WithSelected,widemode,Field,_http_referer,export_results");
+$orig_cmd=$cmd;
+$PWD = array_key_exists("PWD",$_SERVER) ? $_SERVER["PWD"] : "";
+$PHP_SELF = $_SERVER["PHP_SELF"];
+
+if (substr($_SERVER["PHP_SELF"],0,1)=="/") $SELF = $_SERVER["PHP_SELF"]; else $SELF="$PWD/".$_SERVER["PHP_SELF"];
+$docroot = substr($SELF,0,strrpos($SELF,'/'));
+if (!$DOCUMENT_ROOT) $DOCUMENT_ROOT = $docroot;
+
+$_ENV["libdir"] = "/usr/share/phplib/";
+$_ENV["local"]  = $DOCUMENT_ROOT."/phplib/";
+
+$QUERY_STRING="";
+
+
 require($_ENV["libdir"] . "db_pdo.inc");  /* Change this to match your database. */
 require($_ENV["libdir"] . "ct_sql.inc");    /* Change this to match your data storage container */
 require($_ENV["libdir"] . "session.inc");   /* Required for everything below.      */
@@ -68,10 +86,6 @@ include($_ENV["libdir"] . 'table.inc');
 include($_ENV["libdir"] . 'sqlquery.inc');
 include($_ENV["libdir"] . 'template.inc');
 
-if ($_ENV["editor"]=="fckeditor") include("/usr/share/phplib/fckeditor/fckeditor.php");
-if ($_ENV["editor"]=="ckeditor") include("/usr/share/phplib/ckeditor/ckeditor.php");
-if ($_ENV["editor"]=="ckfinder") include("/usr/share/phplib/ckeditor/ckeditor.php");
-
 
 /* Additional require statements go before this line */
 
@@ -85,6 +99,11 @@ require($_ENV["libdir"] . "page.inc");	/* Required, contains the page management
 
 #require($_ENV['libdir'] . 'htmlMail.php');	/* for sending MIME encoded email messages. */
 #require($_ENV['libdir'] . 'web.php');	/* for access web pages with cookies etc. */
+
+if ($_ENV["editor"]=="fckeditor") include("/usr/share/phplib/fckeditor/fckeditor.php");
+if ($_ENV["editor"]=="ckeditor") include("/usr/share/phplib/ckeditor/ckeditor.php");
+if ($_ENV["editor"]=="ckfinder") include("/usr/share/phplib/ckeditor/ckeditor.php");
+
 
 function get_request_values($varlist) {
         $vars = explode(",",$varlist);
@@ -176,12 +195,18 @@ if ($db->next_record()) {
 	$_ENV["subnavhdr"] = $db->f("subnavhdr");
 	// edit perms defaults to the same as view perms when blank.
 	if (!$_ENV["edit_requires"]) $_ENV["edit_requires"] = $_ENV["view_requires"];
+} else {
+	$_ENV["view_requires"] = "";
+	$_ENV["edit_requires"] = "";
+	$MetaData = "<meta name='keywords' content='' />\n".
+		"<meta name='description' content='' />\n".
+		"<meta http-equiv='Content-type' content='text/html;charset=UTF-8' />\n";
 }
 $self = explode(".",$self);
-if (!$HTML_title) $HTML_title = $_ENV["BaseName"]." ".$self[0];
+if (empty($HTML_title)) $HTML_title = $_ENV["BaseName"]." ".$self[0];
 
 function check_view_perms() {
-	global $sess, $auth;
+	global $sess, $auth, $cmd, $submit;
 	$ok = false;
 	if ($_ENV["view_requires"]) {
 		foreach(explode(",",$_ENV["view_requires"]) as $need) {
@@ -215,6 +240,13 @@ function check_edit_perms() {
 		page_close();
 		exit;
 	} 
+}
+function array_first_chunk($input,$narrow_chunk_size,$wide_chunk_size) {
+        $chunk_size = empty($globals["widemode"]) ? $narrow_chunk_size : $wide_chunk_size;  //get appropriate chunk size for screen width.
+        if (count($input)>$chunk_size) {
+                $chunks = array_chunk($input,$chunk_size);
+                return $chunks[0];
+        } else return $input;
 }
 
 class MenuPageform extends menuform {
@@ -358,10 +390,5 @@ function show_audit_trail($id,$table='') {
                 echo "<a href=".$sess->url($_ENV["LogSqlTo"].".php").$sess->add_query(array("Table"=>$table,"Key"=>$id)).">Show More Audit Logs</a>\n";
         }
 }
-
-
-error_reporting(E_ALL^E_NOTICE);      // will report all errors
-set_error_handler('my_error_handler');
-error_fatal(E_ALL^E_NOTICE); // will die on any error except E_NOTICE
 
 ?>
