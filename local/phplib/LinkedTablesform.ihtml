@@ -1,0 +1,40 @@
+<?php
+  $this->form_data->start("LinkedTablesform");
+  if ($this->error) printf("<P class=error>Error: %s %s</p>\n", $ErrorFieldName, $this->error);  ?>
+ <TABLE>     <TR><TD></TD><TD>
+		<?php $this->form_data->show_element('id'); ?> </TD></TR>
+    <TR><TD>Form Name</TD><TD>
+		<?php $this->form_data->show_element('FormName'); ?> </TD></TR>
+    <TR><TD>Field Name</TD><TD>
+		<?php $this->form_data->show_element('FieldName'); ?> </TD></TR>
+    <TR><TD>Link Table</TD><TD>
+		<?php $this->form_data->show_element('LinkTable'); ?> </TD></TR>
+    <TR><TD>Link Field</TD><TD>
+		<?php $this->form_data->show_element('LinkField'); ?> </TD></TR>
+    <TR><TD>Link Desc</TD><TD>
+		<?php $this->form_data->show_element('LinkDesc'); ?> </TD></TR>
+    <TR><TD>Null Value</TD><TD>
+		<?php $this->form_data->show_element('NullValue'); ?> </TD></TR>
+    <TR><TD>Null Desc</TD><TD>
+		<?php $this->form_data->show_element('NullDesc'); ?> </TD></TR>
+    <TR><TD>Link Condition</TD><TD>
+		<?php $this->form_data->show_element('LinkCondition'); ?> </TD></TR>
+    <TR><TD>Link Error Msg</TD><TD>
+		<?php $this->form_data->show_element('LinkErrorMsg'); ?> </TD></TR>
+    <TR><TD>&nbsp;</TD><TD> 
+		<?php 
+		if ($cmd=="View") {
+			$cmd="Back";
+                        global $id;
+                        echo "<a href=".$sess->url(".php");
+                        echo $sess->add_query(array("cmd"=>"Edit","id"=>$id));
+                        echo ">Edit</a>&nbsp;<a href='".$sess->url(".php")."'>Back</a>";
+                } else {
+			if ($cmd=="Add") $cmd="Save";
+			if ($cmd=="Edit") $cmd="Save";
+			$this->form_data->show_element('submit',$cmd);
+                }
+		?> </TD></TR>
+ </TABLE>
+<?php $this->form_data->finish("/* after */","DoCustomChecks(f);");
+?>
