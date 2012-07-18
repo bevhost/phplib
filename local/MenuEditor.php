@@ -5,16 +5,6 @@ page_open(array("sess"=>$_ENV["SessionClass"],"auth"=>$_ENV["AuthClass"],"perm"=
 
 check_view_perms();
 
-echo "<script language=JavaScript src=/ckeditor/ckeditor.js></script>\n";
-
-echo "<script language=JavaScript src=js/scripts.js></script>\n";
-echo "<script language=JavaScript src=js/datefunc.js>
-//Parts taken from ts_picker.js
-//Script by Denis Gritcyuk: tspicker@yahoo.com
-//Submitted to JavaScript Kit (http://javascriptkit.com)
-//Visit http://javascriptkit.com for this script
-</script> \n";
-
 $db = new $_ENV["DatabaseClass"];
 
 class MymenuTable extends Table {
@@ -44,7 +34,7 @@ class MymenuTable extends Table {
         }
         echo "</td>";
   }
-  function table_insert_row_add_extra()
+  function table_insert_row_add_extra($data,$class)
   {
 	global $parent, $level;
         echo "<td class='btable'>";
@@ -58,6 +48,8 @@ class MymenuTable extends Table {
 
 echo "<p align=right><a href='AuditPerms.php'>Menu Audit</a></p>";
 echo "<h2>Menu Editor</h2>";
+
+get_request_values("id,submit,cmd,parent,menufieldsi,target");
 
 $f = new menuform;
 
@@ -78,7 +70,7 @@ function FixWidth() {
         }
 }
 
-if ($submit=$_POST["submit"]) {
+if ($submit) {
   switch ($submit) {
 
    case "Save":
@@ -88,7 +80,7 @@ if ($submit=$_POST["submit"]) {
    case "Edit":
     if (isset($auth)) {
      check_edit_perms();
-     if (!$f->validate($result)) {
+     if (!$f->validate()) {
         $cmd = $submit;
         echo "<font class=bigTextBold>$cmd menu</font>\n";
         $f->reload_values();
@@ -100,11 +92,21 @@ if ($submit=$_POST["submit"]) {
      {
         echo "Saving....";
         $f->save_values();
+	if (substr($target,-5)==".html") {
+		$file = $_ENV["local"]."templates/".$target;
+		if (!file_exists($file)) {
+			if( $fp = fopen($file,"w")) {
+				$targ = NeatStr(substr($target,0,-5));
+				fwrite($fp,"<h1>$targ</h1><p>Under construction</p>");
+				fclose($fp);
+				$_http_referer = "/$target";
+			}
+		}
+	}
 	if ($parent==0) FixWidth();
         echo "<b>Done!</b><br>\n";
       	if (!$_http_referer) $_http_referer=$sess->self_url().$sess->add_query(array("parent"=>$parent));
-        echo "<META HTTP-EQUIV=REFRESH CONTENT=\"0; URL=".$_http_referer;
-	echo "\">";
+        if (!$dev) echo "<META HTTP-EQUIV=REFRESH CONTENT=\"0; URL=".$_http_referer."\">";
 	echo "&nbsp<a href=\"$_http_referer\">Back to menu.</a><br>\n";
         page_close();
         exit;
@@ -139,11 +141,11 @@ if ($submit=$_POST["submit"]) {
         exit;
   }
 } else {
-    if ($id=$_REQUEST["id"]) {
+    if ($id) {
 	$f->find_values($id);
     }
 }
-switch ($cmd=$_REQUEST["cmd"]) {
+switch ($cmd) {
     case "View":
     case "Delete":
 	$f->freeze();
@@ -192,7 +194,6 @@ switch ($cmd=$_REQUEST["cmd"]) {
 		$menufields = $default_fields;
 		$sess->register("menufields");
 	}
-	if ($_REQUEST["menufields"]) $menufields = $_REQUEST["menufields"];
 
 	echo "<form method=post>\n";
 
@@ -215,10 +216,9 @@ switch ($cmd=$_REQUEST["cmd"]) {
 			);
 
 
-        $parent = $_REQUEST["parent"];
 	if (!$parent) {
 		$parent='0';
-		if ($ref = basename($_SERVER["HTTP_REFERER"])) {
+		if ($ref = basename(@$_SERVER["HTTP_REFERER"])) {
 			$db->query("select parent from menu where target='$ref'");
 			if ($db->next_record()) {
 				$parent=$db->f(0);
