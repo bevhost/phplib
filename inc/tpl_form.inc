@@ -617,9 +617,9 @@ TODO: Change this to have some AJAX to handle larger lists.
 				$old = unserialize(gzuncompress(base64_decode($_POST["_old_record_values"])));
 				if (is_array($old) and count($old)) $checkOld = true;
 				if ($dev) {
-					echo "<table><tr><td><h2>Before</h2>";
+					echo "<table><tr><td width='50%'><h2>Before</h2>";
 					var_dump($old);
-					echo "</td><td><h2>After</h2>";
+					echo "</td><td width='50%'><h2>After</h2>";
 					var_dump($_POST);
 					echo "</td></tr></table>";
 				}
