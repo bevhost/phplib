@@ -28,7 +28,7 @@ class of_password extends of_element {
     $str = "";
     
     if (is_array($this->value))
-      $v = htmlspecialchars($this->value[$which]);
+      $v = htmlspecialchars(array_key_exists($which,$this->value) ? $this->value[$which] : "");
     else 
       $v = htmlspecialchars($this->value);
     $n = $this->name . ($this->multiple ? "[]" : "");
