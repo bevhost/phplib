@@ -819,7 +819,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 			case "form_name":
 				break;
 			default:
-                        	echo "<p class=error>Field $F not found.</p>";
+                        	if (!isset($el->no_edit)) echo "<p class=error>Field $F not found.</p>";
 		   }
 		}
           }
