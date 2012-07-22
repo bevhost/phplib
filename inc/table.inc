@@ -375,7 +375,7 @@ class Table
     $this->table_form_start($this->add_insert);
 	echo "\n";
     $this->set_checkbox_insert($class);
-    $this->show_table_insert_cells($data, $class);
+    $this->show_table_insert_cells($data, "insert_row $class");
 
     if ((isset($this->all_fields)) and (isset($this->default_values))) $this->add_hidden_fields($this->default_values);
 
@@ -1492,6 +1492,16 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
                 $class   = empty($v["class"])   ? "ae_$display"         : $v["class"];
                 $title   = empty($v["title"])   ? $display	        : $v["title"];
                 $perm    = empty($v["perm"])    ? $default_perm		: $v["perm"];
+		switch ($display) {
+			case "email_attach": $icon = "icon-envelope"; break;
+			case "refund": $icon = "icon-step-backward"; break;
+			case "boot": $icon = "icon-eject"; break;
+			case "process": $icon = "icon-play-circle"; break;
+			case "copy": $icon = "icon-share"; break;
+			case "view": $icon = "icon-search"; break;
+			case "delete": $icon = "icon-trash"; break;
+			default: $icon = "icon-".$display; break;
+		}
 		if (strlen($perm)>2) {
 			$perm = $sess->have_perm($perm);  // convert string question to boolean answer.
 		}
@@ -1506,7 +1516,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 				echo "<a class='$class' href='".$sess->url($target);
 				echo @$sess->add_query(array("cmd"=>$cmd,$this->primary_key=>$data[$key]));
 			}
-			echo "' title='$title' key='$key'>$display</a>";
+			echo "' title='$title' key='$key'><i class='$icon'></i> $display</a>";
 		}
         }
         if ($this->edit) {

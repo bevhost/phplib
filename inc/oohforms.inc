@@ -179,6 +179,7 @@ class form {
     if (!$target) $target = "_self";
 
     $str .= "<form name='$jvs_name' ";
+    if ($this->in_table) $str .= " class='well form-inline'";
     if ($this->isfile) {
       $str .= " enctype='multipart/form-data'";
       $method = "post";
