@@ -106,9 +106,9 @@ class tpl_form {
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
     if (!$this->database_class) $this->database_class = $_ENV["DatabaseClass"];
     if (!$this->database_class) return;
-    $db = new $_ENV["MyForeignKeysDB"];
     if (array_key_exists("MyForeignKeys",$_ENV)) $fk=$_ENV["MyForeignKeys"]; else $fk=false;
     if (!$fk) return;  # No automatic table linking
+    $db = new $_ENV["MyForeignKeysDB"];
     $sql = "select * from $fk where FormName = '$class'";
     $db->query($sql);
     while ($db->next_record()) {
