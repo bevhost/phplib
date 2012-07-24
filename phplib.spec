@@ -40,6 +40,11 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/phplib/*
 
 %changelog
+* tba
+- version 0.9
+- added more support for information_schema in metadata queries
+- allow ForeignKeys/LinkedTables to reside in a seperate database
+
 * Sat Jul 07 2012 dave
 - version 0.8
 - added file db_pdo.inc, with support for prepared statements

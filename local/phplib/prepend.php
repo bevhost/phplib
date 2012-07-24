@@ -36,11 +36,12 @@ if ($dev) {
 	if (array_key_exists("HTTP_HOST",$_SERVER)) ini_set('html_errors', 'On');
 	else ini_set('html_errors', 'Off');
 	ini_set('docref_root','http://au.php.net/manual/en/');
-	error_reporting(E_ALL^E_NOTICE); 	// will report all errors
+	error_reporting(E_ALL^(E_STRICT|E_NOTICE));
+	error_fatal(0);
 	set_error_handler('my_error_handler');
 } else {
-	error_reporting(E_ALL^E_NOTICE);	// will report all errors
-	error_fatal(E_ALL^E_NOTICE);		// will die on any error except E_NOTICE
+	error_reporting(E_ALL & ~(E_STRICT|E_NOTICE));
+	error_fatal(E_ALL & ~(E_STRICT|E_NOTICE));
 	ini_set('display_errors', 'Off');
 	set_error_handler('my_error_handler');
 }
@@ -85,14 +86,11 @@ include($_ENV["libdir"] . 'oohforms.inc');
 include($_ENV["libdir"] . 'tpl_form.inc');
 include($_ENV["libdir"] . 'table.inc');
 include($_ENV["libdir"] . 'sqlquery.inc');
-include($_ENV["libdir"] . 'template.inc');
-
 
 /* Additional require statements go before this line */
 
 #require($_ENV["local"] . "My_Cart.inc");	/* Disable this, if you are not using the shopping cart. */
 require($_ENV["local"] . "local.inc");	/* Required, contains your local configuration. */
-require($_ENV["local"] . "menu.inc");
 
 if (file_exists($inc="phplib".substr($PHP_SELF,0,-3)."inc")) include($inc);  /* Include SQL & form class to match this php */
 
@@ -105,6 +103,10 @@ if ($_ENV["editor"]=="fckeditor") include("/usr/share/phplib/fckeditor/fckeditor
 if ($_ENV["editor"]=="ckeditor") include("/usr/share/phplib/ckeditor/ckeditor.php");
 if ($_ENV["editor"]=="ckfinder") include("/usr/share/phplib/ckeditor/ckeditor.php");
 
+if ($_SERVER['HTTP_COOKIE']) { 
+        if (strstr($_SERVER['HTTP_COOKIE'],$_ENV["SessionClass"])===FALSE) unset($modRW);
+        else $modRW = "on";
+} 
 
 function get_request_values($varlist) {
         $vars = explode(",",$varlist);
@@ -125,7 +127,13 @@ function get_request_values($varlist) {
 				}
 			}
                 } else {
-                        if (!isset($GLOBALS[$v])) $GLOBALS[$v]=false;
+			switch($v) {
+			    case "rowcount":
+			    case "sortorder":
+					break;
+			    default:
+                        	if (!isset($GLOBALS[$v])) $GLOBALS[$v]=false;
+			}
                 }
         }
         if (!is_array($GLOBALS[$v])) $GLOBALS["q_".$v]="'".addslashes($GLOBALS[$v])."'";  // can't use database specific yet, not defined.
@@ -187,8 +195,14 @@ switch ($self) {
 	case "template.php":
 		$self = $_REQUEST["page"].".html";
 }
-$db->query("SELECT HtmlTitle, MetaData, view_requires, edit_requires, subnavhdr from menu WHERE target='$self' OR target='/$self' order by id desc");
-if ($db->next_record()) {
+if ($menu = array_key_exists("MenuTable",$_ENV) ? $_ENV["MenuTable"] : false) {
+   require($_ENV["local"] . "$menu.inc");
+   class MenuPageform extends menuform {
+        var $classname="MenuPageform";
+   }
+   $db->query("SELECT HtmlTitle, MetaData, view_requires, edit_requires, subnavhdr from menu WHERE target='$self' OR target='/$self' order by id desc");
+}
+if ($menu and $db->next_record()) {
 	$HTML_title = stripslashes($db->f(0));
 	$MetaData = stripslashes($db->f(1));
 	$_ENV["view_requires"] = $db->f("view_requires");
@@ -250,9 +264,6 @@ function array_first_chunk($input,$narrow_chunk_size,$wide_chunk_size) {
         } else return $input;
 }
 
-class MenuPageform extends menuform {
-        var $classname="MenuPageform";
-}
 function MenuPage($page) {
         global $target, $id, $perm, $view_requires, $edit;
         $db = new $_ENV["DatabaseClass"];
@@ -288,16 +299,18 @@ function MenuPage($page) {
 function my_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
     global $dev;
     $errno = $errno & error_reporting();
-    if ((!$dev) and ($errno == 0)) return;
+    if ($errno == 0) return;
     if (error_reporting() === 0) {
         // continue script execution, skipping standard PHP error handler
         return true;
     }
     if(!defined('E_STRICT'))            define('E_STRICT', 2048);
     if(!defined('E_RECOVERABLE_ERROR')) define('E_RECOVERABLE_ERROR', 4096);
-    switch($errno){
+    if ($dev) {
+      switch($errno){
         case E_ERROR:               print "Error";                  break;
-        case E_WARNING:             print "Warning";                break;
+        case E_WARNING:             if (!$dev) return true;
+				    print "Warning";                break;
         case E_PARSE:               print "Parse Error";            break;
         case E_NOTICE:              print "Notice";                 break;
         case E_CORE_ERROR:          print "Core Error";             break;
@@ -310,6 +323,7 @@ function my_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
         case E_STRICT:              print "Strict Notice";          break;
         case E_RECOVERABLE_ERROR:   print "Recoverable Error";      break;
         default:                    print "Unknown error ($errno)"; break;
+      }
     }
     $msg = "<b>PHP Error:</b> <i>$errstr</i> in <b>$errfile</b> on line <b>$errline</b>\n";
     $detail = "";
