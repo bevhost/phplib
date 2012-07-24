@@ -405,4 +405,5 @@ function show_audit_trail($id,$table='') {
         }
 }
 
+include($_ENV["local"] . 'application.inc');
 ?>
