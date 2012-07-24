@@ -21,6 +21,7 @@ ini_set('magic_quotes_gpc', 0);
 ini_set("arg_separator.input",";&");
 setlocale(LC_ALL, 'en_AU.UTF-8');
 date_default_timezone_set("Australia/Sydney");
+$js="";
 
 $testip = "129.168.1.100"; // NPD
 $REMOTE_ADDR = @$_SERVER["REMOTE_ADDR"];
@@ -35,7 +36,7 @@ if ($dev) {
 	if (array_key_exists("HTTP_HOST",$_SERVER)) ini_set('html_errors', 'On');
 	else ini_set('html_errors', 'Off');
 	ini_set('docref_root','http://au.php.net/manual/en/');
-	error_reporting(E_ALL); 		// will report all errors
+	error_reporting(E_ALL^E_NOTICE); 	// will report all errors
 	set_error_handler('my_error_handler');
 } else {
 	error_reporting(E_ALL^E_NOTICE);	// will report all errors
@@ -182,7 +183,7 @@ function neatstr($InpStr)
 $db = new $_ENV["DatabaseClass"];
 $self = substr($PHP_SELF,1);
 switch ($self) {
-	case "index.php":
+#	case "index.php":
 	case "template.php":
 		$self = $_REQUEST["page"].".html";
 }
@@ -317,7 +318,7 @@ function my_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
         $backtrace = debug_backtrace();
         array_shift($backtrace);
         foreach($backtrace as $i=>$l){
-            $detail .= "[$i] in function <b>{$l['class']}{$l['type']}{$l['function']}</b>";
+            @$detail .= "[$i] in function <b>{$l['class']}{$l['type']}{$l['function']}</b>";
             if($l['file']) $detail .= " in <b>{$l['file']}</b>";
             if($l['line']) $detail .= " on line <b>{$l['line']}</b>";
             $detail .= "<br>\n";
