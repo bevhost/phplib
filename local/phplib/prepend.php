@@ -195,14 +195,18 @@ switch ($self) {
 	case "template.php":
 		$self = $_REQUEST["page"].".html";
 }
-if ($menu = array_key_exists("MenuTable",$_ENV) ? $_ENV["MenuTable"] : false) {
-   require($_ENV["local"] . "$menu.inc");
-   class MenuPageform extends menuform {
+$_ENV["view_requires"] = "";
+$_ENV["edit_requires"] = "";
+$MetaData = "<meta name='keywords' content='' />\n".
+	"<meta name='description' content='' />\n".
+	"<meta http-equiv='Content-type' content='text/html;charset=UTF-8' />\n";
+if ($MenuClass = array_key_exists("MenuTable",$_ENV) ? $_ENV["MenuTable"] : false) {
+    require($_ENV["local"] . "$MenuClass.inc");
+    class MenuPageform extends menuform {
         var $classname="MenuPageform";
-   }
-   $db->query("SELECT HtmlTitle, MetaData, view_requires, edit_requires, subnavhdr from menu WHERE target='$self' OR target='/$self' order by id desc");
-}
-if ($menu and $db->next_record()) {
+    }
+    $db->query("SELECT HtmlTitle, MetaData, view_requires, edit_requires, subnavhdr from menu WHERE target='$self' OR target='/$self' order by id desc");
+    if ($db->next_record()) {
 	$HTML_title = stripslashes($db->f(0));
 	$MetaData = stripslashes($db->f(1));
 	$_ENV["view_requires"] = $db->f("view_requires");
@@ -210,12 +214,7 @@ if ($menu and $db->next_record()) {
 	$_ENV["subnavhdr"] = $db->f("subnavhdr");
 	// edit perms defaults to the same as view perms when blank.
 	if (!$_ENV["edit_requires"]) $_ENV["edit_requires"] = $_ENV["view_requires"];
-} else {
-	$_ENV["view_requires"] = "";
-	$_ENV["edit_requires"] = "";
-	$MetaData = "<meta name='keywords' content='' />\n".
-		"<meta name='description' content='' />\n".
-		"<meta http-equiv='Content-type' content='text/html;charset=UTF-8' />\n";
+    }
 }
 $self = explode(".",$self);
 if (empty($HTML_title)) $HTML_title = $_ENV["BaseName"]." ".$self[0];
