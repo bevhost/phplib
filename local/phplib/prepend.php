@@ -23,21 +23,20 @@ setlocale(LC_ALL, 'en_AU.UTF-8');
 date_default_timezone_set("Australia/Sydney");
 $js="";
 
-$testip = "129.168.1.100"; // NPD
+$testip = "203.26.11.96"; // NPD
 $REMOTE_ADDR = @$_SERVER["REMOTE_ADDR"];
-if (($REMOTE_ADDR==$testip) or ($REMOTE_ADDR=="124.191.215.55") or (@$_ENV["SiteRoot"] == "/var/www/hsdev/public_html/")) { 
+if (($REMOTE_ADDR==$testip) or ($REMOTE_ADDR=="58.174.77.127") or (@$_ENV["SiteRoot"] == "/var/www/hsdev/public_html/")) { 
  	$dev=true; 
 } else {
  	$dev=false;
 }
-$dev=true;
 if ($dev) {
 	ini_set('display_errors', 'On');
 	if (array_key_exists("HTTP_HOST",$_SERVER)) ini_set('html_errors', 'On');
 	else ini_set('html_errors', 'Off');
 	ini_set('docref_root','http://au.php.net/manual/en/');
 	error_reporting(E_ALL^(E_STRICT|E_NOTICE));
-	error_fatal(0);
+	error_fatal(E_ALL^(E_STRICT|E_NOTICE));
 	set_error_handler('my_error_handler');
 } else {
 	error_reporting(E_ALL & ~(E_STRICT|E_NOTICE));
@@ -168,7 +167,7 @@ $db = new $_ENV["DatabaseClass"];
 function magicquote($str) {   // hangover from addslashes 
 	global $db;
 	if (!$db->connect()) return 0;
-        return substr(substr($db->escape_string($str),1),0,-1);
+        return $db->escape_string($str);
 }
 
 
@@ -303,58 +302,59 @@ function my_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
         // continue script execution, skipping standard PHP error handler
         return true;
     }
+    $self = $_SERVER["PHP_SELF"];
     if(!defined('E_STRICT'))            define('E_STRICT', 2048);
     if(!defined('E_RECOVERABLE_ERROR')) define('E_RECOVERABLE_ERROR', 4096);
     if ($dev) {
       switch($errno){
-        case E_ERROR:               print "Error";                  break;
+        case E_ERROR:               $ErrType = "Error";                  break;
         case E_WARNING:             if (!$dev) return true;
-				    print "Warning";                break;
-        case E_PARSE:               print "Parse Error";            break;
-        case E_NOTICE:              print "Notice";                 break;
-        case E_CORE_ERROR:          print "Core Error";             break;
-        case E_CORE_WARNING:        print "Core Warning";           break;
-        case E_COMPILE_ERROR:       print "Compile Error";          break;
-        case E_COMPILE_WARNING:     print "Compile Warning";        break;
-        case E_USER_ERROR:          print "User Error";             break;
-        case E_USER_WARNING:        print "User Warning";           break;
-        case E_USER_NOTICE:         print "User Notice";            break;
-        case E_STRICT:              print "Strict Notice";          break;
-        case E_RECOVERABLE_ERROR:   print "Recoverable Error";      break;
-        default:                    print "Unknown error ($errno)"; break;
+				    $ErrType = "Warning";                break;
+        case E_PARSE:               $ErrType = "Parse Error";            break;
+        case E_NOTICE:              $ErrType = "Notice";                 break;
+        case E_CORE_ERROR:          $ErrType = "Core Error";             break;
+        case E_CORE_WARNING:        $ErrType = "Core Warning";           break;
+        case E_COMPILE_ERROR:       $ErrType = "Compile Error";          break;
+        case E_COMPILE_WARNING:     $ErrType = "Compile Warning";        break;
+        case E_USER_ERROR:          $ErrType = "User Error";             break;
+        case E_USER_WARNING:        $ErrType = "User Warning";           break;
+        case E_USER_NOTICE:         $ErrType = "User Notice";            break;
+        case E_STRICT:              if (!$dev) return true;
+				    $ErrType = "Strict Notice";          break;
+        case E_RECOVERABLE_ERROR:   $ErrType = "Recoverable Error";      break;
+        default:                    $ErrType = "Unknown error ($errno)"; break;
       }
-    }
-    $msg = "<b>PHP Error:</b> <i>$errstr</i> in <b>$errfile</b> on line <b>$errline</b>\n";
-    $detail = "";
-    if(function_exists('debug_backtrace')){
+      $msg = "<b>PHP Error:</b> <i>$errstr</i> in <b>$errfile</b> on line <b>$errline</b>\n";
+      $detail = "";
+      if(function_exists('debug_backtrace')){
         //print "backtrace:\n";
         $backtrace = debug_backtrace();
         array_shift($backtrace);
         foreach($backtrace as $i=>$l){
-            @$detail .= "[$i] in function <b>{$l['class']}{$l['type']}{$l['function']}</b>";
-            if($l['file']) $detail .= " in <b>{$l['file']}</b>";
-            if($l['line']) $detail .= " on line <b>{$l['line']}</b>";
-            $detail .= "<br>\n";
+            @$detail .= "[$i] in function {$l['class']}{$l['type']}{$l['function']}";
+            if($l['file']) $detail .= " in {$l['file']}";
+            if($l['line']) $detail .= " on line {$l['line']}";
+            $detail .= "\n";
         }
+      }
+      if (isset($php_errormsg)) echo "<h1>$php_errormsg</h1>";
+      echo "<h3>PHP $ErrType $errstr in $errfile on line $errline</h3><!--\n$detail";
+      ini_set('html_errors', 'Off');
+      var_dump($errcontext);
+      echo "-->";
     }
-    $self = $_SERVER["PHP_SELF"];
-    if ($dev) {
-	if (isset($php_errormsg)) echo "<h1>$php_errormsg</h1>";
-	echo "<h3>PHP BackTrace for $errstr in $errfile on line $errline</h3>$detail<pre>";
-	var_dump($errcontext);
-    }
-    $error=EventLog($msg,serialize($errcontext),"Error");
+    $error=EventLog($msg,$detail,"Error");
     if ($detail) EventLog("PHP BackTrace for $errstr in $errfile on line $errline",$detail,"Error");
     if(isset($GLOBALS['error_fatal'])){
         if($GLOBALS['error_fatal'] & $errno)
 		if ($self=="api.php") {
-			$xmlstr = "<?xml version='1.0' standalone='yes'?><api><errors></errors></api>";
+			$xmlstr = "<?xml version='1.0' standalone='yes'?><api><errors></errors></api>"; 
 			$xml = new SimpleXMLElement($xmlstr);
 			$xml->errors->addChild("error","Call Support and Quote Event ID $error");
 			echo str_replace("><",">\n<",$xml->asXML());
-			exit;
+			exit; 
 		} else
-                die("<br><br><big><b>Oops, well this is embarrassing! &nbsp; An error has occurred:</b>
+                if (!$dev) die("<br><br><big><b>Oops, well this is embarrassing! &nbsp; An error has occurred:</b>
                         <br>Please quote <b>Event ID $error</b> if calling helpdesk on 1300 739 822 from 9am to 8pm</big>");
     }
 }
