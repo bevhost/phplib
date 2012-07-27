@@ -25,13 +25,14 @@ $js="";
 
 $testip = "203.26.11.96"; // NPD
 $REMOTE_ADDR = @$_SERVER["REMOTE_ADDR"];
-if (($REMOTE_ADDR==$testip) or ($REMOTE_ADDR=="58.174.77.127") or (@$_ENV["SiteRoot"] == "/var/www/hsdev/public_html/")) { 
+$DOCUMENT_ROOT = $_SERVER["DOCUMENT_ROOT"];
+if (($REMOTE_ADDR==$testip) or ($REMOTE_ADDR=="58.174.77.127")) { 
  	$dev=true; 
 } else {
  	$dev=false;
 }
-$dev=false;
-if (@$_ENV["SiteRoot"] == "/var/www/portal/public_html/") $dev=false;
+if (array_pop(explode(".",$_SERVER["HTTP_HOST"]))=="local") $dev=true;
+if ($DOCUMENT_ROOT == "/var/www/portal/public_html") $dev=false;
 if ($dev) {
 	ini_set('display_errors', 'On');
 	if (array_key_exists("HTTP_HOST",$_SERVER)) ini_set('html_errors', 'On');
@@ -57,7 +58,6 @@ $_page_start_time = $time;
 
 if (array_key_exists("widemode",$_REQUEST)) $GLOBALS["widemode"]=$_REQUEST["widemode"];
 
-$DOCUMENT_ROOT = $_SERVER["DOCUMENT_ROOT"];
 get_request_values("id,cmd,submit,rowcount,sortorder,sortdesc,startingwith,start,prev,next,last,cond,EditMode,WithSelected,widemode,Field,_http_referer,export_results");
 $orig_cmd=$cmd;
 $PWD = array_key_exists("PWD",$_SERVER) ? $_SERVER["PWD"] : "";
