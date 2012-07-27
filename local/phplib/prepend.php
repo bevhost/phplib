@@ -30,6 +30,8 @@ if (($REMOTE_ADDR==$testip) or ($REMOTE_ADDR=="58.174.77.127") or (@$_ENV["SiteR
 } else {
  	$dev=false;
 }
+$dev=false;
+if (@$_ENV["SiteRoot"] == "/var/www/portal/public_html/") $dev=false;
 if ($dev) {
 	ini_set('display_errors', 'On');
 	if (array_key_exists("HTTP_HOST",$_SERVER)) ini_set('html_errors', 'On');
@@ -148,19 +150,42 @@ function mycallback($classname)
 
 
 function EventLog($Description,$ExtraInfo="",$Level="Info") {
-        global $PHP_SELF, $argv, $REMOTE_ADDR, $auth;
+        if ($Level=="Debug") {
+                if (date("d-M-Y")<>"11-May-2011") return;  // Only debug if date matches.
+        }
+        global $PHP_SELF, $argv, $REMOTE_ADDR, $auth, $action, $dev;
         $db = new $_ENV["DatabaseClass"];
         if ($PHP_SELF) $Program=$PHP_SELF; else $Program = $argv[0];
-        if ($auth) $UserName = $auth->auth["uname"]; else $UserName="NotLoggedIn";
-        $sql = "INSERT DELAYED INTO EventLog SET ";
-        $sql .= "Program = '$Program',";
-        $sql .= "IPAddress = '$REMOTE_ADDR',";
-        $sql .= "UserName = '$UserName',";
-        $sql .= "Description = '".addslashes($Description)."',";
-        $sql .= "Level = '$Level',";
-        $sql .= "ExtraInfo = '".addslashes($ExtraInfo)."'";
-        $db->query($sql);
-} 
+        if ($Program=='/hello.php') $Program=$action;
+        $UserName = "NotLoggedIn";
+        if ($auth) if (array_key_exists("uname",$auth->auth)) $UserName = $auth->auth["uname"];
+        if ($db->type=="pdo") {
+                $stmt = $db->prepare("INSERT INTO EventLog (Program,IPAddress,UserName,Description,Level,ExtraInfo) values (?,?,?,?,?,?)");
+                $stmt->execute(array($Program,$REMOTE_ADDR,$UserName,$Description,$Level,$ExtraInfo));
+                return $db->lastInsertId();
+        } else {
+                if ($Level=='Error') $sql = "INSERT INTO EventLog SET ";
+                else $sql = "INSERT INTO EventLog SET ";
+                $sql .= "Program = '$Program',";
+                $sql .= "IPAddress = '$REMOTE_ADDR',";
+                $sql .= "UserName = ".$db->quote($UserName).",";
+                $sql .= "Description = ".$db->quote($Description).",";
+                $sql .= "Level = '$Level',";
+                $sql .= "ExtraInfo = ".$db->quote($ExtraInfo);
+                switch ($Program) {
+                        case "/hello.php":
+                        #       break;
+                        default:
+                                $db->query($sql);
+                }
+                if ($Level=='Error') {
+                    $db->query("SELECT LAST_INSERT_ID()");
+                    $db->next_record();
+                    return $db->f(0);
+                }
+        }
+
+}
 
 $db = new $_ENV["DatabaseClass"];
 
@@ -296,12 +321,16 @@ function MenuPage($page) {
 
 function my_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
     global $dev;
+    static $ErrorCount;
+    if (!isset($ErrorCount)) $ErrorCount=0;
+    $ErrorCount++;
     $errno = $errno & error_reporting();
     if ($errno == 0) return;
     if (error_reporting() === 0) {
         // continue script execution, skipping standard PHP error handler
         return true;
     }
+    if ($ErrorCount==100) die("Too many errors");
     $self = $_SERVER["PHP_SELF"];
     if(!defined('E_STRICT'))            define('E_STRICT', 2048);
     if(!defined('E_RECOVERABLE_ERROR')) define('E_RECOVERABLE_ERROR', 4096);
@@ -338,10 +367,12 @@ function my_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
         }
       }
       if (isset($php_errormsg)) echo "<h1>$php_errormsg</h1>";
+      if ($ErrorCount<10) {
       echo "<h3>PHP $ErrType $errstr in $errfile on line $errline</h3><!--\n$detail";
       ini_set('html_errors', 'Off');
       var_dump($errcontext);
       echo "-->";
+      }
     }
     $error=EventLog($msg,$detail,"Error");
     if ($detail) EventLog("PHP BackTrace for $errstr in $errfile on line $errline",$detail,"Error");
