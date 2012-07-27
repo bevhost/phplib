@@ -891,7 +891,7 @@ TODO: Change this to have some AJAX to handle larger lists.
         $f = new $formname;
         $f->form_data = new form;
         $f->setup_fields();
-        $sql = $t->select($f).sprintf("%s.%s=%s ",$db2->qi($childclass),$db2->qi($db->f("FieldName")),$db2->quote($GLOBALS[$db->f("LinkField")]))." OFFSET 0 LIMIT 100";
+        $sql = $t->select($f).sprintf("%s.%s=%s ",$db2->qi($childclass),$db2->qi($db->f("FieldName")),$db2->quote($GLOBALS[$db->f("LinkField")]))." LIMIT 100";
         $t->heading = "on";
         $t->add_extra = "$childclass.php";
 	unset($t->fields["submit"]);
