@@ -612,14 +612,15 @@ TODO: Change this to have some AJAX to handle larger lists.
 	    default:
 		$imagekeys = Array();
 		$checkOld = false;
+		if ($_POST["id"]=='') { $oldval=""; $newval=""; }	# Add
 		if ($oldval) {
 			if (array_key_exists("_old_record_values",$_POST)) {
 				$old = unserialize(gzuncompress(base64_decode($_POST["_old_record_values"])));
 				if (is_array($old) and count($old)) $checkOld = true;
 				if ($dev) {
-					echo "<table><tr><td width='50%'><h2>Before</h2>";
+					echo "<table><tr><td style='width:50%'><h2>Before</h2>";
 					var_dump($old);
-					echo "</td><td width='50%'><h2>After</h2>";
+					echo "</td><td style='width:50%'><h2>After</h2>";
 					var_dump($_POST);
 					echo "</td></tr></table>";
 				}
@@ -651,7 +652,7 @@ TODO: Change this to have some AJAX to handle larger lists.
                         if ($el->name=="form_name") $type="skip";
                         if (isset($el->no_edit)) $type="skip";
 			if ($el->extrahtml == " onBlur='dollarformat(this)'") $el->value = str_replace("$","",$el->value);
-                        if ((isset($el->field)) and ($el->name <> $key)) {
+                        if ((isset($el->field)) and ($el->name <> "id")) {
 			  $label = ":".$el->name;
 			  $diff = true;
                           switch ($type) {
