@@ -2,7 +2,7 @@
 <?php 
 error_reporting(E_ALL);
 ini_set('display_errors','On');
-$nobootstrap=true; // set to false if using twitter bootstrap
+$nobootstrap=false; // set to false if using twitter bootstrap
 
 if (!file_exists($LD="/usr/share/phplib")) $LD="";
 $LD = "";
@@ -475,7 +475,7 @@ if (\$submit) {
      check_edit_perms();
      if (!\$f->validate()) {
         \$cmd = \$submit;
-        echo \"<font class='bigTextBold'>\$cmd ".neatstr($tbnames[$i])."</font>\\n\";
+        echo \"<font class='bigTextBold'>\$cmd ".neatstr($tbnames[$i])."</font>\\n<hr />\\n\";
         \$f->reload_values();
         \$f->display();
         page_close();
@@ -554,7 +554,7 @@ switch (\$cmd) {
     case \"Copy\":
 	if (\$cmd==\"Copy\") \$id=\"\";
     case \"Edit\":
-	echo \"<font class='bigTextBold'>\$cmd ".neatstr($tbnames[$i])."</font>\\n\";
+	echo \"<font class='bigTextBold'>\$cmd ".neatstr($tbnames[$i])."</font>\\n<hr />\\n\";
 	\$f->display();
 	if (\$orig_cmd==\"View\") \$f->showChildRecords();
 	break;
@@ -953,13 +953,14 @@ fwrite($fphp,"
           echo \"  <div class='modal-header'>\\n\";
           echo \"<a href=javascript:hide('ColumnSelector')>Hide</a>\";
           echo \" Columns: <br />\";
+          echo \"   <h3>Column Chooser</h3>\\n  </div>\\n  <div class='modal-body'>\";
 " : "
           echo \"\\n<a class='btn' href='#ColumnChooser' data-toggle='modal'>Column Chooser</a>\\n\";
           echo \"<div id='ColumnChooser' class='modal hide'>\\n\";
-          echo \" <form id=ColumnSelector method='post'>\\n\";
           echo \"  <div class='modal-header'>\\n   <button type='button' class='close' data-dismiss='modal'>×</button>\\n\";
-" )."
           echo \"   <h3>Column Chooser</h3>\\n  </div>\\n  <div class='modal-body'>\";
+          echo \" <form id=ColumnSelector method='post'>\\n\";
+" )."
           foreach (\$t->all_fields as \$field) {
                 if (in_array(\$field,\$".$classnames[$i]."_fields,TRUE)) \$chk = \"checked='checked'\"; else \$chk=\"\";
                 echo \"\\n   <input type='checkbox' \$chk name='".$classnames[$i]."_fields[]' value='\$field' />\$field <br />\";
@@ -1167,7 +1168,7 @@ fwrite($fphp,"
     echo \"  <a href='#' class='btn' data-dismiss='modal'>Close</a>\\n\";
     echo \" </div>\\n</div><script>\$('#QueryStats').modal();</script>\\n\";
 " )."
-    echo \"\\n<a class='btn' href=\\\"\".\$sess->self_url().\$sess->add_query(array(\"cmd\"=>\"Add\")).\"\\\">Add New Device</a>\\n\";
+    echo \"\\n<a class='btn' href=\\\"\".\$sess->self_url().\$sess->add_query(array(\"cmd\"=>\"Add\")).\"\\\">Add New ".neatstr($tbnames[$i])."</a>\\n\";
     echo \"<hr />\\n\\n\";
 
     // Dump the results (tagged as CSS class default)
