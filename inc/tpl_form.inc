@@ -621,6 +621,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 					echo "<table><tr><td style='width:50%'><h2>Before</h2>";
 					var_dump($old);
 					echo "</td><td style='width:50%'><h2>After</h2>";
+					unset($_POST["_old_record_values"]);
 					var_dump($_POST);
 					echo "</td></tr></table>";
 				}
@@ -670,6 +671,11 @@ TODO: Change this to have some AJAX to handle larger lists.
                                 break;
 			    case "date":
 				$data[$label] = $this->valid_date($old[$el->name],$el->value,$el->valid_regex);
+				break;
+                            case "password": # sometimes we use el->multiple to get two password boxes on form
+				if (is_array($el->value)) {$el->value = $el->value[0];}
+				if (is_array($old[$el->name])) {$old[$el->name]=$old[$el->name][0];}
+			  	$data[$label] = $el->value;
 				break;
 			    case "select":
 				if ($oldval>0 and $old[$el->name]=='' and $el->value=='0') $el->value='';
