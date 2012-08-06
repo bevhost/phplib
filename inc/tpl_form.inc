@@ -786,7 +786,7 @@ TODO: Change this to have some AJAX to handle larger lists.
         if (!$id) return false;
 	$ID = $id;
 	if (!$key) $key = empty($this->key_field) ? $this->key : $this->key_field;
-	if (($key=="id") and !ctype_digit($id)) {
+	if (($key=="id") and !ctype_digit("$id")) {
 		die("Invalid data - expected numeric value");
 	} else $id = $db->quote($id);
 	if (!$table) $table=$this->table;
