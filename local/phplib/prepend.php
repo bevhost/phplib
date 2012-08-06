@@ -80,7 +80,7 @@ require($_ENV["libdir"] . "auth.inc");      /* Disable this, if you are not usin
 require($_ENV["libdir"] . "perm.inc");      /* Disable this, if you are not using permission checks. */
 require($_ENV["libdir"] . "user.inc");      /* Disable this, if you are not using user variables. */
 #require($_ENV["libdir"] . "cart.inc");      /* Disable this, if you are not using the shopping cart. */
-class My_Cart { function start() {} };		/* Disable this, if you are using the shopping cart */
+class My_Cart { function start() {}  function reset() {} };		/* Disable this, if you are using the shopping cart */
 
 /* Additional require statements go below this line */
 include($_ENV["libdir"] . 'oohforms.inc');
