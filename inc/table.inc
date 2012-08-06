@@ -68,7 +68,7 @@ class Table
   var $format = Array();		 ## php money_format
   var $sortable = '';			 ## Allow headings to have SortCommands to resort output by that column. (DaveB)
   var $trust_the_data = false;		 ## If set to true allows embeded html in the data - dangerous - use with caution
-  var $total;
+  var $total;				 ## Stores running total of colums
   var $limit = 65;
   var $primary_key = "id";		 ## Primary Key used for Cell Level In Place Editing
   var $ipe_table;			 ## Table which Cell Level In Place Editing to save to.
@@ -83,13 +83,11 @@ class Table
 
   function add_hidden_fields($data) 
   {
-	echo "\n";
 	foreach ($this->all_fields as $f) {
 		if (!in_array($f,$this->fields,TRUE)) {
 			if (isset($data[$f])) echo "\n<input type='hidden' name='$f' value='".$data[$f]."'>";
 		}
 	}
-	echo "\n";
   }
 
 
@@ -181,10 +179,10 @@ class Table
 
     if (!$this->no_open) $this->table_open($class);
 	if ($this->show_table_heading_row_result($db, $class)) {
-		echo "<tbody>";
+		echo "<tbody>\n";
       		$rows = $this->show_table_rows_result($db, $class);  
-		echo "</tbody>";
-		$this->show_table_totals_row();
+		echo "</tbody>\n";
+		$this->show_table_totals_row($rows);
 	}
 	
     if (!$this->no_close) $this->table_close($class);
@@ -345,7 +343,7 @@ class Table
     $d = $this->select_colnames($data);
 
     $row = 0;
-    echo "<thead>";
+    echo "<thead>\n";
     $this->table_row_open($row, $d, $class);
     $this->set_checkbox_heading($class);
     $this->show_table_heading_cells($data, $class);
@@ -355,7 +353,7 @@ class Table
       $this->table_heading_row_add_extra($data, $class);
 
     $this->table_row_close(0, $class);
-    echo "</thead>";
+    echo "</thead>\n";
   }
 
   function table_insert_row($data, $class="")
@@ -377,7 +375,9 @@ class Table
     $this->set_checkbox_insert($class);
     $this->show_table_insert_cells($data, "insert_row $class");
 
-    if ((isset($this->all_fields)) and (isset($this->default_values))) $this->add_hidden_fields($this->default_values);
+    if ((isset($this->all_fields)) and (isset($this->default_values))) {
+	$this->add_hidden_fields($this->default_values);
+    }
 
     # call virtual function
     // if ($this->add_extra)
@@ -468,15 +468,15 @@ class Table
         echo "</td>";
 	$custom_query = array_key_exists("custom_query",$_POST) ? $_POST["custom_query"] : "";
     	if (preg_match("/Search/",$this->add_insert_buttons)) {
-		echo "<input type='hidden'  name='sortorder' id='ips_sort_order' value='$sortorder'>";
-		echo "<input type='hidden'  name='rowcount' id='ips_row_count' value='$rowcount'>";
-		echo "<input type='hidden'  name='startingwith' id='ips_starting_with' value='$startingwith'>";
-		echo "<input type='hidden'  name='custom_query' id='ips_custom_query' value='$custom_query'>";
-		echo "<input type='hidden'  name='export_results' id='ips_export_results' value='$export_results'>";
+		echo "\n   <input type='hidden'  name='sortorder' id='ips_sort_order' value='$sortorder'>";
+		echo "\n   <input type='hidden'  name='rowcount' id='ips_row_count' value='$rowcount'>";
+		echo "\n   <input type='hidden'  name='startingwith' id='ips_starting_with' value='$startingwith'>";
+		echo "\n   <input type='hidden'  name='custom_query' id='ips_custom_query' value='$custom_query'>";
+		echo "\n   <input type='hidden'  name='export_results' id='ips_export_results' value='$export_results'>";
 	}
 	foreach ($this->add_extra_search_fields as $sf) {
 		$sfv = array_key_exists($sf,$_POST) ? $_POST[$sf] : "";
-		echo "<input type='hidden'  name='$sf' id='ips_$sf' value='$sfv'>";
+		echo "\n   <input type='hidden'  name='$sf' id='ips_$sf' value='$sfv'>";
 	}
   }
 
@@ -553,11 +553,14 @@ class Table
   }
 
 
-  function show_table_totals_row($class="total") 
+  function show_table_totals_row($row) 
   {
+    $class = "total";
+    $this->table_row_open($row, $this->total);    
     $this->set_checkbox_total();
     if ($this->add_total) 
 	$this->show_table_cells(0,0,$this->total,$class);
+    $this->table_row_close($row);    
   }
 
   
@@ -969,10 +972,9 @@ class Table
   
   function table_cell_open($class="", $align="", $title="")
   {
-    printf("  <td%s%s%s>", 
-      $class?" class='$class'":"",
-      $title?" title='$title'":"",
-      $align?" align='$align' style='text-align:$align' class='align$align'":"");
+    printf("  <td%s%s>", 
+      $class?" class='$class align$align'":"",
+      $title?" title='$title'":"");
   }
 
   function table_cell_close($class="")
@@ -993,8 +995,8 @@ class Table
   #==========================================================================
   function table_heading_cell($col, $val, $class="") 
   {
-    $align=" align-left";
-    if (array_key_exists($val,$this->align)) $align = " align-".$this->align[$val];
+    $align=" alignleft";
+    if (array_key_exists($val,$this->align)) $align = " align".$this->align[$val];
     $this->table_heading_cell_open($class,$align);
     
     ## Check for column name remapping
@@ -1329,7 +1331,7 @@ function ".$this->classname."SaveCell(elem,index) {
   #==========================================================================
   function table_row_open($row, $data, $class="") 
   {
-    printf("\n<tr class='table_cell' >\n");
+    printf(" <tr class='table_cell' >\n");
   }
 
   #==========================================================================
@@ -1347,7 +1349,7 @@ function ".$this->classname."SaveCell(elem,index) {
   #==========================================================================
   function table_row_close($row, $class="") 
   {
-    printf("</tr>\n\n");
+    printf(" </tr>\n");
   }
 
   #==========================================================================
@@ -1465,7 +1467,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
   #####################################
   function table_row_add_extra($row, $row_key, $data, $class="")
   {
-	global $sess;
+	global $debug, $sess;
 
 	if (($this->add_extra=='on') or ($this->add_extra===true)) $this->add_extra = $_SERVER["PHP_SELF"];
 
@@ -1507,28 +1509,27 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 		}
 		if ($key)
 		if ($perm) {
-			if ($count==0) echo "<td class='ae' nowrap>"; else echo " ";
+			if ($count==0) echo "  <td class='ae' nowrap>"; else echo " ";
 			$count++;
 			if ($add) {
-				echo "<a class='$class' href='$target";
+				echo "\n   <a class='$class' href='$target";
 				echo $data[$add];
 			} else {
-				echo "<a class='$class' href='".$sess->url($target);
+				echo "\n   <a class='$class' href='".$sess->url($target);
 				echo @$sess->add_query(array("cmd"=>$cmd,$this->primary_key=>$data[$key]));
 			}
 			echo "' title='$title' key='$key'><i class='$icon'></i> $display</a>";
 		}
         }
         if ($this->edit) {
-                echo "<input type='submit' value='Save' name='submit' class='ipeh'> ";
-                echo "<input type='hidden' value='".$data[$this->primary_key]."' name='id'> ";
+                echo "\n   <input type='submit' value='Save' name='submit' class='ipeh'> ";
+                echo "\n   <input type='hidden' value='".$data[$this->primary_key]."' name='id'> ";
         }
 
-echo "<!-- hidden start -->\n";
+	if ($debug) echo "\n   <!-- hidden start -->";
 	if ($this->all_fields) $this->add_hidden_fields($row, $row_key, $data, $class);
-echo "<!-- hidden end -->\n";
-
-	if ($count) echo "</td>";
+	if ($debug) echo "\n   <!-- hidden end -->";
+	if ($count) echo "\n  </td>\n";
   }
 
   function select($form, $join="") {

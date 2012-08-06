@@ -2,6 +2,7 @@
 <?php 
 error_reporting(E_ALL);
 ini_set('display_errors','On');
+$nobootstrap=false; // set to false if using twitter bootstrap
 
 if (!file_exists($LD="/usr/share/phplib")) $LD="";
 $LD = "";
@@ -418,7 +419,7 @@ if (\$export_results) {
 } else {
 	page_open(array(\"sess\"=>\"".$db."_Session\",\"auth\"=>\"".$db."_Auth\",\"perm\"=>\"".$db."_Perm\"));
 	#if (\$Field) include(\"pophead.ihtml\"); else include(\"head.ihtml\");
-	echo \"<h1>".neatstr($classnames[$i])."</h1>\";
+	echo \"<span class='big'>".neatstr($classnames[$i])."</span>\";
 	#if (empty(\$Field)) include(\"menu.html\");
 }
 check_view_perms();
@@ -474,7 +475,7 @@ if (\$submit) {
      check_edit_perms();
      if (!\$f->validate()) {
         \$cmd = \$submit;
-        echo \"<font class='bigTextBold'>\$cmd ".neatstr($tbnames[$i])."</font>\\n\";
+        echo \"<font class='bigTextBold'>\$cmd ".neatstr($tbnames[$i])."</font>\\n<hr />\\n\";
         \$f->reload_values();
         \$f->display();
         page_close();
@@ -553,7 +554,7 @@ switch (\$cmd) {
     case \"Copy\":
 	if (\$cmd==\"Copy\") \$id=\"\";
     case \"Edit\":
-	echo \"<font class='bigTextBold'>\$cmd ".neatstr($tbnames[$i])."</font>\\n\";
+	echo \"<font class='bigTextBold'>\$cmd ".neatstr($tbnames[$i])."</font>\\n<hr />\\n\";
 	\$f->display();
 	if (\$orig_cmd==\"View\") \$f->showChildRecords();
 	break;
@@ -580,8 +581,6 @@ switch (\$cmd) {
 	#\$t->check = '".$keynames[$i]."';  /* Display a column of checkboxes with value of key field*/
 
 	\$db = new DB_".$db.";
-
-        if (!\$export_results) echo \"<a href=\\\"\".\$sess->self_url().\$sess->add_query(array(\"cmd\"=>\"Add\")).\"\\\">Add</a> ".neatstr($tbnames[$i])."\\n\";
 
 ");
 
@@ -944,20 +943,29 @@ fwrite($fphp,"
 	#\$t->align      = array('fieldname'=>'right', 'otherfield'=>'center'); 	
 
         if (!\$export_results) {
-          echo \"Export to \";
-          echo \"&nbsp;<input name='ExportTo' type=radio onclick=\\\"javascript:export_results('Excel2007');\\\">Excel 2007\";
-
-          echo \"<br>\";
-
+          echo \"Output to:\";
+          echo \"&nbsp;<input name='ExportTo' type='radio' checked='checked' value='' onclick=\\\"javascript:export_results('');\\\"> Here\";
+          echo \"&nbsp;<input name='ExportTo' type='radio' onclick=\\\"javascript:export_results('Excel2007');\\\"> Excel 2007&nbsp;\\n\";
+  
+".( $nobootstrap ? "
           echo \"<a href=javascript:show('ColumnSelector')>Column Chooser</a> \";
           echo \"<form id=ColumnSelector method='post' style=display:none>\\n\";
+          echo \"  <div class='modal-header'>\\n\";
           echo \"<a href=javascript:hide('ColumnSelector')>Hide</a>\";
           echo \" Columns: <br />\";
+          echo \"   <h3>Column Chooser</h3>\\n  </div>\\n  <div class='modal-body'>\";
+" : "
+          echo \"\\n<a class='btn' href='#ColumnChooser' data-toggle='modal'>Column Chooser</a>\\n\";
+          echo \"<div id='ColumnChooser' class='modal hide'>\\n\";
+          echo \"  <div class='modal-header'>\\n   <button type='button' class='close' data-dismiss='modal'>×</button>\\n\";
+          echo \"   <h3>Column Chooser</h3>\\n  </div>\\n  <div class='modal-body'>\";
+          echo \" <form id=ColumnSelector method='post'>\\n\";
+" )."
           foreach (\$t->all_fields as \$field) {
                 if (in_array(\$field,\$".$classnames[$i]."_fields,TRUE)) \$chk = \"checked='checked'\"; else \$chk=\"\";
-                echo \"\\n<input type='checkbox' \$chk name=".$classnames[$i]."_fields[] value='\$field' />\$field <br />\";
+                echo \"\\n   <input type='checkbox' \$chk name='".$classnames[$i]."_fields[]' value='\$field' />\$field <br />\";
           }
-          echo \"\\n<input type=submit name=setcols value='Set' />\";
+	  \$foot = \"\";
           if (\$sess->have_edit_perm()) {
             if (\$EditMode=='on') {
                 \$on='checked=\"checked\"'; \$off='';
@@ -966,11 +974,18 @@ fwrite($fphp,"
             } else {
                 \$off='checked=\"checked\"'; \$on='';
             }
-            echo \"\\n<br />\\nEdit Mode <input type='radio' name='EditMode' value='on' \$on> On <input type='radio' name='EditMode' value='off' \$off /> Off \";
+            \$foot = \" &nbsp; Edit Mode <input type='radio' name='EditMode' value='on' \$on> On <input type='radio' name='EditMode' value='off' \$off /> Off &nbsp; \";
           } else {
             \$EditMode='';
           }
-          echo \"\\n</form>\\n\";
+".( $nobootstrap ? "
+          echo \"  \$foot<input type=submit class='btn btn-primary' value='Set'>\\n  </div>\\n </form>\";
+" : "
+          echo \"\\n  </div>\\n  <div class='modal-footer'>\\n   <a href='#' class='btn' data-dismiss='modal'>Close</a>\\n\";
+          echo \"  \$foot<input type=submit class='btn btn-primary' value='Set'>\\n  </div>\\n </form>\";
+	  echo \"\\n</div>\";
+          echo \"<script>\$('#ColumnChooser').modal();</script>\\n\";
+" )."
 	}
 
   // When we hit this page the first time,
@@ -1103,13 +1118,28 @@ fwrite($fphp,"
   // In any case we must display that form now. Note that the
   // \"x\" here and in the call to \$q->where must match.
   // Tag everything as a CSS \"query\" class.
+  \$mode = \"'hide'\";
+".( $nobootstrap ? "
   echo \"<a href=javascript:show('customQuery')>Custom Query</a>\";
   echo \"\\n<div id=customQuery \$hideQuery><a href=javascript:hide('customQuery')>Hide</a>\\n\";
+" : "
+  echo \"\\n<a class='btn' href='#customQuery' data-toggle='modal'>Custom Query</a>\\n\";
+  echo \"<div id='customQuery' class='modal hide'>\\n\";
+" )."
+  echo \" <div class='modal-header'>\\n  <button type='button' class='close' data-dismiss='modal'>×</button>\\n\";
+  echo \"  <h3>Query Stats</h3>\\n </div>\\n <div class='modal-body'>\\n\";
   printf(\$q_".$classnames[$i]."->form(\"x\", \$t->map_cols, \"query\"));
-  echo \"\\n</div>\\n\";
+  if (array_key_exists(\"more_0\",\$x)) {\$query=\"\"; \$mode=\"'show'\";}
+  if (array_key_exists(\"less_0\",\$x)) {\$query=\"\"; \$mode=\"'show'\";}
+  if (!array_key_exists(\"x\",\$_POST)) \$mode=\"'hide'\";
+".( $nobootstrap ? "
+  echo \"\\n </div>\\n</div>\\n\";
+" : "
+  echo \"\\n </div>\\n <div class='modal-footer'>\\n  <a href='#' class='btn' data-dismiss='modal'>Close</a>\\n\";
+  echo \"  <a href='#' class='btn btn-primary'>Save changes</a>\\n </div>\\n</div>\";
+" )."
+  echo \"<script>\$('#customQuery').modal(\$mode);</script>\\n\";
 
-  if (array_key_exists(\"more_0\",\$x)) {\$query=\"\";}
-  if (array_key_exists(\"less_0\",\$x)) {\$query=\"\";}
 
   // Do we have a valid query string?
   if (\$query) {
@@ -1120,11 +1150,26 @@ fwrite($fphp,"
     #\$db->query(\"select * from \".\$db->qi(\"".$tb_names[$i]."\").\" where \". \$query);
 
     // Show that condition
+".( $nobootstrap ? "
     echo \"<a href=javascript:show('QueryStats')>Query Stats</a><div id=QueryStats style=display:none>\";
     echo \"<a href=javascript:hide('QueryStats')>Hide</a><br>\";
-    printf(\"Query Condition = %s<br />\\n\", \$query);
-    printf(\"Query Results = %s<br /></div>\\n\", \$db->num_rows());
-    echo \"<br />\";
+" : "
+    echo \"\\n<a class='btn' href='#QueryStats' data-toggle='modal'>Query Stats</a>\\n\";
+    echo \"<div id='QueryStats' class='modal hide'>\\n\";
+" )."
+    echo \" <div class='modal-header'>\\n  <button type='button' class='close' data-dismiss='modal'>×</button>\\n\";
+    echo \"  <h3>Query Stats</h3>\\n </div>\\n <div class='modal-body'>\\n\";
+    printf(\"  Query Condition = %s<br />\\n\", \$query);
+    printf(\"  Query Results = %s<br />\\n\", \$db->num_rows());
+    echo \" </div>\\n <div class='modal-footer'>\\n\";
+".( $nobootstrap ? "
+    echo \" </div>\\n</div>\\n\";
+" : "
+    echo \"  <a href='#' class='btn' data-dismiss='modal'>Close</a>\\n\";
+    echo \" </div>\\n</div><script>\$('#QueryStats').modal();</script>\\n\";
+" )."
+    echo \"\\n<a class='btn' href=\\\"\".\$sess->self_url().\$sess->add_query(array(\"cmd\"=>\"Add\")).\"\\\">Add New ".neatstr($tbnames[$i])."</a>\\n\";
+    echo \"<hr />\\n\\n\";
 
     // Dump the results (tagged as CSS class default)
     \$t->show_result(\$db, \"default\");

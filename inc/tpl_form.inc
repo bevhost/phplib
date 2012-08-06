@@ -612,14 +612,16 @@ TODO: Change this to have some AJAX to handle larger lists.
 	    default:
 		$imagekeys = Array();
 		$checkOld = false;
+		if ($_POST["id"]=='') { $oldval=""; $newval=""; }	# Add
 		if ($oldval) {
 			if (array_key_exists("_old_record_values",$_POST)) {
 				$old = unserialize(gzuncompress(base64_decode($_POST["_old_record_values"])));
 				if (is_array($old) and count($old)) $checkOld = true;
 				if ($dev) {
-					echo "<table><tr><td width='50%'><h2>Before</h2>";
+					echo "<table><tr><td style='width:50%'><h2>Before</h2>";
 					var_dump($old);
-					echo "</td><td width='50%'><h2>After</h2>";
+					echo "</td><td style='width:50%'><h2>After</h2>";
+					unset($_POST["_old_record_values"]);
 					var_dump($_POST);
 					echo "</td></tr></table>";
 				}
@@ -651,7 +653,7 @@ TODO: Change this to have some AJAX to handle larger lists.
                         if ($el->name=="form_name") $type="skip";
                         if (isset($el->no_edit)) $type="skip";
 			if ($el->extrahtml == " onBlur='dollarformat(this)'") $el->value = str_replace("$","",$el->value);
-                        if ((isset($el->field)) and ($el->name <> $key)) {
+                        if ((isset($el->field)) and ($el->name <> "id")) {
 			  $label = ":".$el->name;
 			  $diff = true;
                           switch ($type) {
@@ -669,6 +671,11 @@ TODO: Change this to have some AJAX to handle larger lists.
                                 break;
 			    case "date":
 				$data[$label] = $this->valid_date($old[$el->name],$el->value,$el->valid_regex);
+				break;
+                            case "password": # sometimes we use el->multiple to get two password boxes on form
+				if (is_array($el->value)) {$el->value = $el->value[0];}
+				if (is_array($old[$el->name])) {$old[$el->name]=$old[$el->name][0];}
+			  	$data[$label] = $el->value;
 				break;
 			    case "select":
 				if ($oldval>0 and $old[$el->name]=='' and $el->value=='0') $el->value='';
@@ -891,7 +898,7 @@ TODO: Change this to have some AJAX to handle larger lists.
         $f = new $formname;
         $f->form_data = new form;
         $f->setup_fields();
-        $sql = $t->select($f).sprintf("%s.%s=%s ",$db2->qi($childclass),$db2->qi($db->f("FieldName")),$db2->quote($GLOBALS[$db->f("LinkField")]))." OFFSET 0 LIMIT 100";
+        $sql = $t->select($f).sprintf("%s.%s=%s ",$db2->qi($childclass),$db2->qi($db->f("FieldName")),$db2->quote($GLOBALS[$db->f("LinkField")]))." LIMIT 100";
         $t->heading = "on";
         $t->add_extra = "$childclass.php";
 	unset($t->fields["submit"]);

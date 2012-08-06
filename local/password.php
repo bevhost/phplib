@@ -84,12 +84,6 @@ $debug=0;
 ?>
 <html>
  <head>
-<!--
-// here i include my personal meta-tags; one of those might be useful:
-// <META HTTP-EQUIV="REFRESH" CONTENT="<?php print $auth->
-lifetime*60;?>; URL=logoff.html"> // 
-<?php include($_ENV["libdir"] . "meta.inc");?>
---> <font class="bigTextBold"> </font> 
 <?php
 
 ###
