@@ -924,7 +924,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 
   # When add_insert line of table (or any form) is used as a search function,
   # This will create an SQL query to search for items like this.
-  function search() {
+  function search($table=false) {
         if (!isset($this->db)) {
                 if (!isset($this->database_class)) {
                         $this->database_class = $_ENV["DatabaseClass"];
@@ -937,6 +937,27 @@ TODO: Change this to have some AJAX to handle larger lists.
 	# except if there are spaces and or other special chars in the sql fieldname.
 	#
         foreach ($this->form_data->elements as $k=>$v) {
+		$ks = $k."_Selector";
+		$jointable = "";
+		if ($table and array_key_exists($ks,$_POST)) {
+			if (!isset($fk)) $fk = new $_ENV["MyForeignKeysDB"];
+    			$class = $this->classname;
+    			if (strtolower(substr($class,0,3))=="my_") $class=substr($class,3);
+    			if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
+			$sql = "select * from ".$_ENV["MyForeignKeys"]." where FormName = '$class' order by id";
+			$fk->query($sql);
+			while ($fk->next_record()) {
+				extract($fk->Record);
+			        $q_FieldName = $fk->qi($FieldName);
+			        $q_LinkField = $fk->qi($LinkField);
+			        if (($LinkDesc) and (in_array($FieldName,$table->fields))) {
+		                	$tc++;
+                			$jointable = "_t$tc";
+				}
+			}
+			if ($jointable) $k = $ks;
+		}
+		$tablename = $jointable ? $jointable : $this->table;
                 if (isset($v["ob"]->field) 
 		  and ($f = $v["ob"]->field)             // has an sql field
                   and (!empty($_POST[$k]))) {           // and was POSTed.
@@ -959,7 +980,8 @@ TODO: Change this to have some AJAX to handle larger lists.
                         	$value = $this->db->quote($therest);
                         	$nvalue = $this->db->quote("%".$therest."%");
 			}
-			$tf =  $this->db->qi($this->table).".".$this->db->qi($f); /* table.field */
+			if ($jointable) $f = $LinkDesc;
+			$tf =  $this->db->qi($tablename).".".$this->db->qi($f); /* table.field */
                         switch($condition) {
                             case ">":
                             case "<":

@@ -1543,7 +1543,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     $from = "FROM $sql_table";
     $where = "WHERE ";
     if (!$this->edit) {
-      $sql = "select * from ".$_ENV["MyForeignKeys"]." where FormName = '$class'";
+      $sql = "select * from ".$_ENV["MyForeignKeys"]." where FormName = '$class' order by id";
       $tc = 0;
       $db->query($sql);
       while ($db->next_record()) {
