@@ -44,6 +44,10 @@ rm -rf $RPM_BUILD_ROOT
 - version 0.9
 - added more support for information_schema in metadata queries
 - allow ForeignKeys/LinkedTables to reside in a seperate database
+- made compatible with twitter bootstrap
+- of_password ignore multiple when saving eg pass, pass again
+- standardised prepend.php and introduced application.inc
+- skip strict notices, warnings in production mode
 
 * Sat Jul 07 2012 dave
 - version 0.8

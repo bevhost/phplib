@@ -60,6 +60,9 @@ class DB_Sql {
 	return "`".implode("`.`",$arr)."`";
   }
 
+  function lastInsertId() {
+	return mysqli_insert_id($this->Link_ID);
+  }
 
   /* public: constructor */
   function DB_Sql($query = "") {

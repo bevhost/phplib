@@ -214,8 +214,7 @@ class DB_Sql {
       $this->halt("Invalid SQL: ".$Query_String);
     }
 
-    # Will return nada if it fails. That's fine.
-    return 1;
+    return $this->sth;
   }
 
   /* public: walk result set */
