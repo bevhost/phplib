@@ -948,11 +948,14 @@ TODO: Change this to have some AJAX to handle larger lists.
 			$fk->query($sql);
 			while ($fk->next_record()) {
 				extract($fk->Record);
-			        $q_FieldName = $fk->qi($FieldName);
-			        $q_LinkField = $fk->qi($LinkField);
 			        if (($LinkDesc) and (in_array($FieldName,$table->fields))) {
 		                	$tc++;
-                			$jointable = "_t$tc";
+                			if ($FieldName==$k) {
+						$jointable = "_t$tc";
+			        		$q_FieldName = $fk->qi($FieldName);
+			        		$q_LinkField = $fk->qi($LinkField);
+						$joindesc = $LinkDesc;
+					}
 				}
 			}
 			if ($jointable) $k = $ks;
@@ -980,7 +983,7 @@ TODO: Change this to have some AJAX to handle larger lists.
                         	$value = $this->db->quote($therest);
                         	$nvalue = $this->db->quote("%".$therest."%");
 			}
-			if ($jointable) $f = $LinkDesc;
+			if ($jointable) $f = $joindesc;
 			$tf =  $this->db->qi($tablename).".".$this->db->qi($f); /* table.field */
                         switch($condition) {
                             case ">":
