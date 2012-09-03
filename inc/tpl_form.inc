@@ -834,7 +834,8 @@ TODO: Change this to have some AJAX to handle larger lists.
 	  if (substr($el->type,-4)<>"area" and $el->type<>"of_file" and $el->name<>"form_name" and $el->name<>"Password" and $el->type<>"of_password") {
 	     if ($el->value) {
           	if ($count>0) $was .= ", ";
-	  	$was .= $el->name."=".substr($el->value,0,30);
+		$elval = $el->multiple ? implode(",",$el->value) : $el->value;
+	  	$was .= $el->name."=".substr($elval,0,30);
 		$count++;
 	     }
 	  }
