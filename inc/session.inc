@@ -24,7 +24,7 @@ class Session {
                                       ## session cookie is set.
 
   var $gc_time  = 1440;               ## Purge all session data older than 1440 minutes.
-  var $gc_probability = 5;            ## Garbage collect probability in percent
+  var $gc_probability = 2;            ## Garbage collect probability in percent
 
   var $auto_init = "";                ## Name of the autoinit-File, if any.
   var $secure_auto_init = 1;          ## Set to 0 only, if all pages call
