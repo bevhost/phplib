@@ -1029,7 +1029,7 @@ fwrite($fphp,"
   if (\$Format = \$export_results) {
         \$custom_query = array_key_exists(\"custom_query\",\$_POST) ? \$_POST[\"custom_query\"] : \"\";
 
-        require_once \"/usr/share/PHPExcel.php\";
+        require_once \"/usr/share/pear/PHPExcel/PHPExcel.php\";
 
         \$cacheMethod = PHPExcel_CachedObjectStorageFactory::cache_in_memory;
         PHPExcel_Settings::setCacheStorageMethod(\$cacheMethod);
