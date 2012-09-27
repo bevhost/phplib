@@ -567,6 +567,8 @@ TODO: Change this to have some AJAX to handle larger lists.
 
         function save_values($Table="",$key="",$action="") {
 	  global $auth, $dev;
+          if (!$this->database_class) $this->database_class = $_ENV["DatabaseClass"];
+          if (!$this->database_class) return;
 	  $db = new $this->database_class;
           if (! is_object($this->form_data)) {
             $this->setup();
