@@ -835,7 +835,7 @@ class Table
   #==========================================================================
   function format_table_cell($val,$data,&$align,&$comment,&$class) {
 	$dval = array_key_exists($val,$data) ? str_replace("\r","",$data[$val]) : "";
-	if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})/", $dval, $regs))) {
+	if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/", $dval, $regs))) {
 		$output = date("d M Y",strtotime($dval));   /* DD Mmm YYYY */
 		$comment = substr($dval,11,10);
 	} else if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})/", $dval, $regs))) {
