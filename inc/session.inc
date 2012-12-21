@@ -528,19 +528,21 @@ class Session {
                         }
                 }
         }
+	$domain=str_replace("\n","",$domain);
+	$domain=str_replace("\r","",$domain);
         return $domain;
   }
 
   function start($sid = "") {
     if (array_key_exists("HTTP_HOST",$_SERVER)) {
       $host = $_SERVER["HTTP_HOST"];
-      if (!strpos($host,'.')) {			// if local part only, (no domain)
-        if ( isset($HTTPS) && $HTTPS == 'on' ) {
+      if ( isset($HTTPS) && $HTTPS == 'on' ) {
           $PROTOCOL='https';
-        } else {
+      } else {
           $PROTOCOL='http';
-        }
-        $host .= $this->get_domain();		// find my domain and append it.
+      }
+      if (!strpos($host,'.') && $PROTOCOL=='https') {		// if local part only, (no domain)
+        $host .= $this->get_domain();				// find my domain and append it.
         $url = $this->self_url();
         header("Status: 302 Moved Temporarily");
         header("Location: ". $PROTOCOL. "://".$host.$url);
