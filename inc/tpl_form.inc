@@ -567,7 +567,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 
 
         function save_values($Table="",$key="",$action="") {
-	  global $auth, $dev;
+	  global $sess, $auth, $dev;
 	  $db = new $this->database_class;
           if (! is_object($this->form_data)) {
             $this->setup();
@@ -591,6 +591,7 @@ TODO: Change this to have some AJAX to handle larger lists.
           // only during an Edit operation should these values be different
 	  $gv = array_key_exists($key,$GLOBALS) ? $GLOBALS[$key] : ""; // global value used if no _POST
 	  $oldval = array_key_exists($key,$_POST) ? $_POST[$key] : $gv;  // a copy of the primary key in the web form
+	  $oldval = array_key_exists($key,$_POST) ? $_POST[$key] : ""; 
 	  $gv = array_key_exists($this->key,$GLOBALS) ? $GLOBALS[$this->key] : ""; 
 	  $newval = array_key_exists($this->key,$_POST) ? $_POST[$this->key] : $gv;  // primary key in database
           // during Add or Copy $newval should be empty
@@ -628,10 +629,11 @@ TODO: Change this to have some AJAX to handle larger lists.
 				if ($old["_session_identity_"]==$sess->id) {	
 					if (is_array($old) and count($old)) $checkOld = true;
 				}
-			}
+			} else die("no orv");
 			if ($checkOld) {
 	                        $sql = "UPDATE $table SET \n";
 			} else {
+				var_dump($old);
 				die("old record values not found or tampered with");
 			}
                 } else {
@@ -1065,7 +1067,7 @@ echo "<script type='text/javascript' src='/js/datefunc.js'>
 	}
   }
 
-  function decrypt($str) {
+  function decrypt($str) {  # must match encrypt function in oohforms
         $key = hash("crc32",$GLOBALS["sess"]->id.$_ENV["DatabaseClass"]);
         return mcrypt_decrypt ( MCRYPT_3DES , $key , $str , "ecb" );
   } 

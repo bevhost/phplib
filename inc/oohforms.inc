@@ -224,13 +224,14 @@ class form {
     $referer = isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : $_SERVER["PHP_SELF"];
     $str .= sprintf("<input type=\"hidden\" name=\"_http_referer\" value=\"%s\" />\n", $referer);
 
-    if (true)   // serialize compress and encode the whole record so that you can tell which fields have been changed on submit.
-    if ($GLOBALS["cmd"]=="Save") {
+    // serialize compress and encode the whole record so that you can tell which fields have been changed on submit.
+    if ($GLOBALS["cmd"]<>"Back") {
       reset($this->elements);
       while (list($k,$elrec) = each($this->elements)) {
 	$el = $elrec["ob"];
 	$old[$el->name] = $el->value;
       }
+      $old["_session_identity_"]=$sess->id;
       $str .= sprintf("<input type=\"hidden\" name=\"_old_record_values\" value=\"%s\" />\n", 
 		base64_encode(gzcompress($this->encrypt(serialize($old)))));
     }
@@ -506,7 +507,7 @@ class form {
 	return true;
   }
 
-  function encrypt($str) {
+  function encrypt($str) {  #must match the decrypt function in tpl_form
         $key = hash("crc32",$GLOBALS["sess"]->id.$_ENV["DatabaseClass"]);
         return mcrypt_encrypt ( MCRYPT_3DES , $key , $str , "ecb" );
   }
