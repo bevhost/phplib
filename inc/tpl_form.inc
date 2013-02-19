@@ -36,6 +36,7 @@ reload_values
 
 */
 
+
 class tpl_form {
   var $classname = "tpl_form"; # Used for serialization AND in display()
                                # to determine the filename of template
@@ -567,8 +568,6 @@ TODO: Change this to have some AJAX to handle larger lists.
 
         function save_values($Table="",$key="",$action="") {
 	  global $auth, $dev;
-          if (!$this->database_class) $this->database_class = $_ENV["DatabaseClass"];
-          if (!$this->database_class) return;
 	  $db = new $this->database_class;
           if (! is_object($this->form_data)) {
             $this->setup();
@@ -617,8 +616,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 		if ($_POST["id"]=='') { $oldval=""; $newval=""; }	# Add
 		if ($oldval) {
 			if (array_key_exists("_old_record_values",$_POST)) {
-				$old = unserialize(gzuncompress(base64_decode($_POST["_old_record_values"])));
-				if (is_array($old) and count($old)) $checkOld = true;
+				$old = @unserialize($this->decrypt(gzuncompress(base64_decode($_POST["_old_record_values"]))));
 				if ($dev) {
 					echo "<table><tr><td style='width:50%'><h2>Before</h2>";
 					var_dump($old);
@@ -627,8 +625,15 @@ TODO: Change this to have some AJAX to handle larger lists.
 					var_dump($_POST);
 					echo "</td></tr></table>";
 				}
+				if ($old["_session_identity_"]==$sess->id) {	
+					if (is_array($old) and count($old)) $checkOld = true;
+				}
 			}
-                        $sql = "UPDATE $table SET \n";
+			if ($checkOld) {
+	                        $sql = "UPDATE $table SET \n";
+			} else {
+				die("old record values not found or tampered with");
+			}
                 } else {
                         $sql = "INSERT INTO $table ";
                 }
@@ -1060,6 +1065,10 @@ echo "<script type='text/javascript' src='/js/datefunc.js'>
 	}
   }
 
+  function decrypt($str) {
+        $key = hash("crc32",$GLOBALS["sess"]->id.$_ENV["DatabaseClass"]);
+        return mcrypt_decrypt ( MCRYPT_3DES , $key , $str , "ecb" );
+  } 
 
 }
 

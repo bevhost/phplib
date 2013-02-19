@@ -232,7 +232,7 @@ class form {
 	$old[$el->name] = $el->value;
       }
       $str .= sprintf("<input type=\"hidden\" name=\"_old_record_values\" value=\"%s\" />\n", 
-		base64_encode(gzcompress(serialize($old))));
+		base64_encode(gzcompress($this->encrypt(serialize($old)))));
     }
 
     $str .= "\n</form>\n";
@@ -506,6 +506,10 @@ class form {
 	return true;
   }
 
+  function encrypt($str) {
+        $key = hash("crc32",$GLOBALS["sess"]->id.$_ENV["DatabaseClass"]);
+        return mcrypt_encrypt ( MCRYPT_3DES , $key , $str , "ecb" );
+  }
 
 } /* end FORM */
 
