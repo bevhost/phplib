@@ -780,6 +780,9 @@ TODO: Change this to have some AJAX to handle larger lists.
  	# Generally this is for browser clients with javascript disabled as most of the time,
 	# clients will validate the data in the browser before submiting the form.
 	function reload_values() {
+          	if (! is_object($this->form_data)) {
+	            $this->setup();
+        	}
 		for (reset($this->form_data->elements);
                  $elrec = current($this->form_data->elements);
                  next($this->form_data->elements))
