@@ -54,18 +54,17 @@ class of_select extends of_element {
     reset($this->options);
     while (list($k,$o) = each($this->options)) {
       $str .= "<option";
-      if (is_array($o)) 
-        $str .= " value='" .  ($o["value"] ? $o["value"] : $o["label"] ). "'";
-      else
-        $str .= " value='$o'";
-      if (!$this->multiple && ($this->value==$o["value"] || $this->value==$o)) {
+      if (is_array($o)) $value = $o["value"] ? $o["value"] : $o["label"]; else $value = $o;
+      $str .= " value='$value'";
+      if (!$this->multiple && ($this->value==$value)) {
         $str .= " selected='selected'";
 	$found = true;
       }
       elseif ($this->multiple && is_array($this->value)) {
         reset($this->value);
         while (list($tk,$v) = each($this->value)) {
-          if ($v==$o["value"] || $v==$o) { 
+      	  if (is_array($o)) $value = $o["value"] ? $o["value"] : $o["label"]; else $value = $o;
+          if ($v==$value) { 
             $str .= " selected='selected'"; 
 	    $found = true;
 	    break; 
