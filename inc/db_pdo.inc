@@ -211,7 +211,7 @@ class DB_Sql {
     $this->Row   = 0;
     $this->getErrorInfo();
     if (!$this->sth) {
-      $this->halt("Invalid SQL: ".$Query_String);
+      $this->halt("SQL Query Failed: ".$Query_String);
     }
 
     return $this->sth;
