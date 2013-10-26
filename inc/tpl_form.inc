@@ -619,11 +619,12 @@ TODO: Change this to have some AJAX to handle larger lists.
 			if (array_key_exists("_old_record_values",$_POST)) {
 				$old = @unserialize($this->decrypt(gzuncompress(base64_decode($_POST["_old_record_values"]))));
 				if ($dev) {
-					echo "<table><tr><td style='width:50%'><h2>Before</h2>";
+					echo "<table><tr><td style='width:50%'><h2>Before $oldval</h2>";
 					var_dump($old);
-					echo "</td><td style='width:50%'><h2>After</h2>";
+					echo "</td><td style='width:50%'><h2>After $newval</h2>";
 					unset($_POST["_old_record_values"]);
 					var_dump($_POST);
+					var_dump($_FILES);
 					echo "</td></tr></table>";
 				}
 				if ($old["_session_identity_"]==$sess->id) {	
@@ -673,7 +674,7 @@ TODO: Change this to have some AJAX to handle larger lists.
                                 if (substr($_FILES[$el->field]["type"],0,6)=="image/") {
 					$data[$label] = $this->getblob($el->field);				
 					$imagekeys[] = $GLOBALS["blob_key"];
-                                        $count++;
+					$noValue = false;
                                 } else {
 					$data[$label] = $old[$el->name];   // no new file, keep old value.
 				}
@@ -1086,7 +1087,7 @@ if ( !function_exists('image_type_to_extension') ) {
     {
         $e = array ( 1 => 'gif', 'jpeg', 'png', 'swf', 'psd', 'bmp',
             'tiff', 'tiff', 'jpc', 'jp2', 'jpf', 'jb2', 'swc',
-            'aiff', 'wbmp', 'xbm');
+            'aiff', 'wbmp', 'xbm', 'svg');
         return ($dot ? '.' : '') . $e[$type];
     }
 }
@@ -1099,7 +1100,7 @@ if ( !function_exists('image_type_to_mime_type') ) {
             'application/x-shockwave-flash', 'image/psd', 'image/bmp',
             'image/tiff', 'image/tiff', 'application/octet-stream',
             'image/jp2', 'application/octet-stream', 'application/octet-stream',
-            'application/x-shockwave-flash', 'image/iff', 'image/vnd.wap.wbmp', 'image/xbm');
+            'application/x-shockwave-flash', 'image/iff', 'image/vnd.wap.wbmp', 'image/xbm', 'image/svg');
         return $m[$type];
     }
 }

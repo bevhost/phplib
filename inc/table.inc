@@ -148,8 +148,11 @@ class Table
     $rows = 0;
 
     if (!$this->no_open) $this->table_open($class);
-    if ($this->show_table_heading_row($ary, $class))
-      $rows = $this->show_table_rows($ary, $class);
+    if ($this->show_table_heading_row($ary, $class)) {
+	echo "<tbody>\n";
+	$rows = $this->show_table_rows($ary, $class);
+	echo "</tbody>\n";
+    }
     if (!$this->no_close) $this->table_close($class);
     
     return $rows;
@@ -167,6 +170,14 @@ class Table
   # History  :
   #==========================================================================
   function show_result($db, $class="") 
+  {
+	$this->show($db->sth->fetchAll(PDO::FETCH_ASSOC),$class);
+  }
+
+  #
+  #
+  #
+  function old_show_result($db, $class="") 
   {
    if (!$this->add_insert) {
     if (!$this->verify_db($db))
@@ -808,7 +819,7 @@ class Table
 
 	$output = $this->format_table_cell($val,$data,$align,$comment,$class);
 
-	if ($output==0 and $class=="total") $output=" ";
+	if ($output==0 and $class=="total" and $output<>"TOTAL") $output=" ";
 
 	if (@array_key_exists($val,$this->align)) $align = $this->align[$val];
 
