@@ -152,6 +152,7 @@ class Table
 	echo "<tbody>\n";
 	$rows = $this->show_table_rows($ary, $class);
 	echo "</tbody>\n";
+	$this->show_table_totals_row($rows);
     }
     if (!$this->no_close) $this->table_close($class);
     
@@ -171,14 +172,9 @@ class Table
   #==========================================================================
   function show_result($db, $class="") 
   {
-	$this->show($db->sth->fetchAll(PDO::FETCH_ASSOC),$class);
-  }
+   // pdo database can return full dataset in one piece
+   if ($db->type=="pdo") return $this->show($db->sth->fetchAll(PDO::FETCH_ASSOC),$class);
 
-  #
-  #
-  #
-  function old_show_result($db, $class="") 
-  {
    if (!$this->add_insert) {
     if (!$this->verify_db($db))
       return 0;
