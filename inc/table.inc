@@ -64,7 +64,8 @@ class Table
   var $form;				 ## tpl form to hold insert/edit record
   var $js_sent;				 ## has javascript be sent for this form?
   var $map_cols;                         ## remap database columns to new names
-  var $align = Array();				 ## Allow alignment of fields.
+  var $funcs = Array();			 ## Group By Aggregator functions for each field
+  var $align = Array();			 ## Allow alignment of fields.
   var $format = Array();		 ## php money_format
   var $sortable = '';			 ## Allow headings to have SortCommands to resort output by that column. (DaveB)
   var $trust_the_data = false;		 ## If set to true allows embeded html in the data - dangerous - use with caution
@@ -1003,9 +1004,11 @@ class Table
   function table_heading_cell($col, $val, $class="") 
   {
     $align=" alignleft";
+    $func = "";
     if (array_key_exists($val,$this->align)) $align = " align".$this->align[$val];
+    if (array_key_exists($val,$this->funcs)) $func = strtoupper($this->funcs[$val]).":";
     $this->table_heading_cell_open($class,$align);
-    
+
     ## Check for column name remapping
     if ($this->verify_array($this->map_cols))
     {
@@ -1025,9 +1028,9 @@ class Table
     if (isset($key) and ($key==$sortorder)) $key .= " desc";
     if ($this->sortable) {
 	if (isset($this->add_insert))
-		printf("<a class='%s' href='javascript:showSortedBy(\"%s\")'>%s</a>", $class, $key, $val);
+		printf("<a class='%s' href='javascript:showSortedBy(\"%s\")'>%s</a>", $class, $key, $func.$val);
 	else 
-		printf("<a class='%s' href='%s'>%s</a>", $class, $this->table_heading_sortable_link($key), $val);
+		printf("<a class='%s' href='%s'>%s</a>", $class, $this->table_heading_sortable_link($key), $func.$val);
     } else {
 	printf("%s", $val);
     }
@@ -1546,12 +1549,12 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
     $db = new $_ENV["MyForeignKeysDB"];
     $sql_table = $db->qi($this->sql_table);
-    $select = "SELECT $sql_table.*";
     $from = "FROM $sql_table";
     $where = "WHERE ";
+    $tc = 0;
     if (!$this->edit) {
+      $links = "";
       $sql = "select * from ".$_ENV["MyForeignKeys"]." where FormName = '$class' order by id";
-      $tc = 0;
       $db->query($sql);
       while ($db->next_record()) {
         extract($db->Record);
@@ -1560,7 +1563,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 	if (($LinkDesc) and (in_array($FieldName,$this->fields))) {
 		$tc++;
 		$table = "_t$tc";
-		$select .= ", $table.$LinkDesc AS $table$LinkDesc";
+		$links .= ", $table.$LinkDesc AS $table$LinkDesc";
 		$from .= " LEFT OUTER JOIN $LinkTable AS $table ON $sql_table.$q_FieldName=$table.$q_LinkField";
 		$this->map_cols["$table$LinkDesc"] = $this->map_cols[$FieldName];
 		$this->orig_fields["$table$LinkDesc"] = $FieldName;
@@ -1568,8 +1571,17 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 	}
       }
     }
+    $select = "";
+    if ($tc) $sql_table .= "."; else $sql_table = "";
+    foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t") {
+	if ($select) $select .= ", "; else $select="SELECT ";
+	$qf = $db->qi($this_field);
+	$func = array_key_exists($this_field,$this->funcs) ? $this->funcs[$this_field] : false;
+	if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
+	$select .= $func ? "$func($dist$sql_table$qf) as $qf" : "$sql_table$qf";
+    }
     $custom = array_key_exists("custom_query",$_POST) ? $_POST["custom_query"] : "";
-    return("$select $from $join $custom $where");
+    return("$select $links $from $join $custom $where");
   }
 
 }
