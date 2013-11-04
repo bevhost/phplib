@@ -1,8 +1,7 @@
 <?php
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-$_PHPLIB["local"] = "./";
-include("prepend.php");
+include("phplib/prepend.php");
 
 $debug=false;
 
@@ -32,10 +31,11 @@ function date_time_format($str) {
     return false;
 }
 	
-
+/*
+if (!function_exists("date_format")) 
 function date_format($str) {
 	global $uk_fmt, $uk_date, $us_fmt, $us_date;
-	$format_strings = array(   /* php date formats we accept */
+	$format_strings = array(   # php date formats we accept 
 		"Y-m-d", "Y/m/d",
 		"j-F-Y", "j-M-Y", "j-M-y", "j-m-Y", "j-m-y", "j-n-Y",
 		"d-F-Y", "d-M-Y", "d-M-y", "d-m-Y",
@@ -61,6 +61,7 @@ function date_format($str) {
 	}
 	return false;
 }
+*/
 
 function time_format($str) {
 	$format_strings = array(   /* php date function formats */
@@ -150,6 +151,7 @@ function getFileName($str) {
 <?php
 if ($_POST["MAX_FILE_SIZE"]) echo "<a href=import.php>restart</a><br>\n";
 
+$chk = "checked='checked'";
 if ($_REQUEST["submit"]=='Import') {
     if ($_SERVER["PHP_AUTH_USER"]) {
         $db = new $_ENV["DatabaseClass"];
@@ -162,6 +164,9 @@ if ($_REQUEST["submit"]=='Import') {
         exit;
     }
 }
+if ($_REQUEST["submit"]=='Upload') {
+    if (!$DeSpaceFields=$_POST["DeSpaceFields"]) $chk="";
+}
 
 $eof=$_POST["eof"];
 $pref_date=$_POST["pref_date"];
@@ -170,7 +175,6 @@ if (!$esc=$_POST["esc"]) $esc='\\';
 if (!$card=$_POST["card"]) $card=10;
 if (!$minrows=$_POST["minrows"]) $minrows=50;
 if (!$grow_room=$_POST["grow_room"]) $grow_room=25;
-
 
 /* ok let's see what files were upload and if we can handle them */
 $count=0;
@@ -239,14 +243,13 @@ if ($file = $_FILES['userfile']) {
 	}
 }
 
-
 /* if we found some files to process */
 if ($count) {
     echo "<form action='".$GLOBALS["PHP_SELF"]."' method='post'>\n";
     for($files=1;$files<=$count;$files++) {
         unset($lines,$header,$enum,$date_time_format,$date_format,$time_format,$fmt);
         unset($uk_date,$us_date,$uk_fmt,$us_fmt,$date_format,$datecol);
-        unset($SQL,$SETSQL,$SQLCOLDEFS,$SQLKEYS,$chars);
+        unset($SQL,$SETSQL,$SQL_COL_DEFS,$SQL_KEYS,$chars);
         $field_sep=Array(";",",","|","\t");
         foreach($field_sep as $f) $chars[$f]=0;
         if ($fp = fopen($filename[$files],"r")) {
@@ -298,6 +301,7 @@ if ($count) {
                     }
                 } else {
                     foreach($data as $k => $v) {
+			$v = trim($v);
                         if ($lines==2) {
                             $datecol[$k]=true;
                             $key[$k]=true;
@@ -328,15 +332,14 @@ if ($count) {
                             $len[$k] = max($len[$k],strlen($v));
                             if (preg_match('/\./',$v)>1) { $integer[$k] = false; $float[$k] = false; $money[$k] = false; }
                             if ($integer[$k]) { if (preg_match('/^[-]?[0-9]+$/',$v)==0) $integer[$k] = false; }
-                            if ($float[$k]) { if (preg_match('/^[-]?[0-9|e|\.]+$/i',$v)==0) $float[$k] = false; }
-                            if ($money[$k]) { if (preg_match('/^[$|-]?[0-9|\.]+$/',$v)==0) $money[$k] = false; }
+                            if ($float[$k]) { if (preg_match('/^[-]?[0-9|e|,|\.]+$/i',$v)==0) $float[$k] = false; }
+                            if ($money[$k]) { if (preg_match('/^[$|-]+[0-9|,|\.]+$/',$v)==0) $money[$k] = false; }
                             $enum[$k][trim($v)]++;
                         }
                     }
                 }
             }
         }
-
 
         /* so we looked at the file in detail, lets create a MySQL definition */
         $keys = 0;
@@ -348,12 +351,14 @@ if ($count) {
         }
         if ($us_date) $date_format=$us_fmt; else $date_format=$uk_fmt;
         $TableName = $basename[$files];
+	if ($DeSpaceFields) $TableName=str_replace(" ", "", $TableName);
         $db->query("SHOW TABLES LIKE '$TableName'");
         if ($db->next_record()) {
             $TableName .= "_".date("YmdHis");
         }
         $SQL = "\nCREATE TABLE `$TableName` (";
         for($i=0;$i<=$k;$i++) {
+	    if ($DeSpaceFields) $header[$i] = str_replace(" ", "", $header[$i]);
             if ($debug) echo "<br>\n$i $header[$i] ";
             $ColName = trim($header[$i]);
             $header[$i] = "`".$header[$i]."`";
@@ -363,18 +368,19 @@ if ($count) {
                 $j = $i + 1;
                 $length = floor($len[$i] * ($grow_room/100+1));
                 $datatype = "VARCHAR($length)";
+                $distinct = count($enum[$i]); #allow enum type if varchar
+                if ($distinct<$lines) $key[$i]=false;
                 if ($datecol[$i]) { 
                     if ($dtf = $date_time_fmt[$i]) { $datatype = "DATETIME"; $header[$i]='@col'.$j; addtoset("$ColName = str_to_date(@col$j,",$dtf); } else
                     if ($df = $date_fmt[$i]) { $datatype = "DATE"; $header[$i]='@col'.$j; addtoset("`$ColName` = str_to_date(@col$j,",$df); } else
                     if ($tf = $time_fmt[$i]) { $datatype = "TIME"; } 
                     if ($debug) echo " dtf:$dtf df:$df tf:$tf ";
+		    $distinct=0;
                 }
-                if ($money[$i]) { if ($debug) echo "money "; $datatype = 'DECIMAL(9,2)'; }
-                if ($float[$i]) { if ($debug) echo "float "; $datatype = 'FLOAT'; }
-                if ($integer[$i]) { if ($debug) echo "int "; $datatype = 'INT'; }
-                $distinct = count($enum[$i]);
+                if ($money[$i]) { if ($debug) echo "money "; $datatype = 'DECIMAL(9,2)'; $distinct=0;}
+                if ($float[$i]) { if ($debug) echo "float "; $datatype = 'FLOAT'; $distinct=0;}
+                if ($integer[$i]) { if ($debug) echo "int "; $datatype = 'INT'; $distinct=0;}
                 if ($debug) echo " $distinct ";
-                if ($distinct<$lines) $key[$i]=false;
                 if (($distinct>1) and ($distinct<$card) and ($lines>100)) {
                     $datatype="ENUM('".implode("','",array_keys($enum[$i]))."')";
                     $header[$i] = '@col'.$j;
@@ -386,18 +392,18 @@ if ($count) {
                 if ($debug) echo "empty ";
                 $datatype = "TEXT";
             }
-            if ($i) $SQLCOLDEFS.=",";
-            $SQLCOLDEFS .= "\n  `$ColName` $datatype";
+            if ($i) $SQL_COL_DEFS.=",";
+            $SQL_COL_DEFS .= "\n  `$ColName` $datatype";
             if ($key[$i]) { 
                 if ($debug) echo "key "; $keys++; 
-                if ($keys==1) $SQLKEYS = ",\n  PRIMARY KEY (`$ColName`)";
-                else $SQLKEYS = ",\n  UNIQUE `k_".$header[$i]."` (`$ColName`)";
+                if ($keys==1) $SQL_KEYS .= ",\n  PRIMARY KEY (`$ColName`)";
+                else $SQL_KEYS .= ",\n  UNIQUE `k_".$header[$i]."` (`$ColName`)";
             }
             if ($null[$i]) if ($debug) echo "null ";
         }
-        if (!$keys) $SQLCOLDEFS = "\n  `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,".$SQLCOLDEFS;
-        $SQL .= $SQLCOLDEFS;
-        $SQL .= $SQLKEYS."\n);\n\n";
+        if (!$keys) $SQL_COL_DEFS = "\n  `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,".$SQL_COL_DEFS;
+        $SQL .= $SQL_COL_DEFS;
+        $SQL .= $SQL_KEYS."\n);\n\n";
 
         $esc = mysql_escape_string($esc);
         $enc = mysql_escape_string($enc);
@@ -428,7 +434,7 @@ if ($count) {
 <form enctype="multipart/form-data" action="import.php" method="post" onsubmit='return confirm("Please be patient. This could take a while");'>
  <input type="hidden" name="MAX_FILE_SIZE" value="30000000" />
  <input type="file" name="userfile" size="60" />
- <input type="submit" name="submit" />
+ <input type="submit" name="submit" value='Upload' />
 <p>This should normally work with the default settings below, but they are here in case you need to tweak something.</p>
 <br />
  Default Date Format
@@ -460,6 +466,9 @@ if ($count) {
 <hr />
  VarChar grow room<br />
  Add <input type="text" name="grow_room" value="<?=$grow_room?>" size="3">% to the length of the longest value found in each column when defining varchar columns
+<hr />
+<input type="checkbox" <?=$chk?> name="DeSpaceFields" value='1'>
+ Remove Spaces from Field Names
 </form>
 <?php } ?>
 </body>
