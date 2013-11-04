@@ -243,14 +243,13 @@ if ($file = $_FILES['userfile']) {
 	}
 }
 
-
 /* if we found some files to process */
 if ($count) {
     echo "<form action='".$GLOBALS["PHP_SELF"]."' method='post'>\n";
     for($files=1;$files<=$count;$files++) {
         unset($lines,$header,$enum,$date_time_format,$date_format,$time_format,$fmt);
         unset($uk_date,$us_date,$uk_fmt,$us_fmt,$date_format,$datecol);
-        unset($SQL,$SETSQL,$SQLCOLDEFS,$SQLKEYS,$chars);
+        unset($SQL,$SETSQL,$SQL_COL_DEFS,$SQL_KEYS,$chars);
         $field_sep=Array(";",",","|","\t");
         foreach($field_sep as $f) $chars[$f]=0;
         if ($fp = fopen($filename[$files],"r")) {
@@ -342,7 +341,6 @@ if ($count) {
             }
         }
 
-
         /* so we looked at the file in detail, lets create a MySQL definition */
         $keys = 0;
         echo "$lines read including header<pre>";
@@ -360,8 +358,8 @@ if ($count) {
         }
         $SQL = "\nCREATE TABLE `$TableName` (";
         for($i=0;$i<=$k;$i++) {
-            if ($debug) echo "<br>\n$i $header[$i] ";
 	    if ($DeSpaceFields) $header[$i] = str_replace(" ", "", $header[$i]);
+            if ($debug) echo "<br>\n$i $header[$i] ";
             $ColName = trim($header[$i]);
             $header[$i] = "`".$header[$i]."`";
             if ($float[$i]) $money[$i]=false;
@@ -394,18 +392,18 @@ if ($count) {
                 if ($debug) echo "empty ";
                 $datatype = "TEXT";
             }
-            if ($i) $SQLCOLDEFS.=",";
-            $SQLCOLDEFS .= "\n  `$ColName` $datatype";
+            if ($i) $SQL_COL_DEFS.=",";
+            $SQL_COL_DEFS .= "\n  `$ColName` $datatype";
             if ($key[$i]) { 
                 if ($debug) echo "key "; $keys++; 
-                if ($keys==1) $SQLKEYS = ",\n  PRIMARY KEY (`$ColName`)";
-                else $SQLKEYS = ",\n  UNIQUE `k_".$header[$i]."` (`$ColName`)";
+                if ($keys==1) $SQL_KEYS .= ",\n  PRIMARY KEY (`$ColName`)";
+                else $SQL_KEYS .= ",\n  UNIQUE `k_".$header[$i]."` (`$ColName`)";
             }
             if ($null[$i]) if ($debug) echo "null ";
         }
-        if (!$keys) $SQLCOLDEFS = "\n  `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,".$SQLCOLDEFS;
-        $SQL .= $SQLCOLDEFS;
-        $SQL .= $SQLKEYS."\n);\n\n";
+        if (!$keys) $SQL_COL_DEFS = "\n  `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,".$SQL_COL_DEFS;
+        $SQL .= $SQL_COL_DEFS;
+        $SQL .= $SQL_KEYS."\n);\n\n";
 
         $esc = mysql_escape_string($esc);
         $enc = mysql_escape_string($enc);
