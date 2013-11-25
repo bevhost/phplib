@@ -1,7 +1,7 @@
 <?php
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-include("phplib/prepend.php");
+include("../phplib/prepend.php");
 
 $debug=false;
 
@@ -161,8 +161,8 @@ if ($_REQUEST["submit"]=='Import') {
         }
     } else {
         echo "<h1>This script is not password protected therefore is not safe to run.</h1><h2>click back in your browser</h2><h3>cut and paste the SQL into your database client</h3>";
-        exit;
     }
+    exit;
 }
 if ($_REQUEST["submit"]=='Upload') {
     if (!$DeSpaceFields=$_POST["DeSpaceFields"]) $chk="";
@@ -377,15 +377,24 @@ if ($count) {
                     if ($debug) echo " dtf:$dtf df:$df tf:$tf ";
 		    $distinct=0;
                 }
-                if ($money[$i]) { if ($debug) echo "money "; $datatype = 'DECIMAL(9,2)'; $distinct=0;}
+                if ($money[$i]) { 
+			if ($debug) echo "money "; 
+			$datatype = 'DECIMAL(9,2)'; 
+			$distinct=0; 
+			$header[$i]='@col'.$j;
+    			if (!$SETSQL) $SETSQL = "\nSET \n"; else $SETSQL .= ",\n";
+    			$SETSQL .= "`$ColName` = TRIM(REPLACE(REPLACE(REPLACE(@col$j,'$',''),',',''),' ',''))";
+		}
                 if ($float[$i]) { if ($debug) echo "float "; $datatype = 'FLOAT'; $distinct=0;}
                 if ($integer[$i]) { if ($debug) echo "int "; $datatype = 'INT'; $distinct=0;}
                 if ($debug) echo " $distinct ";
                 if (($distinct>1) and ($distinct<$card) and ($lines>100)) {
-                    $datatype="ENUM('".implode("','",array_keys($enum[$i]))."')";
-                    $header[$i] = '@col'.$j;
-                    if (!$SETSQL) $SETSQL = "\nSET \n"; else $SETSQL .= ",\n";
-                    $SETSQL .= "`$ColName` = trim(@col$j)";
+		    if (strpos(implode("",array_keys($enum[$i])),"'")===false) { #if data contains ' then not suitable for enum
+                    	$datatype="ENUM('".implode("','",array_keys($enum[$i]))."')";
+                    	$header[$i] = '@col'.$j;
+                    	if (!$SETSQL) $SETSQL = "\nSET \n"; else $SETSQL .= ",\n";
+                    	$SETSQL .= "`$ColName` = trim(@col$j)";
+		    }
                 }
                 if (!$null[$i]) $datatype .= " NOT NULL";
             } else {
@@ -410,7 +419,7 @@ if ($count) {
         echo "<h3>$basename[$files]</h3>";
         echo "<br>\n$keys keys<br />";
         echo "<textarea name='sqlquery[]' rows='15' cols='100'>$SQL</textarea><br />";
-        $SQL = "LOAD LOCAL DATA INFILE '".@mysql_escape_string($filename[$files])."' INTO TABLE `".$TableName.  "` FIELDS TERMINATED BY '$eof'".
+        $SQL = "LOAD DATA INFILE '".@mysql_escape_string($filename[$files])."' INTO TABLE `".$TableName.  "` FIELDS TERMINATED BY '$eof'".
                " OPTIONALLY ENCLOSED BY '$enc' ESCAPED BY '$esc' LINES TERMINATED BY '$eol' IGNORE 1 LINES (".implode(",", $header).")".$SETSQL.";";
         echo "<textarea name='sqlquery[]' rows='5' cols='100'>$SQL</textarea><br />";
     }
