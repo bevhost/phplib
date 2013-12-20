@@ -153,7 +153,9 @@ class Table
 	echo "<tbody>\n";
 	$rows = $this->show_table_rows($ary, $class);
 	echo "</tbody>\n";
+	echo "<tfoot>\n";
 	$this->show_table_totals_row($rows);
+	echo "</tfoot>\n";
     }
     if (!$this->no_close) $this->table_close($class);
     
