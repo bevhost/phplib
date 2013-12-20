@@ -287,6 +287,8 @@ class Table
       if (isset($this->add_insert))
        $this->table_insert_row($val, $class);
     }
+    if ($this->check) 
+	  echo "<form method='post' name='$this->checkbox_form_id' id='$this->checkbox_form_id'>\n";
 
     return 1;
   }
@@ -1571,10 +1573,10 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 	}
       }
     }
-    $select = "";
     if ($tc) $sql_table .= "."; else $sql_table = "";
+    $select = "SELECT $sql_table".$this->primary_key;
     foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t") {
-	if ($select) $select .= ", "; else $select="SELECT ";
+	if ($select) $select .= ", "; 
 	$qf = $db->qi($this_field);
 	$func = array_key_exists($this_field,$this->funcs) ? $this->funcs[$this_field] : false;
 	if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
