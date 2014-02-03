@@ -53,6 +53,8 @@ class Table
   var $fields;                           ## Array of field names to show
   var $all_fields;			 ## Complete field names list
   var $orig_fields = Array();		 ## Original field name where display field is mapped to another db table.
+  var $numeric_fields = Array();	 ## Fields that contain data that can be SUM, AVERAGE, MIN, MAX etc
+  var $extra_fields;			 ## Fields such as Primary Key needed by Checkbox or add_extra functions.
   var $heading;                          ## if set, create <th> section
   var $add_extra = false;                ## Call extra cell functions
   var $add_total;			 ## Display Total Line
@@ -142,8 +144,11 @@ class Table
   function show($ary, $class="") 
   {
     global $debug;
+
+    # need some data for headings and search row.
+    if ($this->heading and empty($ary) and is_array($this->fields)) foreach($this->fields as $f) $ary[0][$f]=''; 
     
-    if (!$this->verify_2d_array($ary))
+   if (!$this->verify_2d_array($ary))
       return 0;
 
     $rows = 0;
@@ -153,9 +158,7 @@ class Table
 	echo "<tbody>\n";
 	$rows = $this->show_table_rows($ary, $class);
 	echo "</tbody>\n";
-	echo "<tfoot>\n";
 	$this->show_table_totals_row($rows);
-	echo "</tfoot>\n";
     }
     if (!$this->no_close) $this->table_close($class);
     
@@ -518,6 +521,7 @@ class Table
     reset($ary);
     while(list($key, $val) = each($ary))
     {
+      if ($key or implode($val,'')>'') #skip blank first dummy row
       ## Process a single row
       $this->table_row($row++, $key, $val, $class);
     }
@@ -1548,6 +1552,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 
   function select($form, $join="") {
     $class = $form->classname;
+    if (empty($this->extra_fields)) $this->extra_fields[] = $this->primary_key;
     $this->orig_fields = Array();
     if (strtolower(substr($class,0,3))=="my_") $class=substr($class,3);
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
@@ -1576,7 +1581,10 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
       }
     }
     if ($tc) $sql_table .= "."; else $sql_table = "";
-    $select = "SELECT $sql_table".$this->primary_key;
+    foreach ($this->extra_fields as $this_field) {
+	if ($select) $select .= ", "; else $select = "SELECT ";
+    	$select .= $sql_table.$this_field;
+    }
     foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t") {
 	if ($select) $select .= ", "; 
 	$qf = $db->qi($this_field);
