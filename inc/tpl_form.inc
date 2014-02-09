@@ -953,7 +953,7 @@ TODO: Change this to have some AJAX to handle larger lists.
         foreach ($this->form_data->elements as $k=>$v) {
 		$ks = $k."_Selector";
 		$jointable = "";
-		if ($table and array_key_exists($ks,$_POST)) {
+		if ($table and array_key_exists($ks,$_REQUEST)) {
 			if (!isset($fk)) $fk = new $_ENV["MyForeignKeysDB"];
     			$class = $this->classname;
     			if (strtolower(substr($class,0,3))=="my_") $class=substr($class,3);
@@ -977,15 +977,15 @@ TODO: Change this to have some AJAX to handle larger lists.
 		$tablename = $jointable ? $jointable : $this->table;
                 if (isset($v["ob"]->field) 
 		  and ($f = $v["ob"]->field)             // has an sql field
-                  and (!empty($_POST[$k]))) {           // and was POSTed.
+                  and (!empty($_REQUEST[$k]))) {           // and was POSTed.
                         if ($query) $query .= " AND ";
-			if (array_key_exists("oper_$k",$_POST)) {
-				$condition = $_POST["oper_$k"];
-				$data = $_POST[$k];
+			if (array_key_exists("oper_$k",$_REQUEST)) {
+				$condition = $_REQUEST["oper_$k"];
+				$data = $_REQUEST[$k];
 				$this->DateCheck($data);
                         	$value = $this->db->quote($data);
                         } else {
-				if (is_array($data = $_POST[$k])) {
+				if (is_array($data = $_REQUEST[$k])) {
 					$data = $data[0];
 				} else {
 					if (substr($data,0,1)=="$") $data = substr($data,1);
