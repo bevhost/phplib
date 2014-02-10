@@ -922,7 +922,10 @@ TODO: Change this to have some AJAX to handle larger lists.
 
   # check to see if the field is a date or part thereof
   # convert to correct format
-  function DateCheck(&$str) {
+  function DateCheck(&$str,$type) {
+   switch($type) {
+     default: break;
+     case "of_date":
 	$orig=$str;
 	if (strlen($str)==3 and in_array($str,explode(",","jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec"))) {
 		$s = strtotime($str);
@@ -932,6 +935,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 		if ($date = strtotime($str)) $str=date("Y-m-d",$date);
 	}
 #	if (!strpos($orig,date('D',strtotime($str)))) $str=str_replace(date('-d',strtotime($str)),'-',$str);
+   }
   }
 
 
@@ -977,11 +981,12 @@ TODO: Change this to have some AJAX to handle larger lists.
                 if (isset($v["ob"]->field) 
 		  and ($f = $v["ob"]->field)             // has an sql field
                   and (!empty($_REQUEST[$k]))) {           // and was POSTed.
+			$type = $v["ob"]->type;
                         if ($query) $query .= " AND ";
 			if (array_key_exists("oper_$k",$_REQUEST)) {
 				$condition = $_REQUEST["oper_$k"];
 				$data = $_REQUEST[$k];
-				$this->DateCheck($data);
+				$this->DateCheck($data,$type);
                         	$value = $this->db->quote($data);
                         } else {
 				if (is_array($data = $_REQUEST[$k])) {
@@ -991,8 +996,8 @@ TODO: Change this to have some AJAX to handle larger lists.
 				}
 	                        $condition = substr($data,0,1);
 				$therest = substr($data,1);
-				$this->DateCheck($therest);
-				$this->DateCheck($data);
+				$this->DateCheck($therest,$type);
+				$this->DateCheck($data,$type);
                         	$value = $this->db->quote($therest);
                         	$nvalue = $this->db->quote("%".$therest."%");
 			}
@@ -1009,7 +1014,8 @@ TODO: Change this to have some AJAX to handle larger lists.
                                 $query .= "$tf NOT LIKE $nvalue";
                                 break;
                             default:
-                                $query .= "$tf LIKE ".$this->db->quote("%".$data."%");
+				if ($type<>"of_date") $data = "%".$data;
+                                $query .= "$tf LIKE ".$this->db->quote($data."%");
                         }
 
                 }
