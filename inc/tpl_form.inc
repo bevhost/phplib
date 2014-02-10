@@ -479,7 +479,6 @@ TODO: Change this to have some AJAX to handle larger lists.
 		else $options[] = array("value"=>$NullValue,"label"=>$NullDesc);
 	}
 	$count = 0;
-	#echo "<!-- $sql -->";
         $db->query($sql);
         while ($db->next_record()) {
 		if ($count++>200) break;
@@ -875,7 +874,7 @@ TODO: Change this to have some AJAX to handle larger lists.
   # In this example the link function provides a dropdown box with a list of
   # companies on the contacts or sales_staff or truck_drivers forms.
 
-  function showChildRecords($cols=8) {
+  function showChildRecords($cols=8,$max_rows=20) {
     $class = substr($this->classname,0,-4);
     if (strtolower(substr($class,0,3))=="my_") $class=substr($class,3);
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
@@ -912,7 +911,7 @@ TODO: Change this to have some AJAX to handle larger lists.
         $f = new $formname;
         $f->form_data = new form;
         $f->setup_fields();
-        $sql = $t->select($f).sprintf("%s.%s=%s ",$db2->qi($childclass),$db2->qi($db->f("FieldName")),$db2->quote($GLOBALS[$db->f("LinkField")]))." LIMIT 100";
+        $sql = $t->select($f).sprintf("%s.%s=%s ",$db2->qi($childclass),$db2->qi($db->f("FieldName")),$db2->quote($GLOBALS[$db->f("LinkField")]))." LIMIT $max_rows";
         $t->heading = "on";
         $t->add_extra = "$childclass.php";
 	unset($t->fields["submit"]);
