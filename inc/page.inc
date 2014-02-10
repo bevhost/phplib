@@ -17,7 +17,6 @@ function page_open($feature) {
     $sess = new $feature["sess"];
     $sess->start();
 
-    
     # the auth feature depends on sess
     if (isset($feature["auth"])) {
       global $auth;
@@ -27,7 +26,6 @@ function page_open($feature) {
       }
       $auth->start();
   
-      
       # the perm feature depends on auth and sess
       if (isset($feature["perm"])) {
         global $perm;
