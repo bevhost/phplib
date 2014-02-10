@@ -626,12 +626,28 @@ class DB_Sql {
   }
 
   function haltmsg($msg) {
+     global $dev;
+     if($dev) {
+      $detail = "";
+      if(function_exists('debug_backtrace')){
+        //print "backtrace:\n";
+        $backtrace = debug_backtrace();
+        array_shift($backtrace);
+        foreach($backtrace as $i=>$l){
+            @$detail .= "[$i] in function {$l['class']}{$l['type']}{$l['function']}";
+            if($l['file']) $detail .= " in {$l['file']}";
+            if($l['line']) $detail .= " on line {$l['line']}";
+            $detail .= "\n";
+        }
+      }
+     }
     printf("<b>Database error:</b> %s<br>\n", $msg);
     printf("<b>%s PDO Error</b> (%s): %s, %s<br>\n",
       $this->Server,
       $this->ErrCode,
       $this->Errno,
       $this->Error);
+    echo "<pre>$detail</pre>";
   }
 
 }
