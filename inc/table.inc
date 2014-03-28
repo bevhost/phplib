@@ -56,6 +56,7 @@ class Table
   var $numeric_fields = Array();	 ## Fields that contain data that can be SUM, AVERAGE, MIN, MAX etc
   var $extra_fields;			 ## Fields such as Primary Key needed by Checkbox or add_extra functions.
   var $heading;                          ## if set, create <th> section
+  var $caption;				 ## If set, show <caption>
   var $add_extra = false;                ## Call extra cell functions
   var $add_total;			 ## Display Total Line
   var $add_insert;			 ## Display Insert/Search Line
@@ -1291,6 +1292,7 @@ function ".$this->classname."SaveCell(elem,index) {
 	
     printf("<table%s >\n", $class?" class='$class'":""); 
 	$this->total = array();
+    if ($this->caption) echo "<caption>$this->caption</caption>\n";
   }
 
   #==========================================================================
@@ -1556,17 +1558,18 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     $this->orig_fields = Array();
     if (strtolower(substr($class,0,3))=="my_") $class=substr($class,3);
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
-    $db = new $_ENV["MyForeignKeysDB"];
+    $fk = new $_ENV["MyForeignKeysDB"];
+    $db = new $form->database_class;
     $sql_table = $db->qi($this->sql_table);
     $from = "FROM $sql_table";
     $where = "WHERE ";
-    $tc = 0;
+    if ($join) $tc=1; else $tc=0;  // table counter
     if (!$this->edit) {
       $links = "";
       $sql = "select * from ".$_ENV["MyForeignKeys"]." where FormName = '$class' order by id";
-      $db->query($sql);
-      while ($db->next_record()) {
-        extract($db->Record);
+      $fk->query($sql);
+      while ($fk->next_record()) {
+        extract($fk->Record);
 	$q_FieldName = $db->qi($FieldName);
 	$q_LinkField = $db->qi($LinkField);
 	if (($LinkDesc) and (in_array($FieldName,$this->fields))) {
@@ -1582,11 +1585,13 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     }
     if ($tc) $sql_table .= "."; else $sql_table = "";
     foreach ($this->extra_fields as $this_field) {
-	if ($select) $select .= ", "; else $select = "SELECT ";
-    	$select .= $sql_table.$this_field;
+	if (array_search($this_field,$this->fields)===false) {
+	    if ($select) $select .= ", "; else $select = "SELECT ";
+    	    $select .= $sql_table.$this_field;
+	}
     }
     foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t") {
-	if ($select) $select .= ", "; 
+	if ($select) $select .= ", "; else $select = "SELECT ";
 	$qf = $db->qi($this_field);
 	$func = array_key_exists($this_field,$this->funcs) ? $this->funcs[$this_field] : false;
 	if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
