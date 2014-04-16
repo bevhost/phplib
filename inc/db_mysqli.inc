@@ -16,6 +16,7 @@ class DB_Sql {
   var $Database = "";
   var $User     = "";
   var $Password = "";
+  var $Server   = "mysql";
 
   var $charset  = "utf8";
 
@@ -356,7 +357,7 @@ class DB_Sql {
     if ($table) {
       $this->connect();
       //$id = @mysqli_list_fields($this->Database, $table);
-      $id = @mysql_query($this->LinkID,"SHOW FIELDS FROM $table");
+      $id = @mysqli_query($this->LinkID,"SHOW FIELDS FROM $table");
       if (!$id) {
         $this->halt("Metadata query failed.");
         return false;
@@ -430,7 +431,7 @@ class DB_Sql {
   /* public: find available table names */
   function table_names() {
     $this->connect();
-    $h = @mysqli_query($this->LinkID,"show tables");
+    $h = @mysqli_query($this->Link_ID,"show tables");
     $i = 0;
     while ($info = @mysqli_fetch_row($h)) {
       $return[$i]["table_name"]      = $info[0];
