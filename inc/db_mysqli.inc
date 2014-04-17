@@ -357,7 +357,7 @@ class DB_Sql {
     if ($table) {
       $this->connect();
       //$id = @mysqli_list_fields($this->Database, $table);
-      $id = @mysqli_query($this->LinkID,"SHOW FIELDS FROM $table");
+      $id = @mysqli_query($this->Link_ID,"SHOW FIELDS FROM $table");
       if (!$id) {
         $this->halt("Metadata query failed.");
         return false;
@@ -395,7 +395,7 @@ class DB_Sql {
 
     for ($i=0; $i<$count; $i++) {
 	$res[$i]["group"] = $res[$i]["type"];
-	$h = @mysqli_query($this->LinkID,"SHOW FIELDS FROM $table WHERE Field='".$res[$i]["name"]."'");
+	$h = @mysqli_query($this->Link_ID,"SHOW FIELDS FROM $table WHERE Field='".$res[$i]["name"]."'");
 	$row = @mysqli_fetch_array($h);
 	$fattr = "";
 	$pos = strpos ( $row["Type"], "(" );
@@ -446,7 +446,7 @@ class DB_Sql {
 
   function primary_key($table) {
     $this->connect();
-    $h = @mysqli_query($this->LinkID,"show index from `$table` where Key_name='PRIMARY'");
+    $h = @mysqli_query($this->Link_ID,"show index from `$table` where Key_name='PRIMARY'");
     if ($info = @mysqli_fetch_array($h)) {
 	$return = $info["Column_name"];
     }
