@@ -419,7 +419,8 @@ if (\$export_results) {
 } else {
 	page_open(array(\"sess\"=>\"".$db."_Session\",\"auth\"=>\"".$db."_Auth\",\"perm\"=>\"".$db."_Perm\"));
 	#if (\$Field) include(\"pophead.ihtml\"); else include(\"head.ihtml\");
-	echo \"<span class='big'>".neatstr($classnames[$i])."</span>\";
+	if (\$".$classnames[$i]."_group_by) \$by = \" by \$".$classnames[$i]."_group_by\"; else \$by=\"\";
+	echo \"<span class='big'>".neatstr($classnames[$i])."\$by</span>\";
 	#if (empty(\$Field)) include(\"menu.html\");
 }
 check_view_perms();
@@ -582,6 +583,7 @@ switch (\$cmd) {
 
 	\$db = new DB_".$db.";
 
+	if (!\$export_results) echo \"<a href=\\\"\".\$sess->self_url().\$sess->add_query(array(\"cmd\"=>\"Add\")).\"\\\">Add</a> ".neatstr($tbnames[$i])."\\n\";
 ");
 
 
@@ -591,6 +593,7 @@ $DataModifierRead = "";
 $DataModifierWrite = "";
 $fvals = "";
 $fcols = "";
+$fnums = "";
 $fdisp = "";
 $fquer = "";
 $fnams = "";
@@ -775,6 +778,7 @@ WebType:      ".$wtype."
     		if ($j>0) $fvals .= "'$".$fvname."'";
                 if (strlen($fdisp)>1) $fdisp .= ","; $fdisp .= "\n\t\t\t\"".$fname.'"=>"'.neatstr($fvname).'"';
                 if (strlen($fcols)>1) $fcols .= ","; $fcols .= "\n\t\t\t\"".$fname.'"';
+		if (strlen($fnums)>1) $fnums .= ","; $fnums .= "\n\t\t\t\"".$fname.'"';
 		if ($AllowNull=="null") $ValidRegex = "^[0-9|\-]+$|^$";
 		else $ValidRegex = "^[0-9|\-]+$";
 		fwrite($finc,'"type"=>"text","name"=>"'.$fvname.'","size"=>"'.$fsize.'",
@@ -833,6 +837,7 @@ WebType:      ".$wtype."
                 $fvals .= "'$".$fvname."'";
                 if (strlen($fdisp)>1) $fdisp .= ","; $fdisp .= "\n\t\t\t\"".$fname.'"=>"'.neatstr($fvname).'"';
                 if (strlen($fcols)>1) $fcols .= ","; $fcols .= "\n\t\t\t\"".$fname.'"';
+		if (strlen($fnums)>1) $fnums .= ","; $fnums .= "\n\t\t\t\"".$fname.'"';
 		$DataModifierRead .= "\$".$fvname." = \"$\".\$".$fvname.";\n\t";
 		$DataModifierRead .= "\$this->form_data->elements[\"".$fvname."\"][\"ob\"]->value=\$".$fvname.";\n\t";
 		$DataModifierWrite .= "\$".$fvname." = str_replace('$','',\$".$fvname.");\n\t";
@@ -848,6 +853,7 @@ WebType:      ".$wtype."
 	case "datetime":
 	case "timestamp":
 		$oohtype="date";
+		if (strlen($fnums)>1) $fnums .= ","; $fnums .= "\n\t\t\t\"".$fname.'"';
 	default: /* char,varchar,string,var_string etc */
     		$fquer .= "\n\t\"".$fname."\" => \"".$fname."\"";
     		$fvals .= "'$".$fvname."'";
@@ -930,14 +936,26 @@ fwrite($fihtml,"    <tr><td>&nbsp;</td><td>
 // Write tail end of files.
 
 fwrite($fphp,"
-        if (array_key_exists(\"".$classnames[$i]."_fields\",\$_REQUEST)) \$".$classnames[$i]."_fields = \$_REQUEST[\"".$classnames[$i]."_fields\"];
+        if (array_key_exists(\"".$classnames[$i]."_fields\",\$_REQUEST)) {
+                \$".$classnames[$i]."_fields = \$_REQUEST[\"".$classnames[$i]."_fields\"];
+                \$".$classnames[$i]."_funcs = \$_REQUEST[\"".$classnames[$i]."_funcs\"];
+                \$".$classnames[$i]."_group_by = \$_REQUEST[\"GroupBy\"];
+        }
         if (empty(\$".$classnames[$i]."_fields)) {
                 \$".$classnames[$i]."_fields = array_first_chunk(\$t->default,7,11);
-                \$sess->register(\"".$classnames[$i]."_fields\");
+                \$".$classnames[$i]."_funcs = array();
+                \$".$classnames[$i]."_group_by = \"\";
+                \$sess->register(\"".$classnames[$i]."_fields,".$classnames[$i]."_funcs,".$classnames[$i]."_group_by\");
         }
 	if (in_array(@\$LocField,\$".$classnames[$i]."_fields)) displayLocSelect(\$f->classname,\$LocField);
         
         \$t->fields = \$".$classnames[$i]."_fields;
+        \$t->GroupBy = \$".$classnames[$i]."_group_by;
+        \$t->funcs = array();
+        foreach(\$".$classnames[$i]."_funcs as \$func ) if (\$func) {
+                list(\$func,\$field) = explode(\":\",\$func);
+                \$t->funcs[\$field]=\$func;
+        }
 		
 	#\$t->extra_html = array('fieldname'=>'extrahtml');
 	#\$t->align      = array('fieldname'=>'right', 'otherfield'=>'center'); 	
@@ -948,6 +966,7 @@ fwrite($fphp,"
           echo \"&nbsp;<input name='ExportTo' type='radio' onclick=\\\"javascript:export_results('Excel2007');\\\"> Excel 2007&nbsp;\\n\";
   
 ".( $nobootstrap ? "
+	  echo \"<br>\";
           echo \"<a href=javascript:show('ColumnSelector')>Column Chooser</a> \";
           echo \"<form id=ColumnSelector method='post' style=display:none>\\n\";
           echo \"  <div class='modal-header'>\\n\";
@@ -961,9 +980,21 @@ fwrite($fphp,"
           echo \"   <h3>Column Chooser</h3>\\n  </div>\\n  <div class='modal-body'>\";
           echo \" <form id=ColumnSelector method='post'>\\n\";
 " )."
+	  \$fcount = 0;
           foreach (\$t->all_fields as \$field) {
+		\$fcount++;
                 if (in_array(\$field,\$".$classnames[$i]."_fields,TRUE)) \$chk = \"checked='checked'\"; else \$chk=\"\";
-                echo \"\\n   <input type='checkbox' \$chk name='".$classnames[$i]."_fields[]' value='\$field' />\$field <br />\";
+                if (array_key_exists(\$field,\$t->funcs)) \$func = \$t->funcs[\$field].\":\".\$field; else \$func=\"\";
+                echo \"\\n<input id='cb\$fcount' type='checkbox' \$chk name=".$classnames[$i]."_fields[] value='\$field' />\";
+                echo \"\\n<input id='hf\$fcount' type='hidden' name=".$classnames[$i]."_funcs[] value='\$func' />\";
+                if (!\$func) \$func = \$field;
+                echo \"<span id=span_\$fcount>\$func</span> <small>\";
+                if (in_array(\$field,\$t->numeric_fields)) {
+                        foreach (explode(\",\",\"off,sum,max,min,avg,std,count,distinct\") as \$func) {
+                                echo \"<a href=\\\"javascript:SetFunction(\$fcount,'\$field','\$func')\\\">\$func</a> \";
+                        }
+                }
+                echo \"</small><br />\";
           }
 	  \$foot = \"\";
           if (\$sess->have_edit_perm()) {
@@ -975,6 +1006,7 @@ fwrite($fphp,"
                 \$off='checked=\"checked\"'; \$on='';
             }
             \$foot = \" &nbsp; Edit Mode <input type='radio' name='EditMode' value='on' \$on> On <input type='radio' name='EditMode' value='off' \$off /> Off &nbsp; \";
+	    \$foot .=  \"\\n<br /> Group By <input name=GroupBy value='\$t->GroupBy'>\";
           } else {
             \$EditMode='';
           }
@@ -1109,6 +1141,10 @@ fwrite($fphp,"
 #      \"ip_addr\"=>\"inet_aton\",  
 #      );
 
+  if (strpos(strtolower(\$query),\"group by\")===false) {
+        if (\$t->GroupBy) \$query .= \" group by \".\$t->GroupBy;
+        \$t->add_extra = false;
+  }
   if (strpos(strtolower(\$query),\"order by\")===false) {
 	if (\$so=\$f->order_by(\$sortorder)) \$query .= \" order by \".\$so;
   }
@@ -1189,14 +1225,20 @@ class ".$classnames[$i]."Table extends Table {
   var \$sql_table = \"$tb_names[$i]\";
   var \$primary_key = \"$keynames[$i]\";
   var \$primary_field = \"$key_names[$i]\";
-  var \$all_fields = array(".$fcols.");
+  var \$all_fields = array(".$fcols.",
+			);
 
   /* comment out or delete some of these default entries so that the table isn't too wide for the screen */
-  var \$default = array(".$fcols.");
+  var \$default = array(".$fcols.",
+			);
+
+  var \$numeric_fields = array(".$fnums.",
+			);
 
   // These fields will be searchable and displayed in results.
   // Format is \"RealFieldName\"=>\"Field Name Formatted For Display\",
-  var \$map_cols = array(".$fdisp.");
+  var \$map_cols = array(".$fdisp.",
+			);
 ");
 if ( $tbnames[$i] == $cart_table )
   fwrite($finc,"
