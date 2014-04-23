@@ -80,7 +80,20 @@ class DB_Sql {
   }
   function execute($param=array()) {
 	if (!is_array($param)) $param = func_get_args();
-	if (!$status = $this->sth->execute($param)) $this->halt(array_search(null,$param)?"Null Parameter":"Cannot Execute");
+	if (!((bool)count(array_filter(array_keys($param), 'is_string')))) { // this is NOT an associative array, so we cannot bindValue or bindParams
+		if (!$status = $this->sth->execute($param)) $this->halt(array_search(null,$param)?"Null Parameter":"Cannot Execute");
+	} else {
+		foreach ($param as $key => &$val) {
+			if ($val === null) {
+				$this->sth->bindValue($key, $val, PDO::PARAM_NULL);
+			} else if ($val === "''") {
+				$this->sth->bindValue($key, $val, PDO::PARAM_STR);
+			} else {
+				$this->sth->bindParam($key, $val);
+			}
+		}
+		if (!$status = $this->sth->execute()) $this->halt(array_search(null,$param)?"Null Parameter":"Cannot Execute");
+	}
 	$this->getErrorInfo();
 	return $status;
   }
