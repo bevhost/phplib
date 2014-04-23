@@ -77,6 +77,12 @@ class DB_Sql {
   function rollback() {
 	return $this->dbh->rollback();
   }
+  function execute($param=array()) {
+	if (!is_array($param)) $param = func_get_args();
+	if (!$status = $this->sth->execute($param)) $this->halt("Cannot Execute");
+	$this->getErrorInfo();
+	return $status;
+  }
 
   /* public: some trivial reporting */
   function link_id() {
@@ -223,7 +229,7 @@ class DB_Sql {
   }
 
   /* public: walk result set */
-  function next_record() {
+  function next_record($fetch_style=PDO::FETCH_BOTH) {
     if (!$this->sth) {
       $this->halt("next_record called with no query pending.");
       return 0;
@@ -231,7 +237,7 @@ class DB_Sql {
 
     if ($this->Debug) echo ".";
 
-    $this->Record = $this->sth->fetch();
+    $this->Record = $this->sth->fetch($fetch_style);
     $this->Row   += 1;
     $this->getErrorInfo();
 
