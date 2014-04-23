@@ -67,6 +67,7 @@ class DB_Sql {
 	return $this->dbh->beginTransaction();
   }
   function prepare($query = "") {
+    	if ($this->Debug) printf("Debug: prepare = %s<br>\n", $query);
 	if (!$this->connect()) return false;  
 	$this->sth = $this->dbh->prepare($query);
 	return $this->sth;
@@ -79,7 +80,7 @@ class DB_Sql {
   }
   function execute($param=array()) {
 	if (!is_array($param)) $param = func_get_args();
-	if (!$status = $this->sth->execute($param)) $this->halt("Cannot Execute");
+	if (!$status = $this->sth->execute($param)) $this->halt(array_search(null,$param)?"Null Parameter":"Cannot Execute");
 	$this->getErrorInfo();
 	return $status;
   }
@@ -236,6 +237,7 @@ class DB_Sql {
     }
 
     if ($this->Debug) echo ".";
+    if (is_array($fetch_style)) $fetch_style=PDO::FETCH_BOTH;
 
     $this->Record = $this->sth->fetch($fetch_style);
     $this->Row   += 1;
@@ -653,7 +655,7 @@ class DB_Sql {
       $this->ErrCode,
       $this->Errno,
       $this->Error);
-    echo "<pre>$detail</pre>";
+    if ($dev) echo "<pre>$detail</pre>";
   }
 
 }
