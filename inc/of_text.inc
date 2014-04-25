@@ -101,7 +101,8 @@ class of_text extends of_element {
     $str .= "$v\n";
     
     $count = 1;
-    return $str;
+    if (isset($this->link)) return $this->link.$str."</a>";
+    else return $str;
   }
 
   function self_get_js($ndx_array) {
