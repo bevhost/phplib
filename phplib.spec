@@ -1,10 +1,11 @@
 Summary: php library
 Name: phplib
 Version: 1.0
-Release: 8
+Release: 9
 License: GNU Library or Lesser General Public License (LGPL)
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-root
+Requires: php-mcrypt
 Group: System Environment/Daemons
 Source: %{name}-%{version}.tar.gz
 Packager: David Beveridge <david@beveridge.id.au>
@@ -40,6 +41,9 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/phplib/*
 
 %changelog
+* Mon Apr 28 2014 marado
+- Added php-mcrypt dependency
+
 * Sat Jul 07 2012 dave
 - version 0.8
 
