@@ -67,6 +67,7 @@ class Table
   var $form;				 ## tpl form to hold insert/edit record
   var $js_sent;				 ## has javascript be sent for this form?
   var $map_cols;                         ## remap database columns to new names
+  var $map_rels = Array();		 ## remap fieldnames to joined table fieldnames
   var $funcs = Array();			 ## Group By Aggregator functions for each field
   var $align = Array();			 ## Allow alignment of fields.
   var $format = Array();		 ## php money_format
@@ -317,7 +318,7 @@ class Table
    }
     if ($this->heading)
     {
-      if ($db->next_record())
+      if ($db->next_record($this->map_rels))
       {
         $this->table_heading_row($db->Record, $class);
         if (isset($this->add_insert))
@@ -465,7 +466,9 @@ class Table
                 $this->js_sent[$form] = 1;
                 $this->form->form_data->finish();
         } else {
-                echo "<input type='hidden' name='form_name' value='$form'></form>";
+		$this->form->form_data->jvs_name = false;
+                $this->form->form_data->finish();
+  #              echo "<input type='hidden' name='form_name' value='$form'></form>";
         }
   }
 
@@ -559,7 +562,7 @@ class Table
       $row++;
     }
     
-    while($db->next_record())					// show the rest of the rows
+    while($db->next_record($this->map_rels))					// show the rest of the rows
     {
       ## Process a table row
       $this->table_row($row, $row, $db->Record, $class);
@@ -650,7 +653,7 @@ class Table
     $fin = $start + $num;
 
     $db->seek($start);
-    while($db->next_record() && ($row < $fin))    
+    while($db->next_record($this->map_rels) && ($row < $fin))    
     {
       ## Process a table row
       $this->table_row($row, $row, $db->Record, $class);
@@ -1563,6 +1566,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     $sql_table = $db->qi($this->sql_table);
     $from = "FROM $sql_table";
     $where = "WHERE ";
+    $select = "";
     if ($join) $tc=1; else $tc=0;  // table counter
     if (!$this->edit) {
       $links = "";
@@ -1586,16 +1590,22 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     if ($tc) $sql_table .= "."; else $sql_table = "";
     foreach ($this->extra_fields as $this_field) {
 	if (array_search($this_field,$this->fields)===false) {
-	    if (isset($select)) $select .= ", "; else $select = "SELECT ";
+	    if ($select) $select .= ", "; else $select = "SELECT ";
     	    $select .= $sql_table.$this_field;
 	}
     }
+    $this->map_rels = array();
     foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t") {
-      if (isset($select)) $select .= ", "; else $select = "SELECT ";
-      $qf = $db->qi($this_field);
-      $func = array_key_exists($this_field,$this->funcs) ? $this->funcs[$this_field] : false;
-      if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
-      $select .= $func ? "$func($dist$sql_table$qf) as $qf" : "$sql_table$qf";
+	if ($select) $select .= ", "; else $select = "SELECT ";
+	$qf = $db->qi($this_field);
+	if ($relName = @$form->form_data->elements[$this_field]["ob"]->relName) {
+		if (!$relShow = $form->form_data->elements[$this_field]["ob"]->relShow) $relShow = "Name";
+		$qf = $relName . "." . $relShow;
+		$this->map_rels[$relName] = $this_field;
+	}
+	$func = array_key_exists($this_field,$this->funcs) ? $this->funcs[$this_field] : false;
+	if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
+	$select .= $func ? "$func($dist$sql_table$qf) as $qf" : "$sql_table$qf";
     }
     $custom = array_key_exists("custom_query",$_POST) ? $_POST["custom_query"] : "";
     return("$select $links $from $join $custom $where");
