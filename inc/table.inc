@@ -1586,16 +1586,16 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     if ($tc) $sql_table .= "."; else $sql_table = "";
     foreach ($this->extra_fields as $this_field) {
 	if (array_search($this_field,$this->fields)===false) {
-	    if ($select) $select .= ", "; else $select = "SELECT ";
+	    if (isset($select)) $select .= ", "; else $select = "SELECT ";
     	    $select .= $sql_table.$this_field;
 	}
     }
     foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t") {
-	if ($select) $select .= ", "; else $select = "SELECT ";
-	$qf = $db->qi($this_field);
-	$func = array_key_exists($this_field,$this->funcs) ? $this->funcs[$this_field] : false;
-	if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
-	$select .= $func ? "$func($dist$sql_table$qf) as $qf" : "$sql_table$qf";
+      if (isset($select)) $select .= ", "; else $select = "SELECT ";
+      $qf = $db->qi($this_field);
+      $func = array_key_exists($this_field,$this->funcs) ? $this->funcs[$this_field] : false;
+      if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
+      $select .= $func ? "$func($dist$sql_table$qf) as $qf" : "$sql_table$qf";
     }
     $custom = array_key_exists("custom_query",$_POST) ? $_POST["custom_query"] : "";
     return("$select $links $from $join $custom $where");
