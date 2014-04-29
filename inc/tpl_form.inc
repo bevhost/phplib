@@ -328,16 +328,19 @@ class tpl_form {
     $file = "phplib/".$this->classname.".ihtml";
     if (file_exists($file)) include($file);
     else {
-    	$file = "phplib/autogen/".$this->classname.".ihtml";
-    	if (file_exists($file)) include($file);
-    	else {
-    	    $file = "phplib/autogen/".$_ENV["autogen"].'/'.$this->classname.".ihtml";
-    	    if (file_exists($file)) include($file);
-    	    else {
-		EventLog("form file not found for ".$this->classname,"","Error");
+      $file = "phplib/autogen/".$this->classname.".ihtml";
+      if (file_exists($file)) include($file);
+      else if (isset($_ENV["autogen"])) {
+        $file = "phplib/autogen/".$_ENV["autogen"].'/'.$this->classname.".ihtml";
+        if (file_exists($file)) include($file);
+        else {
+          EventLog("form file not found for ".$this->classname,"","Error");
+          // maybe die here.
+        }
+      } else {
+        EventLog("form file not found for ".$this->classname,"","Error");
 		// maybe die here.
-	    }
-	}
+      }
     }
     return true;
   }
