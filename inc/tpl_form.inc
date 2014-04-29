@@ -73,6 +73,8 @@ class tpl_form {
   var $image_store = "disk"; # If set to "disk" then alway store on disk.
 			     # otherwise attempt to store in SQL DB 1st.
 
+  var $map_rels = array();   # map relational field names
+
   # This is a sort of constructor for the class. $values
   # is an array used to store form values. The class
   # writes data into it, but may also use it to obtain
@@ -328,19 +330,18 @@ class tpl_form {
     $file = "phplib/".$this->classname.".ihtml";
     if (file_exists($file)) include($file);
     else {
-      $file = "phplib/autogen/".$this->classname.".ihtml";
-      if (file_exists($file)) include($file);
-      else if (isset($_ENV["autogen"])) {
-        $file = "phplib/autogen/".$_ENV["autogen"].'/'.$this->classname.".ihtml";
-        if (file_exists($file)) include($file);
-        else {
-          EventLog("form file not found for ".$this->classname,"","Error");
-          // maybe die here.
-        }
-      } else {
-        EventLog("form file not found for ".$this->classname,"","Error");
+    	$file = "phplib/autogen/".$this->classname.".ihtml";
+    	if (file_exists($file)) include($file);
+    	else {
+	    # if autogen ENV is set, check for sanity, may have been POST'd instead of being in a config file.
+	    $autogen = isset($_ENV["autogen"]) ? (preg_match('/^[a-zA-Z0-9_]+$/',$_ENV["autogen"],$autogen) ? $autogen[0] : "") : "";
+    	    $file = "phplib/autogen/$autogen/$this->classname.ihtml";
+    	    if (file_exists($file)) include($file);
+    	    else {
+		EventLog("form file not found for ".$this->classname,"","Error");
 		// maybe die here.
-      }
+	    }
+	}
     }
     return true;
   }
@@ -812,11 +813,27 @@ TODO: Change this to have some AJAX to handle larger lists.
 		die("Invalid data - expected numeric value");
 	} else $id = $db->quote($id);
 	if (!$table) $table=$this->table;
-	$sql = "SELECT * FROM ".$db->qi($table)." WHERE ".$db->qi($key)."=".$id;
+	$fields = "";
+	if ($db->Server=='salesforce') $this->map_rels = array();
+	foreach($this->form_data->elements as $elrec) {
+		if ($db->Server=='salesforce') {
+		    if ($relName = $elrec["ob"]->relName) {
+			if ($fields) $fields .= ", ";
+			if (!$relShow = $elrec["ob"]->relShow) $relShow = "Name";
+			$fields .= $relName . "." . $relShow;
+			$this->map_rels[$relName] = $elrec["ob"]->field;
+		    }
+		} 
+		if (isset($elrec["ob"]->field)) {
+			if ($fields) $fields .= ", ";
+			$fields .= $db->qi($elrec["ob"]->field);
+		}
+	}
+	$sql = "SELECT $fields FROM ".$db->qi($table)." WHERE ".$db->qi($key)."=".$id;
         $db->query($sql);
-        if (!$db->next_record()) { 
+        if (!$db->next_record($this->map_rels)) { 
 		#echo "Record not found ($key=$id)"; 
-		return; 
+		return false; 
 	}
 	$count = 0;
 	$was = "";
@@ -833,6 +850,9 @@ TODO: Change this to have some AJAX to handle larger lists.
               $this->form_data->elements[$el->name]["ob"]->value = explode(",",$db->f($F));
             } else {
               $this->form_data->elements[$el->name]["ob"]->value = $db->f($F);
+	      if ($rel = array_search($F,$this->map_rels))
+	      $this->form_data->elements[$el->name]["ob"]->link = 
+			"<a href='".$db->RelType[$rel].".php?cmd=View;Type=$rel;Id=".$db->Keys[$F]."'>";
             }
           } else {
                 if (($F) and (!array_key_exists($F,$db->Record))) {
@@ -1006,6 +1026,10 @@ TODO: Change this to have some AJAX to handle larger lists.
 			}
 			if ($jointable) $f = $joindesc;
 			$tf =  $this->db->qi($tablename).".".$this->db->qi($f); /* table.field */
+		        if ($relName = $v["ob"]->relName) {
+		                if (!$relShow = $v["ob"]->relShow) $relShow = "Name";
+                		$tf = $relName . "." . $relShow;
+		        }
                         switch($condition) {
                             case ">":
                             case "<":
@@ -1023,6 +1047,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 
                 }
         }
+	if (!$query) $query=@$this->default_query;
 	if (!$query) $query="1";
         return $query;
   }
