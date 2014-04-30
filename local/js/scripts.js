@@ -232,6 +232,11 @@ if (typeof(XMLHttpRequest) == "undefined") {
   };
 }
 
+function ShowSelector(el,popup) {
+        form = el.form.elements['form_name'].value;
+        fld = el.name;
+        ajax('/find.php?Frm='+form+';Col='+fld+';v='+el.value,popup);
+}
 function ajax(url,el) {
   el = typeof(el) != 'undefined' ? el : "popup";
   var xmlHttp;
