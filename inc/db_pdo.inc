@@ -244,11 +244,15 @@ class DB_Sql {
 
   /* public get all records */
   function fetchAll() {
-	if ($this->sth->columnCount()>1) 
-		return $this->sth->fetchAll(PDO::FETCH_ASSOC);  // Array of records (rows)
-	else 
+	if ($this->sth->columnCount()>1) {
+		// Array of records (rows)
+		$data = $this->sth->fetchAll(PDO::FETCH_ASSOC); 
+		if (!$data) $data = array();  // if no records return empty array/
+	} else {
+		// Array of values
 	 	foreach ($this->sth->fetchAll(PDO::FETCH_NUM) as $row) $data[]=$row[0]; 
-	return $data;						// Array of values
+	}
+	return $data;  // Always return an array,
   }
   /* public: walk result set */
   function next_record($fetch_style=PDO::FETCH_BOTH) {
