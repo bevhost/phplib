@@ -242,6 +242,14 @@ class DB_Sql {
     return $this->sth;
   }
 
+  /* public get all records */
+  function fetchAll() {
+	if ($this->sth->columnCount()>1) 
+		return $this->sth->fetchAll(PDO::FETCH_ASSOC);  // Array of records (rows)
+	else 
+	 	foreach ($this->sth->fetchAll(PDO::FETCH_NUM) as $row) $data[]=$row[0]; 
+	return $data;						// Array of values
+  }
   /* public: walk result set */
   function next_record($fetch_style=PDO::FETCH_BOTH) {
     if (!$this->sth) {
