@@ -5,6 +5,9 @@ Release: 9
 License: GNU Library or Lesser General Public License (LGPL)
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-root
+Requires: php-mcrypt
+Requires: php-pdo
+Requires: php-mbstring
 Group: System Environment/Daemons
 Source: %{name}-%{version}.tar.gz
 Packager: David Beveridge <david@beveridge.id.au>
@@ -41,6 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Apr 28 2014 marado
+Added php dependencies
 - version 0.9
 
 * Sat Jul 07 2012 dave
