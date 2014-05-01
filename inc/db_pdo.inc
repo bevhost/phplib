@@ -242,8 +242,20 @@ class DB_Sql {
     return $this->sth;
   }
 
+  /* public get 1 column */
+  function fetchColumn($col=0) {
+ 	if (!$this->sth) {
+	      $this->halt("fetchColumn called with no query pending.");
+	      return 0;
+	}
+	return $this->sth->fetchColumn($col);
+  }
   /* public get all records */
   function fetchAll() {
+ 	if (!$this->sth) {
+	      $this->halt("fetchAll called with no query pending.");
+	      return 0;
+	}
 	if ($this->sth->columnCount()>1) {
 		// Array of records (rows)
 		$data = $this->sth->fetchAll(PDO::FETCH_ASSOC); 
