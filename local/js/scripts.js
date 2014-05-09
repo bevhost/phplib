@@ -24,14 +24,9 @@ function showField(jsProdName,jsProdPrice,currency) {
 } 
 
 function showElement(e) {
-        if (document.all) {
-                document.all[e].style.visibility='visible';
-                document.all[e].style.display='block';
-        } else {
-                el = document.getElementById(e);
-                el.style.visibility='visible';
-                el.style.display='block';
-        }
+	el = document.getElementById(e);
+	el.style.visibility='visible';
+	el.style.display='block';
 }
 function addtocart(f) {
         q = buildQuery(f);
@@ -61,16 +56,10 @@ function login() {
         ajax(url,'Delivery');
 }
 function toggleDA() {
-        if (document.all) {
-                h = document.all["DeliveryFrame"].height;
-                if (h==0) h=350; else h=0;
-                document.all["DeliveryFrame"].height = h;
-        } else {
-                el = document.getElementById("DeliveryFrame");
-                h = el.height;
-                if (h==0) h=350; else h=0;
-                el.height = h;
-        }
+	el = document.getElementById("DeliveryFrame");
+	h = el.height;
+	if (h==0) h=350; else h=0;
+	el.height = h;
 }
 
 function Seconds(Count,Units) {
@@ -83,61 +72,23 @@ function Seconds(Count,Units) {
 }
 
 function getDivHtml(fieldToGet) {
- if (document.all||document.layers||document.getElementById){
-  if (document.all) {
-   vItem = document.all[fieldToGet].innerHTML;
-  } else if (document.layers){
-   vItem = document.fieldToGet.innerHTML;
-  } else if (document.getElementById){
-   vItem = document.getElementById(fieldToGet).innerHTML;
-  }
-  return vItem;
- }
+  return document.getElementById(fieldToGet).innerHTML;
 }
 function setDivHtml(fieldToSet,vItem) { 
- if (document.all||document.layers||document.getElementById){
-  if (document.all) {
-   document.all[fieldToSet].innerHTML = vItem;
-  } else if (document.layers){
-   document.fieldToSet.innerHTML = vItem;
-  } else if (document.getElementById){
    document.getElementById(fieldToSet).innerHTML = vItem;
-  }
- }
 }
 function addDivHtml(fieldToSet,vItem) {
- if (document.all||document.layers||document.getElementById){
-  if (document.all) {
-   document.all[fieldToSet].innerHTML += vItem;
-  } else if (document.layers){
-   document.fieldToSet.innerHTML += vItem;
-  } else if (document.getElementById){
    document.getElementById(fieldToSet).innerHTML += vItem;
-  }
- }
 }
 function setFieldValue(fieldToSet,vItem) {
- if (document.all||document.layers||document.getElementById){
-  if (document.all) {
-   document.all[fieldToSet].value = vItem;
-  } else if (document.layers){
-   document.fieldToSet.value = vItem;
-  } else if (document.getElementById){
    document.getElementById(fieldToSet).value = vItem;
-  }
- }
 }
 
 function getFieldValue(e) {
  return _(e);
 }
 function _(e) {
- if (document.all) {
-  v = document.all[e].value;
- } else if (document.getElementById) {
-  v = document.getElementById(e).value;
- } else v=0;
- return v;
+ return document.getElementById(e).value;
 }
 
 function isChecked(fieldToGet) {
@@ -473,11 +424,7 @@ function dollarformat(thisone){
 }
 
 function dollarvalue(fieldToGet){
-  if (document.all) {
-   vField = document.all[fieldToGet].value;
-  } else if (document.getElementById) {
-   vField = document.getElementById(fieldToGet).value;
-  } else vField=0;
+  vField = document.getElementById(fieldToGet).value;
   if (vField.charAt(0)=='$') return Number(vField.substring(1,vField.length));
   else return Number(vField);
 }
@@ -501,11 +448,7 @@ function enum_set_move(obj,target) {
 }
 function enum_set_chooser(elem,set) {
         var e,f,i,p;
-	if (document.all) {
-		enum_set_popup = document.all['enum_set_popup'];
-	} else {
-		enum_set_popup = document.getElementById("enum_set_popup");
-	}
+	enum_set_popup = document.getElementById("enum_set_popup");
 	enum_set_inner_HTML = '<a onclick="this.offsetParent.style.display=\'none\';" id="close">x</a><ul>';
 	for ( o in enum_set[set] ) {
 		v = enum_set[set][o];
@@ -544,11 +487,7 @@ function enum_set_update() {
 }
 function show_debug(str) {
 	if (true) return;
-	if (document.all) {
-		popup = document.all["popup"];
-	} else {
-		popup = document.getElementById("popup");
-	}
+	popup = document.getElementById("popup");
 	str += "<br>";
 	popup.style.display='block';
 	popup.style.visibility='visible';
@@ -561,16 +500,14 @@ function show_debug(str) {
 
 function nextPage() {
 	id = 'ips_starting_with';
-        if (document.all) el=document.all[id];
-        else el = document.getElementById(id);
+        el = document.getElementById(id);
 	el.value = String(Number(el.value)+Number(getFieldValue('ips_row_count')));
 	el.form.submit.click();
 }
 
 function prevPage() {
 	id = 'ips_starting_with';
-        if (document.all) el=document.all[id];
-        else el = document.getElementById(id);
+        el = document.getElementById(id);
 	v = Number(el.value)-Number(getFieldValue('ips_row_count'));
 	if (v<0) v = 0;
 	el.value = v;
@@ -579,16 +516,14 @@ function prevPage() {
 
 function Jump10Pages() {
 	id = 'ips_starting_with';
-        if (document.all) el=document.all[id];
-        else el = document.getElementById(id);
+        el = document.getElementById(id);
 	el.value = String(Number(el.value)+(10*Number(getFieldValue('ips_row_count'))));
 	el.form.submit.click();
 }
 
 function Back10Pages() {
 	id = 'ips_starting_with';
-        if (document.all) el=document.all[id];
-        else el = document.getElementById(id);
+        el = document.getElementById(id);
 	v = Number(el.value)-(10*Number(getFieldValue('ips_row_count')));
 	if (v<0) v = 0;
 	el.value = v;
@@ -597,21 +532,18 @@ function Back10Pages() {
 
 function showSortedBy(colname) {
 	id = 'ips_sort_order';
-        if (document.all) el=document.all[id];
-        else el = document.getElementById(id);
+        el = document.getElementById(id);
 	el.value = colname
 	el.form.submit.click();
 }
 function custom_query(q) {
         id = 'ips_custom_query';
-        if (document.all) el=document.all[id];
-        else el = document.getElementById(id);
+        el = document.getElementById(id);
         el.value = q
 }
 function export_results(q) {
         id = 'ips_export_results';
-        if (document.all) el=document.all[id];
-        else el = document.getElementById(id);
+        el = document.getElementById(id);
         el.value = q
 }
 
