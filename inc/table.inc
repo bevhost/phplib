@@ -71,6 +71,9 @@ class Table
   var $funcs = Array();			 ## Group By Aggregator functions for each field
   var $align = Array();			 ## Allow alignment of fields.
   var $format = Array();		 ## php money_format
+  var $same_data = Array();		 ## true for columns that have the save value on every row
+  var $tables = Array();		 ## List of field=>table where for sql joined fields.
+  var $joins = Array();			 ## List of table=>join_condition for joined tables.
   var $sortable = '';			 ## Allow headings to have SortCommands to resort output by that column. (DaveB)
   var $trust_the_data = false;		 ## If set to true allows embeded html in the data - dangerous - use with caution
   var $total;				 ## Stores running total of colums
@@ -437,12 +440,12 @@ class Table
 	$val = $this->orig_fields[$val];
     }
     if (preg_match("/Search/",$this->add_insert_buttons)) {
-	$this->form->form_data->elements[$val]["ob"]->class="ips";
+	$this->form->form_data->elements[$val]["ob"]->action="ips";
 	$this->form->form_data->elements[$val]["ob"]->value=""; // Prevent default value from showing.
     	if (isset($this->extra_html[$val])) $this->form->form_data->elements[$val]["ob"]->extrahtml=$this->extra_html[$val];
 	else $this->form->form_data->elements[$val]["ob"]->extrahtml = "";
     } else {
-	$this->form->form_data->elements[$val]["ob"]->class="ipi";
+	$this->form->form_data->elements[$val]["ob"]->action="ipi";
     	if (isset($this->extra_html[$val])) $this->form->form_data->elements[$val]["ob"]->extrahtml=$this->extra_html[$val];
     }
     if (array_key_exists($val,$_POST)) $this->form->form_data->elements[$val]["ob"]->value = $_POST[$val];
@@ -458,6 +461,18 @@ class Table
 #echo "<!-- form: $form -->";
 	$this->form->setup("inside_table",$this->js_sent[$form], $this->ipe_table ? $this->classname : false );
 	$this->form->form_data->start($form);
+	foreach ($this->tables as $LinkDesc=>$LinkTable) {
+          $this->form->form_data->add_element(array(  # Joined Field
+                "type"=>"text",
+                "name"=>$LinkDesc,
+                "field"=>"$LinkTable.$LinkDesc",
+#		"LinkDesc"=>$LinkDesc,
+#		"LinkTable"=>$LinkTable,
+#		"LinkCondition"=>@$this->joins[$LinkTable],
+#		"FormName"=>$form,
+                "edit"=>false,
+            ));
+	}
   }
 
   function table_form_finish($form)
@@ -689,6 +704,12 @@ class Table
 
     $this->set_checkbox($row, $row_key, $data, $class);
     $this->show_table_cells($row, $row_key, $data, $class);
+
+    if (!count($this->same_data)) { # first row
+      $this->same_data = $data;
+    } else {
+      foreach ($data as $k=>$v) if ($this->same_data[$k] <> $data[$k]) $this->same_data[$k]=false;
+    }
 
     # call virtual function
     if ($this->add_extra)
@@ -961,7 +982,7 @@ class Table
 	if ($this->form->form_data->elements[$key]["ob"]->multiple) $val = explode(",",$val);
 */
 	$this->form->form_data->elements[$key]["ob"]->value=$val;
-	$this->form->form_data->elements[$key]["ob"]->class="ipe";
+	$this->form->form_data->elements[$key]["ob"]->action="ipe";
 	
 	$this->form->form_data->elements[$key]["ob"]->extrahtml = " ".str_replace('$index',"$index",$this->form->form_data->elements[$key]["ob"]->extrahtml);
 
@@ -1564,9 +1585,10 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     $fk = new $_ENV["MyForeignKeysDB"];
     $db = new $form->database_class;
     $sql_table = $db->qi($this->sql_table);
-    $from = "FROM $sql_table";
-    $where = "WHERE ";
-    $select = "";
+    $from = "\nFROM $sql_table";
+    $where = "\nWHERE ";
+    $select = ""; 
+    $joins = $this->joins;
     if ($join) $tc=1; else $tc=0;  // table counter
     if (!$this->edit) {
       $links = "";
@@ -1576,18 +1598,24 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
         extract($fk->Record);
 	$q_FieldName = $db->qi($FieldName);
 	$q_LinkField = $db->qi($LinkField);
-	if (($LinkDesc) and (in_array($FieldName,$this->fields))) {
+	$field_key = array_search($FieldName,$this->fields);
+	if (($LinkDesc) and ($field_key!==false)) { 
 		$tc++;
 		$table = "_t$tc";
-		$links .= ", $table.$LinkDesc AS $table$LinkDesc";
-		$from .= " LEFT OUTER JOIN $LinkTable AS $table ON $sql_table.$q_FieldName=$table.$q_LinkField";
-		$this->map_cols["$table$LinkDesc"] = $this->map_cols[$FieldName];
-		$this->orig_fields["$table$LinkDesc"] = $FieldName;
-		$this->fields[array_search($FieldName,$this->fields)] = "$table$LinkDesc";
-	}
+		$LinkName = "$table$LinkDesc"; 
+		$links .= ", $table.$LinkDesc AS $LinkName";
+		$from .= "\nLEFT OUTER JOIN $LinkTable AS $table ON $sql_table.$q_FieldName=$table.$q_LinkField";
+		$this->map_cols[$LinkName] = $this->map_cols[$FieldName];
+		$this->orig_fields[$LinkName] = $FieldName;
+		if ($field_key!==false) {
+			$this->fields[$field_key] = $LinkName;
+			$this->map_cols[$LinkName] = $this->map_cols[$FieldName];
+		}
+	} 
       }
     }
-    if ($tc) $sql_table .= "."; else $sql_table = "";
+    foreach ($joins as $lt=>$lc) $join .= "\nJOIN $lt ON ($lc)";
+    if ($tc or $join) $sql_table .= "."; else $sql_table = "";
     foreach ($this->extra_fields as $this_field) {
 	if (array_search($this_field,$this->fields)===false) {
 	    if ($select) $select .= ", "; else $select = "SELECT ";
@@ -1598,6 +1626,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t") {
 	if ($select) $select .= ", "; else $select = "SELECT ";
 	$qf = $db->qi($this_field);
+	if (!empty($this->tables[$this_field])) $this_table = $this->tables[$this_field]."."; else $this_table = $sql_table;
 	if ($relName = @$form->form_data->elements[$this_field]["ob"]->relName) {
 		if (!$relShow = $form->form_data->elements[$this_field]["ob"]->relShow) $relShow = "Name";
 		$qf = $relName . "." . $relShow;
@@ -1605,7 +1634,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 	}
 	$func = array_key_exists($this_field,$this->funcs) ? $this->funcs[$this_field] : false;
 	if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
-	$select .= $func ? "$func($dist$sql_table$qf) as $qf" : "$sql_table$qf";
+	$select .= $func ? "$func($dist$sql_table$qf) as $qf" : "$this_table$qf";
     }
     $custom = array_key_exists("custom_query",$_POST) ? $_POST["custom_query"] : "";
     return("$select $links $from $join $custom $where");

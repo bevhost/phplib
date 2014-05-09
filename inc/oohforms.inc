@@ -15,6 +15,7 @@ class of_element {
   var $class;
   var $multiple;
   var $extrahtml;
+  var $action=false;
   var $is_file=false;
   var $is_hidden=false;
   var $is_checkbox=false;

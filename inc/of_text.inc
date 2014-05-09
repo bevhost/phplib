@@ -38,7 +38,7 @@ class of_text extends of_element {
     $extra = "";
     if (@$this->LinkedTable) {
 	$linkdesc = ""; if ($this->LinkDesc) $linkdesc = ", ".$db->qi($this->LinkDesc);
-    	$str .= " type='hidden'><input  name='".$n."_Selector'";
+    	$str .= " type='hidden'><input autocomplete='off' name='".$n."_Selector'";
 	$sql="select ".$db->qi($this->LinkField).$linkdesc." from ".$db->qi($this->LinkedTable)." where ".$db->qi($this->LinkField)."=".$db->quote($v);
 	#echo "<!-- $sql -->";
 	if ($v) {
@@ -48,7 +48,7 @@ class of_text extends of_element {
 		if ($this->LinkDesc) $v=$db->f(1);
 	    }
 	}
-	$str .= " onkeyup=ShowSelector(this,'$n') value=\"$v\"";;
+	$str .= " onkeyup=ShowSelector(this,'".$this->LinkDesc."','".$this->action."') value=\"$v\"";;
     }
     $str .= ($this->pass)? " type='password'" : " type='text'";
     if ($this->maxlength)
@@ -58,7 +58,7 @@ class of_text extends of_element {
       else $this->size=80;
     }
     $size = $this->size;
-    switch ($this->class) {
+    switch ($this->action) {
 	case 'ips':			// in place search
 	case 'ipi':			// in place insert 
 	case 'ipe':			// in place edit
@@ -66,6 +66,7 @@ class of_text extends of_element {
               if (empty($GLOBALS["widemode"])) $size = floor($this->size / 1.8);
               else $size = floor($this->size / 1.2);
 	   }
+	   $size=false;
 	   break;
 	default:
 	   $size = $this->maxlength;
@@ -75,6 +76,8 @@ class of_text extends of_element {
     $str .= " class='$this->class'";
     if ($size) 
       $str .= " size='$size'";
+    else
+      $str .= " style='width:80%'";
     if ($this->extrahtml) 
       $str .= " $this->extrahtml";
     else

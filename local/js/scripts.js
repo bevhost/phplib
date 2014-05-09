@@ -232,11 +232,14 @@ if (typeof(XMLHttpRequest) == "undefined") {
   };
 }
 
-function ShowSelector(el,popup) {
-        form = el.form.elements['form_name'].value;
-        fld = el.name;
-        ajax('/find.php?Frm='+form+';Col='+fld+';v='+el.value,popup);
+function ShowSelector(el,linkdesc,action) {
+        myform = el.form.elements['form_name'].value;
+        Selector = el.name;
+        fld = Selector.replace("_Selector","");
+        el.form.elements[fld].value='';
+        old_ajax('/find.php?Frm='+myform+';Col='+Selector+';Desc='+linkdesc+';a='+action+';v=',el);
 }
+
 function ajax(url,el) {
   el = typeof(el) != 'undefined' ? el : "popup";
   var xmlHttp;
@@ -248,12 +251,12 @@ function ajax(url,el) {
       {
         if (document.all) {
                 document.all[el].innerHTML=xmlHttp.responseText;
-                document.all[el].style.display='block';
+                document.all[el].style.display='inline';
                 document.all[el].style.visibility='visible';
         } else {
                 popup = document.getElementById(el);
                 popup.innerHTML=xmlHttp.responseText;
-                popup.style.display='block';
+                popup.style.display='inline';
                 popup.style.visibility='visible';
         }
       }
@@ -423,6 +426,11 @@ function getElementValue(e)
         }
 }
 
+function show(el) {
+ el = typeof(el) != 'undefined' ? el : "popup";
+ document.getElementById(el).style.display='block';
+ document.getElementById(el).style.visibility='visible';
+}
 function hide(el) {
  el = typeof(el) != 'undefined' ? el : "popup";
  document.getElementById(el).style.display='none';
@@ -632,6 +640,7 @@ function confirmsubmit(e,t,n) {
   if (e.selectedIndex==0) return false;
   count = 0;
   action = e.options[e.selectedIndex].value;
+  words = action.split(" ");
   for (i=0; i<document.forms[t].elements.length; i++) {
 	el = document.forms[t].elements[i];
         if (el.type=='checkbox') {
@@ -639,6 +648,7 @@ function confirmsubmit(e,t,n) {
         }
   }
   if (count<1) {
+	alert('No items are checked.  Please select rows first');
         e.selectedIndex=0;
         return false;
   }
@@ -647,6 +657,28 @@ function confirmsubmit(e,t,n) {
                 e.selectedIndex=0;
                 return false;
         }
+  }
+  if (words[0]=='Change') {
+	var old='';
+	for (k=2;k<words.length-1;k++){if(old.length){old=old+' ';}old=old+words[k];}
+	var newvalue = prompt('New '+words[1]+' value:',old);
+	if (newvalue==old || !newvalue) return false;
+	var el = document.createElement('input');
+	el.type='hidden';
+	el.name='new_value';
+	el.value=newvalue;
+	document.forms[t].appendChild(el);
+  }
+  if (words[0]=='Copy' || words[0]==='Move') {
+	main_form = t;
+	if(el=document.getElementById('zchdr')){
+		el.innerHTML = words[0]+" "+count+" records to zone";
+	}
+	if(el=document.getElementById('ZoneChooser')){
+		el.style.display='inline';
+		el.style.visibility='visible';
+	}
+	return false;
   }
   e.form.submit();
 }

@@ -21,6 +21,7 @@ class Sql_Query {
   var $input_max  = 80;
   var $start_row  = 0;
   var $row_count  = 100;
+  var $max_chooser = 20;			// (DaveB) Maximum drop down box entries.
   var $default_query = "id!='0'";		// (DaveB)
   var $default_sortorder = "id desc";		// (DaveB)
   var $extra_cond = "";				// (DaveB)
@@ -32,7 +33,10 @@ class Sql_Query {
   var $container = "on";    ## If set, create a container table
   var $variable  = "on";    ## if set, create variable size buttons
   var $printview = "off";   // (daveB)
-  var $base    = "x";     // (daveB)
+  var $base      = "x";     // (daveB)
+  var $joins = array(); 
+  var $tables = array();
+  var $search = array();
   
   ## HTML Widget dictionary
   var $dict = array(
@@ -86,7 +90,9 @@ class Sql_Query {
       );
 
 
-  function Sql_Query() {
+  function Sql_Query($tpl_form_classname=false) {
+	if (empty($this->database_class)) $this->database_class=$_ENV["DatabaseClass"];
+	$db = new $this->database_class;
 	if (!isset($this->table)) {
 		if (isset($this->classname)) {
 			$this->table = substr($this->classname,0,-10);
@@ -215,47 +221,6 @@ class Sql_Query {
     else $cell_class=$class;			 		// Added by David Beveridge
 								// References to $cell_class below changed from $class by DaveB.
 
-    $form = str_replace("_Sql_Query","form",$this->classname);
-    $sql = "SELECT  FieldName, LinkTable, LinkField, LinkDesc, LinkCondition FROM LinkedTables WHERE FormName='$form' ";
-    $db->query($sql);
-    $lf = Array();
-    while ($db->next_record()) {
-	extract($db->Record);
-	$lf[$FieldName]="";
-	$sql = "SELECT ".$db->qi($LinkField).", ".$db->qi($LinkDesc)." FROM ".$db->qi($LinkTable);
-	if ($LinkCondition) {
-		eval("\$LinkCondition = \"$LinkCondition\";");
-		$sql .= " WHERE $LinkCondition";
-	}
-	$db2->query($sql);
-	while ($db2->next_record()) {
-		$v = addslashes($db2->f(0));
-		$l = $db2->f(1);
-		$lf[$FieldName].="<option value='".$v."'>".$l."</option>";
-	}
-    }
-?><script type='text/javascript'>
-<!--
-function UpdateChooser(e) {
-        fieldToSet = e.name.replace(/sel/i,"chooser");
-	fieldToSet = fieldToSet.replace(/\[/,"");
-	fieldToSet = fieldToSet.replace(/\]/,"");
-	if (document.all) f=document.all[fieldToSet];
-	else f = document.getElementById(fieldToSet);
-        SelectorField = e.name.replace(/sel/i,"input");
-        t = e.options[e.selectedIndex].value;
-        c = "<input name='"+SelectorField+"' size='20' maxlength='80' value='' />";
-<?php
-	foreach ($lf as $k=>$v) {
-		echo "        if (t=='$k') { c = \"<select name=\"+SelectorField+\"'>$v </select>\"; }\n";
-	}
-?>
-	f.innerHTML = c;
-}
--->
-</script><?php
-	echo "<a href='".$sess->self_url()."'>reset</a>";
-
     ## A hack. We cannot do language dependent initialisation of
     ## static values.
     if (isset($this->compare["not like"])) {
@@ -264,9 +229,8 @@ function UpdateChooser(e) {
     if (isset($this->compare["like"])) {
       $this->compare["like"] = $this->dict[$this->lang]["like"];
     }
-$class='MyForm';
     
-    $res .= sprintf("<form class='MyForm' method=\"%s\" action=\"%s\">\n",
+    $res .= sprintf("<form class='$class' method=\"%s\" action=\"%s\">\n",
       $this->method, 
       ($target)?$target:$sess->self_url());
     
@@ -281,7 +245,7 @@ $class='MyForm';
       } else {
         $res .= sprintf("  %s<br />\n", 
           $this->selection($this->makename($base, "conj", $i),
-                           array("and" => $this->dict[$this->lang]["and"], "or" => $this->dict[$this->lang]["or"]),
+                           array("and" => $this->dict[$this->lang]["and"], "or" => $this->dict[$this->lang]["or"],") or ("=>") ".$this->dict[$this->lang]["or"]." ("),
                            $this->param($base,"conj_".$i), 
                            "on",
                            $class));
@@ -304,36 +268,6 @@ $class='MyForm';
           $this->param($base,"comp_".$i), 
           "on", 
           $class));
-    $chooser="";
-    $fn = $this->param_nq($base,"sel_".$i);
-    $val = $this->param_nq($base,"input_".$i);
-    $sql = "SELECT LinkTable, LinkField, LinkDesc, LinkCondition FROM LinkedTables WHERE FormName='$form' ";
-    $sql .= "and FieldName='$fn'";
-    $db = new $this->database_class;
-    $db->query($sql);
-	if ($db->next_record()) {
-	    extract($db->Record);
-	    $sql = "SELECT ".$db->qi($LinkField).", ".$db->qi($LinkDesc)." FROM ".$db->qi($LinkTable);
-	    if ($LinkCondition) {
-	            eval("\$LinkCondition = \"$LinkCondition\";");
-	            $sql .= " WHERE $LinkCondition";
-	    }
-	    $db->query($sql);
-	    if ($db->num_rows()) {
-	    	$chooser = "'>";
-	    	while ($db->next_record()) {
-	            $chooser .= "<option ";
-		    if ($val==$db->f(0)) $chooser .= "selected ";
-		    $chooser .= "value='".$db->f(0)."'>".$db->f(1)."</option>";
-	    	}
-    		$chooser .= "</select>";
-    	    }
-	}
-      ## Create text input field.
-      $res .= " <span id='".$this->makeid($base, "chooser", $i)."'>";
-     if ($chooser) {
-	$res .="<select name='".$this->makename($base, "input", $i).$chooser;
-     } else {
       $res .= sprintf("<input type=\"text\" name=\"%s\" value=\"%s\" size=\"%d\" maxlength=\"%d\"%s />\n",
       //  ($class)?" class=$class":"",
         $this->makename($base, "input", $i),
@@ -342,7 +276,6 @@ $class='MyForm';
         $this->input_max,
         ($cell_class)?" class=\"$cell_class\"":"");
       $res .= "</span> ";
-     }
       $res .= sprintf(" \n");
     }
 
@@ -395,8 +328,8 @@ $class='MyForm';
   function plain_where($base) {
     $tt = "";
     $qq = "";
- 
-
+    $tc = 0;
+    $used_joins = array(); 
     if (!isset($db)) {
       if (!$this->database_class) {
 	$this->database_class = $_ENV["DatabaseClass"];
@@ -404,11 +337,33 @@ $class='MyForm';
       $db = new $this->database_class;
       $db2 = new $this->database_class;
     }
-    if ($this->table) $tt = $db->qi($this->table).".";
+    if ($this->table) $tt = $db->qi($this->table);
+
+	if (empty($this->tpl_form_classname)) $this->tpl_form_classname = $this->table."form";
+	$sql = "SELECT  FieldName, LinkTable, LinkField, LinkDesc, LinkCondition FROM LinkedTables WHERE FormName='$this->tpl_form_classname' ";
+	$db->query($sql);
+	while ($db->next_record()) {
+		extract($db->Record);
+		$this->tables[$FieldName] = $LinkTable;
+		$this->joins[$FieldName] = $db->qi($this->table).".".$db->qi($FieldName)."=%s.".$db->qi($LinkField);
+		$this->search[$FieldName] = $LinkDesc;
+	}
+
     for($i=1; $i<=$this->conditions; $i++) {
       ## Only create conditions for used input fields
       if ($this->param($base,"input_".$i) == "")
         continue;
+
+      if ($field = @$GLOBALS[$base]["sel_".$i]) {
+	  if (empty($this->tables[$field])) $table=$tt;
+	  else {
+		$tc++;
+		$table = "_q$tc";
+		$TN = $this->tables[$field];
+		$used_joins["$TN $table"] = sprintf($this->joins[$field],$db->qi($table));
+		if (isset($this->search[$field])) $field=$this->search[$field];
+	  }
+      }      
 
       ## If necessary, add conjunction
       if (!empty($qq))
@@ -420,7 +375,7 @@ $class='MyForm';
         $v = "%".$this->param($base,"input_".$i)."%";
       else {
         $v = $this->param($base,"input_".$i);
-        if (strpos(@$GLOBALS[$base]["sel_".$i],"Date")) {
+        if (strpos($field,"Date")) {
           $c = count(explode("/",$v));
           if ($c==2) {
             list($d,$m) = explode("/",$v);
@@ -436,16 +391,24 @@ $class='MyForm';
 
       ## Create subcondition
       $qq .= sprintf("%s %s '%s'",
-              $tt.$GLOBALS[$base]["sel_".$i],
+              "$table.$field",
 	      $this->param_nq($base,"comp_".$i),
               $v);
     }
- 
     if (empty($qq)) {
 	$qq = $this->extra_cond ? $this->extra_cond : "1";
     } else if ($this->extra_cond) $qq = "$this->extra_cond AND ($qq)"; 
+
+    $this->join = "";
+    foreach($used_joins as $lt=>$lc) $this->join .= "\nLEFT OUTER JOIN $lt ON $lc ";
+
+    if ($order_field = @$GLOBALS[$base]["ord_1"]) {
+		if (substr(strtolower($order_field),-5) == " desc") $of = substr($order_field,0,-5); else $of=$order_field;
+		if (!$table = @$this->tables[$of]) $table = $tt;
+		return "(( $qq )) order by $table.$order_field";
+    } 
     
-    return isset($GLOBALS[$base]["ord_1"]) ? "( $qq ) order by " . $tt.$GLOBALS[$base]["ord_1"] : "( $qq )";
+    return "(( $qq ))";
   }
 
   ## translated_plain_where:

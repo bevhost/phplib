@@ -29,9 +29,10 @@ class of_select extends of_element {
       $n = $this->name;
       $t = "select";
     }
-    if ($this->class=='ips') {
+    if ($this->action=='ips') {
 	if (array_key_exists("oper_$n",$_POST)) $sel=$_POST["oper_$n"]; else $sel=false;
-	$str .= "<select name='oper_$n' id='oper_$n'>";
+	if (isset($this->show_oper)) $xtra=""; else $xtra=" style='display:none'";
+	$str .= "<select name='oper_$n' id='oper_$n'$xtra>";
 	$ops = array("="=>"exactly equals","<"=>"less than",">"=>"greater than","!="=>"not equal to");
 	foreach($ops as $k=>$v) { 
 		$str .= "<option ";
@@ -48,9 +49,10 @@ class of_select extends of_element {
       $str .= " $this->extrahtml";
     $str .= ">\n";
 
-    if ($this->class=='ips') $str .= "<option value=''>Any</option>\n";
+    if ($this->action=='ips') $str .= "<option value=''>Any</option>\n";
     else if ($this->valid_e) $str .= "<option value='0'>select...\n";
 
+#echo "<!--:$val:$this->value:"; var_dump($this->options); echo "-->";
     reset($this->options);
     while (list($k,$o) = each($this->options)) {
       $str .= "<option";
@@ -75,11 +77,12 @@ class of_select extends of_element {
     }
     if (!$found) {
 	if (!empty($val)) $str .= "<option selected value='$val'>$val\n";
-	else $str .= "<option selected value=''>Unspecified\n";
+	else if (!empty($this->value)) $str .= "<option selected value='$this->value'>$this->value\n";
+	else $str .= "<option selected value=''>Any\n";
     }
     $str .= "</select>";
     global $sess;
-    if (!empty($this->edit)) {
+    if (!empty($this->show_popup_links)) {
       if (($this->class<>"ipe") and ($this->class<>"ipi") and ($this->class<>"ips")) {
     	if ($val) {
 	    $str .= " <a href=javascript:gotoWin('".$sess->url("/$this->edit.php");

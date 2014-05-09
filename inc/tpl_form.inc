@@ -116,13 +116,28 @@ class tpl_form {
     $db->query($sql);
     while ($db->next_record()) {
 	extract($db->Record);
-	if (array_key_exists($db->f("FieldName"),$this->form_data->elements))
-	$this->link($db->f("LinkTable"),$db->f("LinkField"),$db->f("FieldName"),$db->f("LinkDesc"),
-				$db->f("NullValue"),$db->f("NullDesc"),$db->f("LinkCondition"),
-				$db->f("LinkErrorMsg"),$db->f("DefaultValue"),$db->f("EditRequires"));
+	if (array_key_exists($FieldName,$this->form_data->elements))
+	$this->link($LinkTable,$LinkField,$FieldName,$LinkDesc,
+				$NullValue,$NullDesc,$LinkCondition,
+				$LinkErrorMsg,$DefaultValue,@$EditRequires);
     }
     return true;
   }
+
+function add_fields_on_joined_tables($tables,$joins=array()) {
+    foreach ($tables as $LinkDesc=>$LinkedTable) {
+          $this->form_data->add_element(array(  # Joined Field
+                "type"=>"text",
+                "name"=>$LinkDesc,
+                "field"=>"$LinkedTable.$LinkDesc",
+#               "LinkDesc"=>$LinkDesc,
+#               "LinkedTable"=>$LinkedTable,
+#               "LinkCondition"=>$joins[$LinkedTable],
+#               "FormName"=>$form,
+                "edit"=>false,
+            ));
+    }
+}
 
   # Override this method in order to provide form fields definition
   # that suit your needs.
@@ -501,7 +516,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 	if ($ok) {
 		if (!file_exists("$Table.php")) $ok = false;
 	}
-	if ($count>200) {
+	if ($count>100) {
 	  $this->form_data->elements[$Src]["ob"]->LinkedTable=$Table;
 	  $this->form_data->elements[$Src]["ob"]->LinkField=$Target;
 	  $this->form_data->elements[$Src]["ob"]->LinkDesc=$Extra;
@@ -651,6 +666,7 @@ TODO: Change this to have some AJAX to handle larger lists.
                  next($this->form_data->elements))
                 {
                         $el = $elrec["ob"];
+			if (!$oldval) $old[$el->name]=false;	# easier than a lot of isset()s
 			$noValue = false;
 			if (array_key_exists($el->name,$_POST)) {
 				$el->value = $_POST[$el->name];
@@ -857,6 +873,7 @@ TODO: Change this to have some AJAX to handle larger lists.
           } else {
                 if (($F) and (!array_key_exists($F,$db->Record))) {
 		   switch ($F) {
+			case "reset":
 			case "submit":
 			case "form_name":
 				break;
@@ -976,6 +993,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 	# under most normal circumstances $k is equal to $v["ob"]->field
 	# except if there are spaces and or other special chars in the sql fieldname.
 	#
+	$tc = 0;
         foreach ($this->form_data->elements as $k=>$v) {
 		$ks = $k."_Selector";
 		$jointable = "";
@@ -988,7 +1006,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 			$fk->query($sql);
 			while ($fk->next_record()) {
 				extract($fk->Record);
-			        if (($LinkDesc) and (in_array($FieldName,$table->fields))) {
+			        if (($LinkDesc) and (in_array($FieldName,$table->fields)!==false)) {
 		                	$tc++;
                 			if ($FieldName==$k) {
 						$jointable = "_t$tc";
@@ -1025,8 +1043,9 @@ TODO: Change this to have some AJAX to handle larger lists.
                         	$nvalue = $this->db->quote("%".$therest."%");
 			}
 			if ($jointable) $f = $joindesc;
-			$tf =  $this->db->qi($tablename).".".$this->db->qi($f); /* table.field */
-		        if ($relName = $v["ob"]->relName) {
+			if (strpos($f,".")) $tf=$this->db->qi($f);
+			else $tf =  $this->db->qi($tablename).".".$this->db->qi($f); /* table.field */
+		        if ($relName = @$v["ob"]->relName) {
 		                if (!$relShow = $v["ob"]->relShow) $relShow = "Name";
                 		$tf = $relName . "." . $relShow;
 		        }
@@ -1067,10 +1086,14 @@ TODO: Change this to have some AJAX to handle larger lists.
  	if (!$sortorder) return false;
 	if (substr($sortorder,0,2)=="_t") $field = $sortorder; else
 	$field = $this->form_data->elements[$sortorder]["ob"]->field;
+	if (isset($this->form_data->elements[$sortorder]["ob"]->LinkTable)) {
+		$table = $this->form_data->elements[$sortorder]["ob"]->LinkTable;
+	} else { $table = $this->table; }
+	$tf = "$table.$field";
 	if (!empty($this->sort_function_maps[$field]))
-		return $this->sort_function_maps[$field]."(".$this->db->qi($field).")".$desc;
+		return $this->sort_function_maps[$field]."(".$this->db->qi($tf).")".$desc;
 	else
-		return $this->db->qi($field).$desc;
+		return $this->db->qi($tf).$desc;
   }
 
   function javascript() {
