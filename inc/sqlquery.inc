@@ -90,7 +90,7 @@ class Sql_Query {
       );
 
 
-  function Sql_Query($tpl_form_classname=false) {
+  function Sql_Query() {
 	if (empty($this->database_class)) $this->database_class=$_ENV["DatabaseClass"];
 	$db = new $this->database_class;
 	if (!isset($this->table)) {
