@@ -325,5 +325,100 @@ class Auth {
 	$this->lifetime = 0;
   }
 
+/* 
+Function which uses the below schema to keep a track of brute force auth attempts.
+
+CREATE TABLE `badauth_counts` (
+ `id` int(11) NOT NULL AUTO_INCREMENT,
+ `username` int(11) NOT NULL,
+ `address` varchar(40) NOT NULL,
+ `ctime` datetime NOT NULL,
+ `mtime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ `count` int(11) NOT NULL DEFAULT '0',
+ `no_cookie` int(11) NOT NULL DEFAULT '0',
+ `user_agent` varchar(50) NOT NULL,
+ PRIMARY KEY (`id`),
+ UNIQUE KEY `username` (`username`),
+ KEY `address` (`address`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+*/
+  var $grace = 10;	# Number of login attemps allowed, (or only half this many without a valid cookie)
+
+  function check_brute_force($addr,$uid) {  # Address can be IPv4, IPv6 or MAC
+	if (!preg_match('/^[0-9a-f\:\.]+$/i',$addr)) {  # Dodgy Address - immediate blockout
+		$this->unauth();
+		return true;
+	}
+	$block = false;
+	$this->db->prepare("SELECT SUM(count+no_cookie) FROM badauth_counts WHERE address=?");
+	$this->db->execute($addr);
+	if ($count = $this->db->fetchColumn()) {
+	    if ($count>$this->grace) {
+		$block=true;
+		$this->brute_force_block_address($addr,$count);
+	    } else {
+		$this->db->prepare("SELECT SUM(count+no_cookie) FROM badauth_counts WHERE username=?");
+		$this->db->execute($this->auth["uname"]);
+		if ($count = $this->db->fetchColumn()) {
+			if ($count>$this->grace) {
+				$block=true;
+				$this->brute_force_block_username($this->auth["uname"],$count);
+			}
+		}
+	    }
+	}
+	if ($block) { 
+		# deny login
+		$this->unauth();	
+		return true;
+	} else {
+		if ($uid) {
+			# login ok, reset counters
+			$this->db->prepare("UPDATE badauth_counts SET count=0, no_cookie=0 WHERE username=? AND address=?");
+			$this->db->execute($this->auth["uname"], $addr);
+		} else {
+			# failed login, increment counters
+			if (!isset($_COOKIE[$GLOBALS["sess"]->name])) {  # If no valid cookie, double the penalty count
+				$upd = "no_cookie=no_cookie+1,";
+				$ins = "no_cookie=1,";
+			} else {
+				$ins=$upd="";
+			}
+			$address = "address = '$addr'";
+			$user = "username = ".$this->db->quote($this->auth["uname"]);
+			$agent = "user_agent = ".$this->db->quote($_SERVER["HTTP_USER_AGENT"]);
+
+			$this->db->query("INSERT INTO badauth_counts SET $ins count=1, $address, $user, $agent, ctime=NOW() ON DUPLICATE KEY UPDATE $upd count=count+1, mtime=NOW()");
+		}
+		return false;
+	}
+  }
+
+  function brute_force_block_address($addr,$count) {
+	# Assume Dave's SQL Injection Attack Scanner is Installed
+	$sql = "INSERT INTO exploits SET "; 	$data = array();
+	if (strlen($addr)==17) {
+		$sql .= "mac = :mac, ";		$data[":mac"] = $addr;
+	} else {
+		$sql .= "ip = :ip, "; 		$data[":ip"] = $addr;
+	}
+	$sql .= "violation = :v, ";		$data[":v"] = $count;
+	$sql .= "target = :target, ";		$data[":target"] = $_SERVER['HTTP_HOST'].$_SERVER["PHP_SELF"];
+	$sql .= "string = 'Too Many Brute Force Password Attempts', banned=1, datetime=now()";
+	$this->db->prepare($sql);
+	$prevstate = $this->db->Halt_On_Error;
+	$this->db->Halt_On_Error = "no";   # quietly ignore errors, if it's not installed.
+	$this->db->execute($data);
+	if ($this->db->num_rows()) {
+		# If successfully entered into exploits, that address cannot reach login page, so clean up.
+		$this->db->prepare("DELETE FROM badauth_counts WHERE address=?");
+		$this->db->execute($addr);
+	}
+	$this->db->Halt_On_Error = $prevstate;
+  }
+  function brute_force_block_username($username,$count) {
+	#Override this function to block a useraccount
+  }
+
 }
 ?>
