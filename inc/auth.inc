@@ -357,9 +357,11 @@ CREATE TABLE `badauth_counts` (
 		$block=true;
 		$this->brute_force_block_address($addr,$count);
 	    } else {
+		$this->auth["tries"] = $count;
 		$this->db->prepare("SELECT SUM(count+no_cookie) FROM badauth_counts WHERE username=?");
 		$this->db->execute($this->auth["uname"]);
 		if ($count = $this->db->fetchColumn()) {
+			if ($count>$this->auth["tries"]) $this->auth["tries"] = $count;
 			if ($count>$this->grace) {
 				$block=true;
 				$this->brute_force_block_username($this->auth["uname"],$count);
@@ -380,15 +382,14 @@ CREATE TABLE `badauth_counts` (
 			# failed login, increment counters
 			if (!isset($_COOKIE[$GLOBALS["sess"]->name])) {  # If no valid cookie, double the penalty count
 				$upd = "no_cookie=no_cookie+1,";
-				$ins = "no_cookie=1,";
 			} else {
-				$ins=$upd="";
+				$upd="";
 			}
 			$address = "address = '$addr'";
 			$user = "username = ".$this->db->quote($this->auth["uname"]);
 			$agent = "user_agent = ".$this->db->quote($_SERVER["HTTP_USER_AGENT"]);
 
-			$this->db->query("INSERT INTO badauth_counts SET $ins count=1, $address, $user, $agent, ctime=NOW() ON DUPLICATE KEY UPDATE $upd count=count+1, mtime=NOW()");
+			$this->db->query("INSERT INTO badauth_counts SET count=1, $address, $user, $agent, ctime=NOW() ON DUPLICATE KEY UPDATE $upd count=count+1, mtime=NOW()");
 		}
 		return false;
 	}
