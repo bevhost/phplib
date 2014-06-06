@@ -235,7 +235,8 @@ class Auth {
   function logout($nobody = "") {
     global $sess;
     $this->db = new $this->database_class;
-    $this->db->query("DELETE FROM active_sessions WHERE name='".$sess->name."' and sid='".$sess->id."'");
+    $this->db->prepare("DELETE FROM active_sessions WHERE name=? and sid=?");
+    $this->db->execute($sess->name,$sess->id);
     $sess->unregister("auth");
     unset($this->auth["uname"]);
     unset($this->auth["uid"]);
@@ -309,7 +310,8 @@ class Auth {
   function auth_delete_old_sessions() {
 	global $sess;
 	if ($this->auth["uname"]<>"admin")
-	$this->db->query("DELETE FROM active_sessions WHERE name='".$sess->name."' and sid!='".$sess->id."' and username='".$this->auth["uname"]."'");
+	$this->db->prepare("DELETE FROM active_sessions WHERE name=? and sid!=? and username=?");
+	$this->db->execute($sess->name,$sess->id,$this->auth["uname"]);
   }
 
   ##
