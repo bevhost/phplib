@@ -79,6 +79,7 @@ class DB_Sql {
 	return $this->dbh->rollback();
   }
   function execute($param=array()) {
+ 	if (!$this->connect()) { return 0; };
 	if (!is_array($param)) $param = func_get_args();
 	if (!((bool)count(array_filter(array_keys($param), 'is_string')))) { // this is NOT an associative array, so we cannot bindValue or bindParams
 		if (!$status = $this->sth->execute($param)) $this->halt(array_search(null,$param)?"Null Parameter":"Cannot Execute");
@@ -139,7 +140,7 @@ class DB_Sql {
 		break;
 	    default:
       		if ($this->Debug) echo "Connecting to $Host as $User<br>\n";
-        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;charset=$this->charset", $User, $Password);
+        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;charset=$this->charset", $User, $Password, array(PDO::ATTR_PERSISTENT => false));
 	}
       }
       catch(PDOException $e) {
@@ -659,7 +660,7 @@ class DB_Sql {
     $this->getErrorInfo();
     if ($this->Debug) echo $this->Server."(pdo) error(".$this->ErrCode."):".$this->Errno." ".$this->Error.$msg;
     if (function_exists("EventLog")) {
-      EventLog($this->Server."(pdo) error(".$this->ErrCode."):".$this->Errno." ".$this->Error,$msg,"Error");
+      #if ($this->dbh) EventLog($this->Server."(pdo) error(".$this->ErrCode."):".$this->Errno." ".$this->Error,$msg,"Error");
     }
     if ($this->Halt_On_Error == "no")
       return;
