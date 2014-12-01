@@ -223,7 +223,10 @@ class form {
       $str .= sprintf("<input type=\"hidden\" name=\"id\" value=\"%s\" key=\"%s\" />\n", $GLOBALS[$this->key],$this->key);
     }
     $referer = isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : $_SERVER["PHP_SELF"];
-    $str .= sprintf("<input type=\"hidden\" name=\"_http_referer\" value=\"%s\" />\n", $referer);
+    $regex = "^https?://".str_replace('.','\.',$_SERVER["HTTP_HOST"])."/";
+    if (preg_match("|$regex|i",$referer)) {
+    	$str .= sprintf("<input type=\"hidden\" name=\"_http_referer\" value=\"%s\" />\n", $referer);
+    }
 
     // serialize compress and encode the whole record so that you can tell which fields have been changed on submit.
     if ($GLOBALS["cmd"]<>"Back") {
@@ -509,8 +512,9 @@ class form {
   }
 
   function encrypt($str) {  #must match the decrypt function in tpl_form
-        $key = hash("crc32",$GLOBALS["sess"]->id.$_ENV["DatabaseClass"]);
-        return mcrypt_encrypt ( MCRYPT_3DES , $key , $str , "ecb" );
+	$iv = mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC), MCRYPT_RAND);
+        $key = md5($GLOBALS["sess"]->id.$_ENV["DatabaseClass"],true);
+        return $iv . mcrypt_encrypt ( MCRYPT_RIJNDAEL_128 , $key , $str , MCRYPT_MODE_CBC, $iv );
   }
 
 } /* end FORM */
