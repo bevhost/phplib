@@ -116,10 +116,11 @@ class tpl_form {
     $db->query($sql);
     while ($db->next_record()) {
 	extract($db->Record);
-	if (array_key_exists($FieldName,$this->form_data->elements))
-	$this->link($LinkTable,$LinkField,$FieldName,$LinkDesc,
+	if (array_key_exists($FieldName,$this->form_data->elements)) {
+		$this->link($LinkTable,$LinkField,$FieldName,$LinkDesc,
 				$NullValue,$NullDesc,$LinkCondition,
 				$LinkErrorMsg,$DefaultValue,@$EditRequires);
+	}
     }
     return true;
   }
@@ -862,6 +863,7 @@ TODO: Change this to have some AJAX to handle larger lists.
           global $$vn;
           $$vn = $el->value;
 	  $F = isset($el->field) ? $el->field : $el->name ;
+	  if ($db->Server=='salesforce' and substr($F,-3)=='__c') $F = substr($F,0,-3);
           if ( isset($db->Record[$F]) ) {
             if ( $el->multiple ) {
               $this->form_data->elements[$el->name]["ob"]->value = explode(",",$db->f($F));
@@ -1007,7 +1009,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 			$fk->query($sql);
 			while ($fk->next_record()) {
 				extract($fk->Record);
-			        if (($LinkDesc) and (in_array($FieldName,$table->fields)!==false)) {
+				if (($LinkDesc) and (in_array($FieldName,$table->fields)!==false)) {
 		                	$tc++;
                 			if ($FieldName==$k) {
 						$jointable = "_t$tc";
