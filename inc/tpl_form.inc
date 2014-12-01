@@ -516,7 +516,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 	if ($ok) {
 		if (!file_exists("$Table.php")) $ok = false;
 	}
-	if ($count>100) {
+	if ($count>200) {
 	  $this->form_data->elements[$Src]["ob"]->LinkedTable=$Table;
 	  $this->form_data->elements[$Src]["ob"]->LinkField=$Target;
 	  $this->form_data->elements[$Src]["ob"]->LinkDesc=$Extra;
@@ -808,10 +808,10 @@ TODO: Change this to have some AJAX to handle larger lists.
                  next($this->form_data->elements))
                 {
                         $el = $elrec["ob"];
-                        $el->value = $_POST[$el->name];
+                        $el->value = @$_POST[$el->name];
 			$vn = $el->name;
 			global $$vn;
-			$$vn = $_POST[$el->name];
+			$$vn = @$_POST[$el->name];
 		}
 	}
 
@@ -833,9 +833,10 @@ TODO: Change this to have some AJAX to handle larger lists.
 	if ($db->Server=='salesforce') $this->map_rels = array();
 	foreach($this->form_data->elements as $elrec) {
 		if ($db->Server=='salesforce') {
-		    if ($relName = $elrec["ob"]->relName) {
+		    if (isset($elrec["ob"]->relName)) {
+			$relName = $elrec["ob"]->relName;
 			if ($fields) $fields .= ", ";
-			if (!$relShow = $elrec["ob"]->relShow) $relShow = "Name";
+			$relShow = isset($elrec["ob"]->relShow) ? $elrec["ob"]->relShow : "Name";
 			$fields .= $relName . "." . $relShow;
 			$this->map_rels[$relName] = $elrec["ob"]->field;
 		    }
@@ -861,7 +862,7 @@ TODO: Change this to have some AJAX to handle larger lists.
           global $$vn;
           $$vn = $el->value;
 	  $F = isset($el->field) ? $el->field : $el->name ;
-          if ( $db->f($F) ) {
+          if ( isset($db->Record[$F]) ) {
             if ( $el->multiple ) {
               $this->form_data->elements[$el->name]["ob"]->value = explode(",",$db->f($F));
             } else {
@@ -1084,11 +1085,15 @@ TODO: Change this to have some AJAX to handle larger lists.
 	}
 	if (!$sortorder) $sortorder = $this->key;
  	if (!$sortorder) return false;
-	if (substr($sortorder,0,2)=="_t") $field = $sortorder; else
-	$field = $this->form_data->elements[$sortorder]["ob"]->field;
-	if (isset($this->form_data->elements[$sortorder]["ob"]->LinkTable)) {
+	if (substr($sortorder,0,2)=="_t") {
+	    $table = substr($sortorder,0,3);
+	    $field = substr($sortorder,3);
+	} else {
+	    $field = $this->form_data->elements[$sortorder]["ob"]->field;
+	    if (isset($this->form_data->elements[$sortorder]["ob"]->LinkTable)) {
 		$table = $this->form_data->elements[$sortorder]["ob"]->LinkTable;
-	} else { $table = $this->table; }
+	    } else { $table = $this->table; }
+	}
 	$tf = "$table.$field";
 	if (!empty($this->sort_function_maps[$field]))
 		return $this->sort_function_maps[$field]."(".$this->db->qi($tf).")".$desc;
@@ -1128,8 +1133,11 @@ echo "<script type='text/javascript' src='/js/datefunc.js'>
   }
 
   function decrypt($str) {  # must match encrypt function in oohforms
-        $key = hash("crc32",$GLOBALS["sess"]->id.$_ENV["DatabaseClass"]);
-        return mcrypt_decrypt ( MCRYPT_3DES , $key , $str , "ecb" );
+	$iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
+	$iv = substr($str, 0, $iv_size);
+	$str = substr($str, $iv_size);
+        $key = md5($GLOBALS["sess"]->id.$_ENV["DatabaseClass"],true);
+        return mcrypt_decrypt ( MCRYPT_RIJNDAEL_128 , $key , $str , MCRYPT_MODE_CBC, $iv );
   } 
 
 }
