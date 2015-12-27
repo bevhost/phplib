@@ -782,7 +782,6 @@ TODO: Change this to have some AJAX to handle larger lists.
 			if (count($imagekeys)) $this->save_image_keys($imagekeys,$id);
 		}
 	    } #if count
-	    else echo "Nothing Changed.. ";
           } //switch $action
 	  if ($id and array_key_exists("LogSqlTo",$_ENV)) {
 	     if ($db->type=="pdo") {
