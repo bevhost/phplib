@@ -202,7 +202,7 @@ class Sql_Query {
 	$this->database_class = $_ENV["DatabaseClass"];
     }
     $db = new $this->database_class;
-    $db2 = new $this->database_class;
+   # $db2 = new $this->database_class;
 
     global $sess, $sortorder, $QUERY_STRING;
 
@@ -335,7 +335,7 @@ class Sql_Query {
 	$this->database_class = $_ENV["DatabaseClass"];
       }
       $db = new $this->database_class;
-      $db2 = new $this->database_class;
+      #$db2 = new $this->database_class;
     }
     if ($this->table) $tt = $db->qi($this->table);
 
@@ -364,7 +364,6 @@ class Sql_Query {
 		if (isset($this->search[$field])) $field=$this->search[$field];
 	  }
       }      
-
       ## If necessary, add conjunction
       if (!empty($qq))
         $qq .= sprintf(" %s ", $this->param_nq($base,"conj_".$i));
@@ -389,6 +388,7 @@ class Sql_Query {
         }
       }
 
+      $field = $db->qi($field);  
       ## Create subcondition
       $qq .= sprintf("%s %s '%s'",
               "$table.$field",
@@ -403,9 +403,16 @@ class Sql_Query {
     foreach($used_joins as $lt=>$lc) $this->join .= "\nLEFT OUTER JOIN $lt ON $lc ";
 
     if ($order_field = @$GLOBALS[$base]["ord_1"]) {
-		if (substr(strtolower($order_field),-5) == " desc") $of = substr($order_field,0,-5); else $of=$order_field;
+		if (substr(strtolower($order_field),-5) == " desc") {
+			$of = substr($order_field,0,-5); 
+			$order = " DESC";
+		} else {
+			$of=$order_field;
+			$order = "";
+		}
+      		$field = $db->qi($of);  
 		if (!$table = @$this->tables[$of]) $table = $tt;
-		return "(( $qq )) order by $table.$order_field";
+		return "(( $qq )) order by $table.$field$order";
     } 
     
     return "(( $qq ))";
