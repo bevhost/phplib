@@ -501,7 +501,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 	$count = 0;
         $db->query($sql);
         while ($db->next_record()) {
-		if ($count++>200) break;
+		if ($count++>300) break;
 		if ($Extra) {
         		$options[] = array("value"=>$db->f(0),"label"=>$db->f(1));
 		} else {
@@ -517,7 +517,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 	if ($ok) {
 		if (!file_exists("$Table.php")) $ok = false;
 	}
-	if ($count>200) {
+	if ($count>300) {
 	  $this->form_data->elements[$Src]["ob"]->LinkedTable=$Table;
 	  $this->form_data->elements[$Src]["ob"]->LinkField=$Target;
 	  $this->form_data->elements[$Src]["ob"]->LinkDesc=$Extra;
