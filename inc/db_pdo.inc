@@ -379,7 +379,7 @@ class DB_Sql {
       /* No current value, make one */
       if ($currentid===false) {
         $nextid = 1;
-        $q = sprintf("insert into `%s` values('%s', %s)",
+        $q = sprintf("insert into `%s` (`seq_name`,`nextid`) values ('%s', %s)",
                  $this->Seq_Table,
                  $seq_name,
                  $nextid);
