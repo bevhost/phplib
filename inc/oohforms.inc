@@ -193,6 +193,7 @@ class form {
     if ($cmd=="Delete") $jvs_name="";  //DaveB  I don't want to validate a record I'm going to delete.
     if ($cmd=="View") $jvs_name="";  //DaveB  I don't want to validate a record I'm going to view.
     if ($cmd=="Process") $jvs_name="";  //DaveB  I don't want to validate a record I'm going to process.
+    if ($cmd=="Connect") $jvs_name="";  //DaveB  I don't want to validate a record I'm going to connect.
     if ($jvs_name) {
       $this->jvs_name = $jvs_name;
 	$str .= " onsubmit=\"return ${jvs_name}_Validator(this)\"";
