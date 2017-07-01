@@ -441,6 +441,7 @@ class Table
     }
     if (preg_match("/Search/",$this->add_insert_buttons)) {
 	$this->form->form_data->elements[$val]["ob"]->action="ips";
+	$this->form->form_data->elements[$val]["ob"]->class="ips";
 	$this->form->form_data->elements[$val]["ob"]->value=""; // Prevent default value from showing.
     	if (isset($this->extra_html[$val])) $this->form->form_data->elements[$val]["ob"]->extrahtml=$this->extra_html[$val];
 	else $this->form->form_data->elements[$val]["ob"]->extrahtml = "";
@@ -879,6 +880,8 @@ class Table
 	if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/", $dval, $regs))) {
 		$output = date("d M Y",strtotime($dval));   /* DD Mmm YYYY */
 		$comment = substr($dval,11,10);
+	} else if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{3})Z/", $dval, $regs))) {
+		$output = sprintf("%s/%s %s:%s",$regs[3],$regs[2],$regs[4],$regs[5],$regs[6]);
 	} else if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})/", $dval, $regs))) {
 	   if (date("Y-m-d") == substr($dval,0,10)) {
 		// Date Field (Today)
@@ -886,10 +889,13 @@ class Table
 	   } else {
 		// Date Field (Not Today)
 		switch ($val) {
+			case "EventTime":
 			case "Updated":
+			case "allocated":
 			case "AcctStartTime":
 				$output = sprintf("%s/%s %s:%s",$regs[3],$regs[2],$regs[4],$regs[5],$regs[6]);
 				break;
+			case "released":
 			case "AcctStopTime":
 				$output = substr($dval,11,5);
 				break;
@@ -904,7 +910,7 @@ class Table
 		// IPv4 Address
 		$align="center";
 		$output = $dval;
-	} else if ((isset($dval)) and ($dval<>".") and (preg_match("/(^[$|-]*[0-9|,|.]+$)/",$dval, $regs))) {
+	} else if ((isset($dval)) and ($dval<>".") and ($dval<>",") and (preg_match("/(^[$|-]*[0-9|,|.]+$)/",$dval, $regs))) {
 		// Numeric Field
 		if (!isset($this->total[$val])) $this->total[$val]=0;
 		$number = str_replace(",","",str_replace("$","",$dval));
@@ -935,7 +941,7 @@ class Table
 							$output=$dval;
 							break;
 						default:
-							$output = number_format($number);
+							$output = number_format(floatval($number));
 					}
 				}
 				$vval = " $val";
@@ -1036,7 +1042,7 @@ class Table
   #==========================================================================
   function table_heading_cell($col, $val, $class="") 
   {
-    $align=" alignleft";
+    $align=" aligncenter";
     $func = "";
     if (array_key_exists($val,$this->align)) $align = " align".$this->align[$val];
     if (array_key_exists($val,$this->funcs)) $func = strtoupper($this->funcs[$val]).":";
@@ -1623,7 +1629,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 	}
     }
     $this->map_rels = array();
-    foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t") {
+    foreach ($this->fields as $this_field) if (substr($this_field,0,2)<>"_t" and array_key_exists($this_field,$form->form_data->elements)) {
 	if ($select) $select .= ", "; else $select = "SELECT ";
 	$qf = $db->qi($this_field);
 	if (!empty($this->tables[$this_field])) $this_table = $this->tables[$this_field]."."; else $this_table = $sql_table;
@@ -1636,7 +1642,7 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 	if ($func=="distinct") {$dist = "distinct ";$func="count";} else $dist="";
 	$select .= $func ? "$func($dist$sql_table$qf) as $qf" : "$this_table$qf";
     }
-    $custom = array_key_exists("custom_query",$_POST) ? $_POST["custom_query"] : "";
+    $custom = isset($_ENV["allow_custom_queries"]) ? array_key_exists("custom_query",$_POST) ? $_POST["custom_query"] : "" : "";
     return("$select $links $from $join $custom $where");
   }
 
