@@ -13,7 +13,7 @@ class of_select extends of_element {
   var $valid_e;
 
   // Constructor
-  function of_select($a) {
+  function __construct($a) {
     $this->setup_element($a);
     if ($a["type"]=="select multiple") $this->multiple=1;
   }
@@ -56,7 +56,7 @@ class of_select extends of_element {
     reset($this->options);
     while (list($k,$o) = each($this->options)) {
       $str .= "<option";
-      if (is_array($o)) $value = $o["value"] ? $o["value"] : $o["label"]; else $value = $o;
+      if (is_array($o)) $value = isset($o["value"]) ? $o["value"] : $o["label"]; else $value = $o;
       $str .= " value='$value'";
       if (!$this->multiple && ($this->value==$value)) {
         $str .= " selected='selected'";
@@ -65,7 +65,7 @@ class of_select extends of_element {
       elseif ($this->multiple && is_array($this->value)) {
         reset($this->value);
         while (list($tk,$v) = each($this->value)) {
-      	  if (is_array($o)) $value = $o["value"] ? $o["value"] : $o["label"]; else $value = $o;
+      	  if (is_array($o)) $value = isset($o["value"]) ? $o["value"] : $o["label"]; else $value = $o;
           if ($v==$value) { 
             $str .= " selected='selected'"; 
 	    $found = true;

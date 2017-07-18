@@ -90,7 +90,7 @@ class of_hidden extends of_element {
 
   var $hidden=1;
 
-  function of_hidden($a) {
+  function __construct($a) {
     $this->setup_element($a);
   }
 
@@ -115,7 +115,7 @@ class of_reset extends of_element {
 
   var $src;
 
-  function of_reset($a) {
+  function __construct($a) {
     $this->setup_element($a);
   }
 
@@ -133,7 +133,7 @@ class of_submit extends of_element {
 
   var $src;
 
-  function of_submit($a) {    
+  function __construct($a) {    
     $this->setup_element($a);
   }
 

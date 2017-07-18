@@ -18,7 +18,7 @@ class of_text extends of_element {
   var $size;
 
   // Constructor
-  function of_text($a) {
+  function __construct($a) {
     $this->setup_element($a);
     if ($a["type"]=="password")
       $this->pass=1;

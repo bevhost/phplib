@@ -18,7 +18,7 @@ class of_password extends of_element {
   var $size;
 
   // Constructor
-  function of_password($a) {
+  function __construct($a) {
     $this->setup_element($a);
     if ($a["type"]=="password")
       $this->pass=1;

@@ -24,7 +24,7 @@ class of_htmlarea extends of_element {
   var $style = "css/style.css";
 
   // Constructor
-  function of_htmlarea($a) {
+  function __construct($a) {
     $this->setup_element($a);
   }
 

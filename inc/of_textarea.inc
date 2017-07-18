@@ -16,7 +16,7 @@ class of_textarea extends of_element {
   var $wrap;
 
   // Constructor
-  function of_textarea($a) {
+  function __construct($a) {
     $this->setup_element($a);
   }
 
@@ -43,7 +43,9 @@ class of_textarea extends of_element {
     $str .= htmlspecialchars($this->value);
     $str .= "\">\n";
     #$str .= "<table border=0><tr><td>\n";
+    $str .= "<span id='$this->name'>";
     $str .=  nl2br($this->value);
+    $str .= "</span>\n";
     #$str .= "\n</td></tr></table>\n";
     
     $count = 1;

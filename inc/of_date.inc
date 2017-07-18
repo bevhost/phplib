@@ -17,7 +17,7 @@ class of_date extends of_text {
   var $size;
 
   // Constructor
-  function of_date($a) {
+  function __construct($a) {
     $this->setup_element($a);
     if ($a["type"]=="password")
       $this->pass=1;

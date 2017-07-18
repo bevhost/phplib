@@ -11,7 +11,7 @@ class of_radio extends of_element {
   var $valid_e;
 
   // Constructor
-  function of_radio($a) {
+  function __construct($a) {
     $this->setup_element($a);
   }
 
