@@ -19,12 +19,13 @@ class DB_Sql {
   /* public: configuration parameters */
   var $Auto_Free     = 0;     ## Set to 1 for automatic mysqli_free_result()
   var $Debug         = 0;     ## Set to 1 for debugging messages.
-  var $Halt_On_Error = "yes"; ## "yes" (halt with message), "no" (ignore errors quietly), "report" (ignore errror, but spit a warning)
+  var $Halt_On_Error = "report"; ## "yes" (halt with message), "no" (ignore errors quietly), "report" (ignore errror, but spit a warning)
   var $Seq_Table     = "db_sequence";
 
   /* public: result array and current row number */
   var $Record   = array();
   var $Row;
+  var $Query;
 
   /* public: current error number and error text */
   var $ErrCode  = 0;
@@ -82,7 +83,10 @@ class DB_Sql {
  	if (!$this->connect()) { return 0; };
 	if (!is_array($param)) $param = func_get_args();
 	if (!((bool)count(array_filter(array_keys($param), 'is_string')))) { // this is NOT an associative array, so we cannot bindValue or bindParams
-		if (!$status = $this->sth->execute($param)) $this->halt(array_search(null,$param)?"Null Parameter":"Cannot Execute");
+		if (!$status = $this->sth->execute($param)) {
+			if ($this->Debug) var_dump($param);
+			$this->halt(array_search(null,$param)?"Null Parameter":"Cannot Execute");
+		}
 	} else {
 		foreach ($param as $key => &$val) {
 			if ($val === null) {
@@ -135,8 +139,8 @@ class DB_Sql {
 		if (!$this->dbh) $this->halt("open($Database) failed.");
 		break;
 	    case "pgsql";
-        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User);
- #       	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User, $Password);
+        #	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User);
+        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User, $Password);
 		break;
 	    default:
       		if ($this->Debug) echo "Connecting to $Host as $User<br>\n";
@@ -202,6 +206,7 @@ class DB_Sql {
   /* public: perform a query */
   function query($Query_String, $retries=1) {
     /* No empty queries, please, since PHP4 chokes on them. */
+    $this->Query = $Query_String;
     if ($Query_String == "") {
       /* The empty query string is passed on from the constructor,
        * when calling the class without a query, e.g. in situations
@@ -252,13 +257,43 @@ class DB_Sql {
 	return $this->sth->fetchColumn($col);
   }
   /* public get all records */
-  function fetchAll() {
+  function fetchAll($cast=false,$num=false) {
  	if (!$this->sth) {
 	      $this->halt("fetchAll called with no query pending.");
 	      return 0;
 	}
+	if ($cast) $meta = $this->metadata();
 	if ($this->sth->columnCount()>1) {
 		// Array of records (rows)
+		if ($cast) {
+			foreach ($this->sth->fetchAll(PDO::FETCH_NUM) as $row) {
+				$count=0;
+				foreach($row as $key=>$val) {
+					if ($num) $name=$count; else
+					$name = $meta[$key]["name"];
+					$type = $meta[$key]["type"];
+					if ( preg_match("/int$/i",$type)) $type = "int"; 
+					switch($type) {
+						case "date":
+						case "datetime":
+							$casted_row[$name] = (strtotime($val)/86400)+25569.4167;
+							break;
+						case "int":
+						case "long":
+						case "longlong":
+						case "newdecimal":
+						case "float":
+						case "double":
+							$casted_row[$name] = $val + 0;
+							break;
+						default: 
+							$casted_row[$name] = $val;
+					}
+					$count++;
+				}
+				$data[] = $casted_row;			
+			}
+		} else 
 		$data = $this->sth->fetchAll(PDO::FETCH_ASSOC); 
 		if (!$data) $data = array();  // if no records return empty array/
 	} else {
