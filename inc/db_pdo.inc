@@ -266,6 +266,9 @@ class DB_Sql {
 	if ($this->sth->columnCount()>1) {
 		// Array of records (rows)
 		if ($cast) {
+			# perhaps this should be changed: see...
+			# https://phpdelusions.net/pdo#returntypes
+			# https://phpdelusions.net/pdo#emulation
 			foreach ($this->sth->fetchAll(PDO::FETCH_NUM) as $row) {
 				$count=0;
 				foreach($row as $key=>$val) {
