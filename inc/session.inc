@@ -106,8 +106,6 @@ class Session {
     if ( "" == $id ) {
       $newid=false;
       switch ($this->mode) {
-        case "cookieonly":
-	  $id = isset($_COOKIE[$this->name]) ? $_COOKIE[$this->name] : "";
         case "cookie":
         case "get":
           $id = isset($_COOKIE[$this->name]) ?
@@ -128,9 +126,7 @@ class Session {
 
     if ( "" == $id ) {
       $newid=true;
-      do {
-         $id = $this->that->ac_newid(bin2hex(openssl_random_pseudo_bytes(16)), $this->name);  // Generate a new ID
-      } while ($this->that->ac_get_value($id, $this->name));	     // See if it exists already
+      $id = $this->that->ac_newid(md5(uniqid($this->magic)), $this->name);
     }
 
     switch ($this->mode) {
@@ -357,9 +353,12 @@ class Session {
   ## Reload frozen variables from the database and microwave them.
 
   function thaw() {
-        $this->get_lock();
+    $this->get_lock();
 
-        $vals = $this->that->ac_get_value($this->id, $this->name);
+    $vals = $this->that->ac_get_value($this->id, $this->name);
+    if ((isset($vals)) and (substr($vals,0,1)=="$")) {
+	eval(sprintf(";%s",$vals));  // support old session data for php3
+    } else {
 	$arr = unserialize($vals);   // new serialised data req. php => 4.07
 	if (is_array($arr)) {
 	    foreach($arr as $k=>$v) {
@@ -367,6 +366,7 @@ class Session {
 		$GLOBALS[$k]=$v;
 	    }
 	}
+    }
   }
 
   ##

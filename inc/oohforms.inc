@@ -513,9 +513,10 @@ class form {
   }
 
   function encrypt($str) {  #must match the decrypt function in tpl_form
-	$iv = mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC), MCRYPT_RAND);
-        $key = md5($GLOBALS["sess"]->id.$_ENV["DatabaseClass"],true);
-        return $iv . mcrypt_encrypt ( MCRYPT_RIJNDAEL_128 , $key , $str , MCRYPT_MODE_CBC, $iv );
+	global $sess;
+	if (empty($sess->id)) $key=md5('somecrap'); else $key=$sess->id;
+	$iv = hex2bin(md5($_ENV["DatabaseClass"]));
+	return openssl_encrypt($str,"AES-256-CTR",hex2bin($key),OPENSSL_RAW_DATA,$iv);
   }
 
 } /* end FORM */

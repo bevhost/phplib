@@ -1134,11 +1134,10 @@ echo "<script type='text/javascript' src='/js/datefunc.js'>
   }
 
   function decrypt($str) {  # must match encrypt function in oohforms
-	$iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
-	$iv = substr($str, 0, $iv_size);
-	$str = substr($str, $iv_size);
-        $key = md5($GLOBALS["sess"]->id.$_ENV["DatabaseClass"],true);
-        return mcrypt_decrypt ( MCRYPT_RIJNDAEL_128 , $key , $str , MCRYPT_MODE_CBC, $iv );
+        global $sess;
+        if (empty($sess->id)) $key=md5('somecrap'); else $key=$sess->id;
+	$iv = hex2bin(md5($_ENV["DatabaseClass"]));
+        return openssl_decrypt($str,"AES-256-CTR",hex2bin($key),OPENSSL_RAW_DATA,$iv);
   } 
 
 }
