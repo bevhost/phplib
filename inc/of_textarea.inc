@@ -56,8 +56,7 @@ class of_textarea extends of_element {
    $str="";
    if (is_array($ndx_array)) { //Added by DaveB
     $str = "/* textarea */\n";
-    reset($ndx_array);
-    while (list($k,$n) = each($ndx_array)) {
+    foreach ($ndx_array as $k=>$n) {
       if ($this->length_e) {
         $str .= "if (f.elements[\"${n}\"].value.length < $this->minlength) {\n";
         $str .= "  alert(\"$this->length_e\");\n";

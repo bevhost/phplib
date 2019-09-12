@@ -171,7 +171,7 @@ function add_fields_on_joined_tables($tables,$joins=array()) {
     if (! is_array($fv)) {
       return false;
     }
-    while (list($var, $value) = each($fv)) {
+    foreach ($fv as $var => $value) {
       global $$var;
       $$var = $value;
     }

@@ -75,7 +75,7 @@ class of_element {
         "max_l"=>"maxlength",
         "extra_html"=>"extrahtml");
     reset($a);
-    while (list($k,$v) = each($a)) {
+    foreach ($a as $k=>$v) {
       #if ($cv_tab[$k]=="ignore") continue;
       #else $k = (array_key_exists($k,$cv_tab) ? $cv_tab[$k] : $k);
       #$this->$k = $v;
@@ -99,8 +99,7 @@ class of_hidden extends of_element {
 
     $v = (is_array($this->value) ? $this->value : array($this->value));
     $n = $this->name . ($this->multiple ? "[]" : "");
-    reset($v);
-    while (list($k,$tv) = each($v)) {
+    foreach($v as $k => $tv) {
       $str .= "<input type='hidden' name='$n' value='$tv'";
       if ($this->extrahtml)
         $str .=" $this->extrahtml";
@@ -213,8 +212,7 @@ class form {
     $str = "";
     
     if ($this->hidden) {
-      reset($this->hidden);
-      while (list($k,$elname) = each($this->hidden)) 
+      foreach ($this->hidden as $k => $elname) 
         $str .= $this->get_element($elname);
     }
     if (is_object($sess) && (!isset($_COOKIE[$sess->name]))) {
@@ -231,8 +229,7 @@ class form {
 
     // serialize compress and encode the whole record so that you can tell which fields have been changed on submit.
     if ($GLOBALS["cmd"]<>"Back") {
-      reset($this->elements);
-      while (list($k,$elrec) = each($this->elements)) {
+      foreach ($this->elements as $k=>$elrec) {
 	$el = $elrec["ob"];
 	$old[$el->name] = $el->value;
       }
@@ -250,8 +247,7 @@ class form {
 
       if (isset($before)) $str .= "$before\n";
       if (isset($this->before)) $str .= "$this->before\n";
-      reset($this->elements);
-      while (list($k,$elrec) = each($this->elements)) {
+      foreach($this->elements as $k=>$elrec) {
         $el = $elrec["ob"];
 	$str .= "/* $k */\n";
         if (array_key_exists("ndx_array",$elrec)) $str .= $el->self_get_js($elrec["ndx_array"]);

@@ -22,8 +22,7 @@ class of_checkbox extends of_element {
       $n = $this->name . "[]";
       $str .= "<input type='checkbox' name='$n' value='$val'";
       if (is_array($this->value)) {
-        reset($this->value);
-        while (list($k,$v) = each($this->value)) {
+	foreach ($this->value as $k=>$v) {
           if ($v==$val) {
             $str .= " checked"; 
             break; 
@@ -53,8 +52,7 @@ class of_checkbox extends of_element {
       $n = $this->name . "[]";
       $str .= "<input type='checkbox' name='$n' value='$val'";
       if (is_array($this->value)) {
-        reset($this->value);
-        while (list($k,$v) = each($this->value)) {
+	foreach ($this->value as $k=>$v) {
           if ($v==$val) {
             $str .= " checked";
             break;

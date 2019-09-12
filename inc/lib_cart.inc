@@ -26,8 +26,7 @@ class Cart {
     if (!is_array($this->item))
       return array(false, 0);
 
-    reset($this->item);
-    while(list($item, $attr) = each($this->item)) {
+    foreach ($this->item as $item => $attr) {
     
       if (isset($attr["art"]) 
        && ($attr["euid"] == $euid)
@@ -44,8 +43,7 @@ class Cart {
   ##
   function reset() {
 
-    reset($this->item);
-    while(list($item, $attr) = each($this->item)) {
+    foreach ($this->item as $item => $attr) {
       unset($this->item[$item]);
     }
     $this->currentItem = 1;
@@ -156,9 +154,8 @@ class Cart {
       return false;
     }
 
-    reset($this->item);
     $this->show_cart_open();
-    while(list($item, $attr) = each($this->item)) {
+    foreach ($this->item as $item => $attr) {
       $this->show_item($attr["art"], $attr["num"], $attr["euid"]);
 	// printf(" %s %s %s\n",$attr["art"], $attr["num"], $attr["euid"]);
     }
@@ -173,8 +170,7 @@ class Cart {
       return false;
     }
 
-    reset($this->item);
-    while(list($item, $attr) = each($this->item)) {
+    foreach ($this->item as $item => $attr) {
 	$ITEM = sprintf("Item%sFor%s",$attr["art"],$attr["euid"]);
 	global $$ITEM;
 	$num = $$ITEM;

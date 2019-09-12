@@ -136,8 +136,7 @@ class Sql_Query {
     $res .= sprintf("<select%s name=\"%s\" %s>\n",
               ($class)?" class='$class'":"",
               $name, $chooser);
-    reset($option);
-    while(list($k, $v) = each($option)) {
+    foreach ($option as $k=>$v) {
       if (($trans == "" && $old == $v)
        || ($trans != "" && $old == $db->qi($k)." desc")
        || ($trans != "" && $old == $db->qi($k)) 

@@ -292,7 +292,7 @@ class Table
     if (isset($this->heading) && $this->heading)
     {
       reset($ary);
-      list($key, $val) = each($ary);
+      $key = key($ary); $val=current($ary);
       $this->table_heading_row($val, $class);
       if (isset($this->add_insert))
        $this->table_insert_row($val, $class);
@@ -421,8 +421,7 @@ class Table
     $d = $this->select_colnames($data);
 
     ## Create regular cells
-    reset($d);
-    while(list($key, $val) = each($d))
+    foreach ($d as $key => $val)
     {
       $this->table_insert_cell($col++, $val, $class);
     }
@@ -538,8 +537,7 @@ class Table
       
     $row = 0;
       
-    reset($ary);
-    while(list($key, $val) = each($ary))
+    foreach($ary as $key=>$val) 
     {
       if ($key or implode($val,'')>'') #skip blank first dummy row
       ## Process a single row
@@ -806,8 +804,7 @@ class Table
     $d = $this->select_colnames($data);
       
     ## Create regular cells
-    reset($d);
-    while(list($key, $val) = each($d)) 
+    foreach ($d as $key=>$val) 
     {
       $this->table_heading_cell($col++, $val, $class);
     }
@@ -842,8 +839,7 @@ class Table
     $d = $this->select_colnames($data);
       
     ## Create regular cells
-    reset($d);
-    while(list($key, $val) = each($d)) 
+    foreach($d as $key=>$val)
     {
 	$comment = "";
 	$align = "left";
@@ -1051,8 +1047,7 @@ class Table
     ## Check for column name remapping
     if ($this->verify_array($this->map_cols))
     {
-      reset($this->map_cols);
-      while(list($key, $name) = each($this->map_cols)) 
+      foreach($this->map_cols as $key => $name)
       {
         if ($key == $val)
         {
@@ -1223,7 +1218,7 @@ class Table
   {
     if (is_array($ary))
     {
-      while(list($key, $val) = each($ary))
+      foreach ($ary as $key=> $val)
       {
         echo "&nbsp;&nbsp;$key = $val<br>\n";
         if (is_array($val))
@@ -1259,8 +1254,7 @@ class Table
 
     if (!is_array($this->fields) && is_array($data)) 
     {
-      reset($data);
-      while(list($key, $val) = each($data)) 
+      foreach($data as $key=>$val)
       {
         if (preg_match("/".$this->filter."/", $key))
           $this->fields[] = $key;

@@ -53,8 +53,7 @@ class of_select extends of_element {
     else if ($this->valid_e) $str .= "<option value='0'>select...\n";
 
 #echo "<!--:$val:$this->value:"; var_dump($this->options); echo "-->";
-    reset($this->options);
-    while (list($k,$o) = each($this->options)) {
+    foreach ($this->options as $k=>$o) {
       $str .= "<option";
       if (is_array($o)) $value = isset($o["value"]) ? $o["value"] : $o["label"]; else $value = $o;
       $str .= " value='$value'";
@@ -63,8 +62,7 @@ class of_select extends of_element {
 	$found = true;
       }
       elseif ($this->multiple && is_array($this->value)) {
-        reset($this->value);
-        while (list($tk,$v) = each($this->value)) {
+        foreach ($this->value as $tk=>$v) {
       	  if (is_array($o)) $value = isset($o["value"]) ? $o["value"] : $o["label"]; else $value = $o;
           if ($v==$value) { 
             $str .= " selected='selected'"; 
@@ -109,10 +107,8 @@ class of_select extends of_element {
     $x = 0;
     $n = $this->name . ($this->multiple ? "[]" : "");
     $v_array = (is_array($this->value) ? $this->value : array($this->value));
-    reset($v_array);
-    while (list($tk,$tv) = each($v_array)) {
-      reset($this->options);
-      while (list($k,$v) = each($this->options)) {
+    foreach($v_array as $tk=>$tv) {
+      foreach ($this->options as $k=>$v) {
         if ((is_array($v) && 
            (($tmp=$v["value"])==$tv || $v["label"]==$tv))
          || ($tmp=$v)==$tv) {
