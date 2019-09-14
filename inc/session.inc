@@ -331,7 +331,7 @@ class Session {
     $arr=array();
     //$this->serialize("this->in", $str);
     //$this->serialize("this->pt", $str);
-    foreach ($this->pt as $thing) {
+    foreach ($this->pt as $thing=>$val) {
       $thing=trim($thing);
       if ( $thing ) {
         //$this->serialize("GLOBALS['".$thing."']", $str);  //php3 serialize was broken, use our own.
