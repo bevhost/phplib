@@ -1,15 +1,14 @@
 Summary: php library
 Name: phplib
 Version: 1.0
-Release: 9
+Release: 13
 License: GNU Library or Lesser General Public License (LGPL)
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-root
-Requires: php-mcrypt
 Requires: php-pdo
 Requires: php-mbstring
 Group: System Environment/Daemons
-Source: %{name}-%{version}.tar.gz
+Source: https://github.com/bevhost/%{name}/archive/%{version}.tar.gz
 Packager: David Beveridge <david@beveridge.id.au>
 
 %description
@@ -43,6 +42,9 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/phplib/*
 
 %changelog
+* Sat Jul 04 2020 dave
+- Change source to github
+
 * Mon Apr 28 2014 marado
 Added php dependencies
 - version 0.9
@@ -56,7 +58,7 @@ Added php dependencies
 * Mon Jun 28 2010 dave
 - version 0.6
 
-* Wed Feb 6 2010 dave
+* Wed Feb 06 2010 dave
 - version 0.5
 
 * Sat Jan 16 2010 David Beveridge <david@beveridge.id.au>
