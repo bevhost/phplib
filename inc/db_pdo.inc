@@ -45,7 +45,6 @@ class DB_Sql {
   }
   function quote($str) {
 	if (!$this->connect()) return 0; 
-	if (get_magic_quotes_gpc()) $str = stripslashes($str);
 	return $this->dbh->quote($str);
   }
   function quote_identifier($str) {
