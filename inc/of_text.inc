@@ -100,7 +100,7 @@ class of_text extends of_element {
     $str .= "<input type='hidden' name='$n' id='$n' value='$v'>\n";
     if (strncmp(strtoupper($v),"HTTP://",7)==0) $v="<a href=$v target=_blank>$v</a>";
     // $str .= "<table border=0><tr><td>$v</td></tr></table>\n";
-    if ($this->format) $v=money_format($this->format,$v);
+    if ($this->format) $v=money_fmat($this->format,$v);
     $str .= "$v\n";
     
     $count = 1;

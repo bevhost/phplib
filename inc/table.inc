@@ -40,6 +40,25 @@
   # Creates an HTML table based on either a PHP array or a
   # database result.
   #==========================================================================
+if (!function_exists('money_fmat')) {
+    function money_fmat($fmat,$value) {
+        $precision = 2;
+        $prefix = "$";  $suffix = "";
+        if (strpos($fmat,".0")) $precision = 0;
+        if (substr($fmat,-2)=="%%") $suffix = "%";
+        if (strpos($fmat,"!")) $prefix = "";
+        if ($value<0) {
+                $value *= -1;
+                if (strpos($fmat,"(")) {
+                        $prefix .= "(";
+                        $suffix .= ")";
+                } else {
+                        $prefix = "-".$prefix;
+                }
+        }
+        return $prefix.number_format($value,$precision,".",",").$suffix;
+    }
+}
   
 class Table
 {
@@ -923,7 +942,7 @@ class Table
       			default: 
 				$align="right";
 				if (array_key_exists($val,$this->format)) {
-					if ($fmat=$this->format[$val]) $output = money_format($fmat,$number);
+					if ($fmat=$this->format[$val]) $output = money_fmat($fmat,$number);
 					else $output=$dval;
 				} else {	
 					if (strpos($number,".")) $output = number_format($number,2);
