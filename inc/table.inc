@@ -539,7 +539,7 @@ class Table
       
     foreach($ary as $key=>$val) 
     {
-      if ($key or implode($val,'')>'') #skip blank first dummy row
+      if ($key or implode('',$val)>'') #skip blank first dummy row
       ## Process a single row
       $this->table_row($row++, $key, $val, $class);
     }
