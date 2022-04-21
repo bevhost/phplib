@@ -1043,6 +1043,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 				$this->DateCheck($data,$type);
                         	$value = $this->db->quote($therest);
                         	$nvalue = $this->db->quote("%".$therest."%");
+                        	$lvalue = $this->db->quote($therest."%");
 			}
 			if ($jointable) $f = $joindesc;
 			if (strpos($f,".")) $tf=$this->db->qi($f);
@@ -1060,6 +1061,9 @@ TODO: Change this to have some AJAX to handle larger lists.
                                 break;
                             case "!":
                                 $query .= "$tf NOT LIKE $nvalue";
+                                break;
+                            case "^":
+                                $query .= "$tf $like $lvalue";
                                 break;
                             default:
 				if ($type<>"of_date") $data = "%".$data;
