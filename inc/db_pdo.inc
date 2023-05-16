@@ -386,7 +386,7 @@ class DB_Sql {
   function lock($table, $mode = "write") {
     $query = "lock tables ";
     if (is_array($table)) {
-      while (list($key,$value) = each($table)) {
+      foreach ($table as $key=>$value) {
         if (!is_int($key)) {
 		  // texts key are "read", "read local", "write", "low priority write"
           $query .= "$value $key, ";
@@ -688,7 +688,7 @@ class DB_Sql {
 		$q = "SELECT name FROM sqlite_master WHERE type = 'table'"; break;
 	case "mysql":
 		$q = "SHOW TABLES"; break;
-        case "opgsql":
+        case "pgsql":
 		$q = "SELECT c.relname FROM pg_catalog.pg_class c
 			LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 			WHERE c.relkind IN ('r','') AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
