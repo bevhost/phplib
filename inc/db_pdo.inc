@@ -6,15 +6,19 @@
  *
  */ 
 
+
 class DB_Sql {
   
   /* public: connection parameters */
   var $Host     = "";
+  var $Port     = "";
+  var $Fallback = "";
   var $Database = "";
   var $User     = "";
   var $Password = "";
   var $Server   = "mysql";
   var $charset  = "utf8";
+  var $dbhfile  = "/tmp/current_pdo_host.";
 
   /* public: configuration parameters */
   var $Auto_Free     = 0;     ## Set to 1 for automatic mysqli_free_result()
@@ -45,6 +49,7 @@ class DB_Sql {
   }
   function quote($str) {
 	if (!$this->connect()) return 0; 
+#	if (get_magic_quotes_gpc()) $str = stripslashes($str);  #function removed in php8
 	return $this->dbh->quote($str);
   }
   function quote_identifier($str) {
@@ -116,19 +121,42 @@ class DB_Sql {
   }
 
   /* public: connection management */
-  function connect($Database = "", $Host = "", $User = "", $Password = "") {
+  function connect($Database = "", $Host = "", $User = "", $Password = "", $Port = "") {
     /* Handle defaults */
-    if ("" == $Database)
-      $Database = $this->Database;
-    if ("" == $Host)
-      $Host     = $this->Host;
-    if ("" == $User)
-      $User     = $this->User;
-    if ("" == $Password)
-      $Password = $this->Password;
-      
+    if ("" == $this->Database)	$this->Database = getenv("DB_DATABASE"); 	// If you run this inside docker using php-fpm
+    if ("" == $this->Host)	$this->Host     = getenv("DB_HOSTNAME");	// you should ensure to include the following in www.conf
+    if ("" == $this->Fallback)	$this->Fallback = getenv("DB_FALLBACK");	// clear_env = no
+    if ("" == $this->User)	$this->User     = getenv("DB_USERNAME");	// This allows the environment from root to be seen by php
+    if ("" == $this->Password) 	$this->Password = getenv("DB_PASSWORD");
+
+    if ("" == $Database) 	$Database = $this->Database;
+    if ("" == $Host) 		$Host     = $this->Host;
+    if ("" == $User) 		$User     = $this->User;
+    if ("" == $Password) 	$Password = $this->Password;
+    if ("" == $Port) 		$Port     = $this->Port;
+    $Fallback = "";
+
     /* establish connection, select database */
     if ( ! $this->dbh ) {
+
+     /* manage caching of currently in-use Host/FallBack */
+     if (!empty($this->Fallback)) { 
+      $ip = $Host;  // default if nothing in file
+      $Fallback   = $this->Fallback;
+      $last_working_host_cache_file = $this->dbhfile . get_class($this);
+      if (file_exists($last_working_host_cache_file)) {
+        if ($str = trim(file_get_contents($last_working_host_cache_file))) {
+	  $ip = long2ip(ip2long($str));  // found a valid ip address
+	}
+	if ($ip==$Fallback) {	//it's the fallback ip
+		$Fallback = $Host;
+		$Host = $ip;
+	} else if ($ip != $Host) { // not fallback and not host (WTF!!), reset.
+		$ip = $Host;
+		$Fallback = $this->Fallback;
+	}
+       }
+      }
     
       try{
 	switch($this->Server) {
@@ -142,16 +170,40 @@ class DB_Sql {
         	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;port=5432", $User, $Password);
 		break;
 	    default:
-      		if ($this->Debug) echo "Connecting to $Host as $User<br>\n";
-        	$this->dbh = new PDO("$this->Server:host=$Host;dbname=$Database;charset=$this->charset", $User, $Password, array(PDO::ATTR_PERSISTENT => false));
+		if ($Port) $Port=";port=$Port";
+      		if ($this->Debug) echo "\nConnecting to $Database at $Host$Port as $User<br>\n";
+        	if (!$this->dbh = new PDO("$this->Server:host=$Host$Port;dbname=$Database;charset=$this->charset", $User, $Password, array(PDO::ATTR_PERSISTENT => false, PDO::ATTR_TIMEOUT => 2))) {
+		   if ($Fallback) {
+      		     if ($this->Debug) echo "\nConnecting to $Fallback$Port as $User<br>\n";
+        	     $this->dbh = new PDO("$this->Server:host=$Fallback$Port;dbname=$Database;charset=$this->charset", $User, $Password, array(PDO::ATTR_PERSISTENT => false, PDO::ATTR_TIMEOUT => 2));
+		     $ip = $Fallback;
+		   }
+		}
 	}
       }
       catch(PDOException $e) {
-	$this->halt($e->getMessage());
+	if (!$Fallback) $this->halt($e->getMessage());
+      }
+      if (!$this->dbh and $Fallback) {
+	try{
+      		     if ($this->Debug) echo "\nConnecting to fallback $Fallback$Port as $User<br>\n";
+        	     $this->dbh = new PDO("$this->Server:host=$Fallback$Port;dbname=$Database;charset=$this->charset", $User, $Password, array(PDO::ATTR_PERSISTENT => false, PDO::ATTR_TIMEOUT => 2));
+		     $ip = $Fallback;
+	}
+        catch(PDOException $e) {
+	  $this->halt($e->getMessage());
+        }
       }
       if (!$this->dbh) {
 	$this->halt("connect($Host, $User, \$Password) failed.");
+	$ip = "";
         return 0;
+      }
+      if (!empty($ip)) {
+        if ($fp = fopen($last_working_host_cache_file,"w")) {
+          fwrite($fp,$ip);
+          fclose($fp);
+        }
       }
 
       switch ($this->Server) {
@@ -334,7 +386,7 @@ class DB_Sql {
   function lock($table, $mode = "write") {
     $query = "lock tables ";
     if (is_array($table)) {
-      foreach ($table as $key=>$value) {
+      while (list($key,$value) = each($table)) {
         if (!is_int($key)) {
 		  // texts key are "read", "read local", "write", "low priority write"
           $query .= "$value $key, ";
@@ -636,7 +688,7 @@ class DB_Sql {
 		$q = "SELECT name FROM sqlite_master WHERE type = 'table'"; break;
 	case "mysql":
 		$q = "SHOW TABLES"; break;
-        case "pgsql":
+        case "opgsql":
 		$q = "SELECT c.relname FROM pg_catalog.pg_class c
 			LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 			WHERE c.relkind IN ('r','') AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
