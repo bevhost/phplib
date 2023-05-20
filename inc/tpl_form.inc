@@ -141,8 +141,12 @@ function add_fields_on_joined_tables($tables,$joins=array()) {
 }
 
   # Override this method in order to provide form fields definition
-  # that suit your needs.
+  # that suit your needs.  or default to this very basic setup.
   function setup_fields() {
+    if (!empty($this->fields)) {
+        foreach($this->fields as $field) $this->form_data->add_element(["type"=>"text","name"=>$field,"field"=>$field]);
+        $this->form_data->add_element(["type"=>"submit","name"=>"submit","value"=>"Submit"]);
+    }
     return true;
   }
 
@@ -498,10 +502,10 @@ TODO: Change this to have some AJAX to handle larger lists.
 		if (!$NullDesc) $options[] = $NullValue;
 		else $options[] = array("value"=>$NullValue,"label"=>$NullDesc);
 	}
-	$count = 0;
+	$_phplib_count = 0;
         $db->query($sql);
         while ($db->next_record()) {
-		if ($count++>300) break;
+		if ($_phplib_count++>300) break;
 		if ($Extra) {
         		$options[] = array("value"=>$db->f(0),"label"=>$db->f(1));
 		} else {
@@ -517,7 +521,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 	if ($ok) {
 		if (!file_exists("$Table.php")) $ok = false;
 	}
-	if ($count>300) {
+	if ($_phplib_count>300) {
 	  $this->form_data->elements[$Src]["ob"]->LinkedTable=$Table;
 	  $this->form_data->elements[$Src]["ob"]->LinkField=$Target;
 	  $this->form_data->elements[$Src]["ob"]->LinkDesc=$Extra;
@@ -661,7 +665,7 @@ TODO: Change this to have some AJAX to handle larger lists.
                 }
 		$pdo = $sql;
 		$was = $fields = $values = $labels = "";
-		$count = 0;
+		$_phplib_count = 0;
                 for (reset($this->form_data->elements);
                  $elrec = current($this->form_data->elements);
                  next($this->form_data->elements))
@@ -724,23 +728,24 @@ TODO: Change this to have some AJAX to handle larger lists.
 				if ($old[$el->name]==$data[$label]) $diff = false;
 			  }
 			  if (isset($el->no_edit)) $diff = false;
+			  if ($data[$label]=='NULL' or $data[$label]=='select...') $diff = false;	// use database default when nothing has been entered or selected
 			  if ($diff) {
 			    if ($oldval) { 	#UPDATE
-				if ($count>0) { $sql .= ", \n"; $pdo .= ", "; $was .= ", \n"; }
+				if ($_phplib_count>0) { $sql .= ", \n"; $pdo .= ", "; $was .= ", \n"; }
 				$sql .= $db->qi($el->field)." = ".$db->quote($data[$label]);
 				$pdo .= $db->qi($el->field)." = $label";
 				$was .= $el->name."=".$old[$el->name];
 			    } else { 		#INSERT
-				if ($count>0) { $fields .= ", "; $values .= ", "; $labels .= ", "; }
+				if ($_phplib_count>0) { $fields .= ", "; $values .= ", "; $labels .= ", "; }
 				$fields .= $db->qi($el->field);
 				$values .= $db->quote($data[$label]);
 				$labels .= $label;
 			    }
-			    $count++;
+			    $_phplib_count++;
 			  } else unset($data[$label]);
                         }
                 }
-	    if ($count>0) {
+	    if ($_phplib_count>0) {
 		if ($oldval) { 
 			$sql .= " \nWHERE ".$db->qi($this->key)." = ".$db->quote($oldval);
 			$pdo .= " WHERE ".$db->qi($this->key)." = :$key";
@@ -852,7 +857,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 		#echo "Record not found ($key=$id)"; 
 		return false; 
 	}
-	$count = 0;
+	$_phplib_count = 0;
 	$was = "";
         for (reset($this->form_data->elements);
                 $elrec = current($this->form_data->elements);
@@ -887,10 +892,10 @@ TODO: Change this to have some AJAX to handle larger lists.
           $$vn = $this->form_data->elements[$el->name]["ob"]->value;
 	  if (substr($el->type,-4)<>"area" and $el->type<>"of_file" and $el->name<>"form_name" and $el->name<>"Password" and $el->type<>"of_password") {
 	     if ($el->value) {
-          	if ($count>0) $was .= ", ";
+          	if ($_phplib_count>0) $was .= ", ";
 		$elval = $el->multiple ? implode(",",$el->value) : $el->value;
 	  	$was .= $el->name."=".substr($elval,0,30);
-		$count++;
+		$_phplib_count++;
 	     }
 	  }
         }
@@ -991,6 +996,7 @@ TODO: Change this to have some AJAX to handle larger lists.
                 $this->db = new $this->database_class;
         }
         $query = "";
+	if ($this->db->Server == 'pgsql') $like = "ILIKE"; else $like = "LIKE";		# ILIKE is case insensitive
 	#
 	# under most normal circumstances $k is equal to $v["ob"]->field
 	# except if there are spaces and or other special chars in the sql fieldname.
@@ -1025,6 +1031,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 		  and ($f = $v["ob"]->field)             // has an sql field
                   and (!empty($_REQUEST[$k]))) {           // and was POSTed.
 			$type = $v["ob"]->type;
+			$function = @$v["ob"]->function;	# e.g. in setup_fields: "function"=>"inet_ntoa(%s)"
                         if ($query) $query .= " AND ";
 			if (array_key_exists("oper_$k",$_REQUEST)) {
 				$condition = $_REQUEST["oper_$k"];
@@ -1052,6 +1059,7 @@ TODO: Change this to have some AJAX to handle larger lists.
 		                if (!$relShow = $v["ob"]->relShow) $relShow = "Name";
                 		$tf = $relName . "." . $relShow;
 		        }
+			if (!empty($this->joins[$k]) and empty($jointable)) $tf = $this->joins[$k]; 
                         switch($condition) {
                             case ">":
                             case "<":
@@ -1060,14 +1068,18 @@ TODO: Change this to have some AJAX to handle larger lists.
                                 $query .= "$tf $condition $value";
                                 break;
                             case "!":
-                                $query .= "$tf NOT LIKE $nvalue";
+                                $query .= "$tf NOT $like $nvalue";
                                 break;
                             case "^":
                                 $query .= "$tf $like $lvalue";
                                 break;
                             default:
-				if ($type<>"of_date") $data = "%".$data;
-                                $query .= "$tf LIKE ".$this->db->quote($data."%");
+				if ($function) {
+        	                        $query .= sprintf($function,$tf)." $like ".$this->db->quote($data."%");
+				} else {
+					if ($type<>"of_date") $data = "%".$data;
+        	                        $query .= "$tf $like ".$this->db->quote($data."%");
+				}
                         }
 
                 }
