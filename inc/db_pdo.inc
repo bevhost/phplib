@@ -349,11 +349,11 @@ class DB_Sql {
 			}
 		} else 
 		$data = $this->sth->fetchAll(PDO::FETCH_ASSOC); 
-		if (!$data) $data = array();  // if no records return empty array/
 	} else {
 		// Array of values
 	 	foreach ($this->sth->fetchAll(PDO::FETCH_NUM) as $row) $data[]=$row[0]; 
 	}
+	if (empty($data)) $data = [];  // if no records return empty array/
 	return $data;  // Always return an array,
   }
   /* public: walk result set */
