@@ -311,7 +311,7 @@ class Table
     if (isset($this->heading) && $this->heading)
     {
       reset($ary);
-      $key = key($ary); $val=current($ary);
+      $val = current($ary);
       $this->table_heading_row($val, $class);
       if (isset($this->add_insert))
        $this->table_insert_row($val, $class);
@@ -399,12 +399,10 @@ class Table
   {
     if (!is_array($data))
     {
-#	echo "<script>alert('no data')</script>";
-#      return;
 	$data = $this->map_cols;
 	$this->table_heading_row($data);
     }
-
+echo "<!-- AddIns form: $this->add_insert -->";
     $d = $this->select_colnames($data);
 
     $row=0;
@@ -430,8 +428,10 @@ class Table
   {
     global $debug;
 
-    if ($debug)
+    if ($debug) {
       printf("<p>show_table_insert_cells()<br>\n");
+	var_dump($data);
+    }
 
     if (!$this->verify_array($data))
       return 0;
@@ -440,7 +440,7 @@ class Table
     $d = $this->select_colnames($data);
 
     ## Create regular cells
-    foreach ($d as $key => $val)
+    foreach ($d as $key=>$val)
     {
       $this->table_insert_cell($col++, $val, $class);
     }
@@ -451,7 +451,7 @@ class Table
 
   function table_insert_cell($col, $val, $class)
   {
-   global $PHP_SELF, $DOCUMENT_ROOT;
+   global $PHP_SELF, $DOCUMENT_ROOT, $debug;
     $align=""; $title="";
     $this->table_cell_open($class, $align, $title);
     if (array_key_exists($val,$this->orig_fields)) {
@@ -476,8 +476,10 @@ class Table
 
   function table_form_start($form) 
   {
+	global $debug;
 	$this->form = new $form;
-#echo "<!-- form: $form -->";
+	if (!isset($this->js_sent[$form])) $this->js_sent[$form]=0;
+	if ($debug) echo "<!-- form: $form -->";
 	$this->form->setup("inside_table",$this->js_sent[$form], $this->ipe_table ? $this->classname : false );
 	$this->form->form_data->start($form);
 	foreach ($this->tables as $LinkDesc=>$LinkTable) {
@@ -492,6 +494,7 @@ class Table
                 "edit"=>false,
             ));
 	}
+        if (empty($this->form->form_data->elements)) echo "No elements(fields) exist in form class definition: $form";
   }
 
   function table_form_finish($form)
@@ -556,7 +559,7 @@ class Table
       
     $row = 0;
       
-    foreach($ary as $key=>$val) 
+    foreach($ary as $key=>$val)
     {
       if ($key or implode('',$val)>'') #skip blank first dummy row
       ## Process a single row
@@ -718,7 +721,7 @@ class Table
 
     $d = $this->select_colnames($data);    
     if ($this->edit) $this->table_form_start($this->edit);
-    $this->table_row_open($row, $d, $class);    
+    $this->table_row_open($row, $data, $class);    
 
     $this->set_checkbox($row, $row_key, $data, $class);
     $this->show_table_cells($row, $row_key, $data, $class);
@@ -823,7 +826,7 @@ class Table
     $d = $this->select_colnames($data);
       
     ## Create regular cells
-    foreach ($d as $key=>$val) 
+    foreach($d as $key=>$val)
     {
       $this->table_heading_cell($col++, $val, $class);
     }
@@ -891,7 +894,9 @@ class Table
   # History  : used ot be built in to show_table_cells
   #==========================================================================
   function format_table_cell($val,$data,&$align,&$comment,&$class) {
-	$dval = array_key_exists($val,$data) ? str_replace("\r","",$data[$val]) : "";
+	#$dval = array_key_exists($val,$data) ? str_replace("\r","",$data[$val]) : "";
+	$dval = @$data[$val];
+	if (!empty($dval)) $dval = str_replace("\r","",$dval);
 	if ((!empty($dval)) and (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/", $dval, $regs))) {
 		$output = date("d M Y",strtotime($dval));   /* DD Mmm YYYY */
 		$comment = substr($dval,11,10);
@@ -957,9 +962,11 @@ class Table
 							break;
 						default:
 							$output = number_format(floatval($number));
+							$output = $dval;
 					}
 				}
 				$vval = " $val";
+				$output = $dval;
 				if (strpos($vval,"time") or strpos($vval,"date")) $comment = @date("Y-m-d H:i:s",$number);
 		}
 	} else { 
@@ -967,7 +974,9 @@ class Table
 		$output = $dval;
 	}
 
-	$output = str_replace("(TEST TRANSACTION ONLY)","<b>(TEST)</b>",$output);
+	#$output = str_replace("(TEST TRANSACTION ONLY)","<b>(TEST)</b>",$output);
+	if ($output == "30 Nov -0001") $output = "";
+	if ($output == "01 Jan 1970") $output = "";
 
 	return $output;
   }	
@@ -987,10 +996,11 @@ class Table
   # Comments :
   # History  :
   #==========================================================================
-  function table_cell($row, $col, $key, $val, $class="", $align="", $comment="", $index) 
+  function table_cell($row, $col, $key, $val, $class="", $align="", $comment="", $index="") 
   {
     global $debug;
 	if ($debug) echo "table_cell($val)";
+
    global $PHP_SELF, $DOCUMENT_ROOT;
     $title="";
     $shown = false;
@@ -1019,14 +1029,15 @@ class Table
 		}
 	} else $this->form->form_data->show_element($key,$val);
     } else {
-        if (strlen($val)>$this->limit+5) {$val = substr($val,0,$this->limit)." ...";}
+        if ($val) if (strlen($val)>$this->limit+5) {$val = substr($val,0,$this->limit)." ...";}
 	if ((isset($this->map_links)) and ($this->verify_array($this->map_links)) and array_key_exists($key,$this->map_links) and ($target = $this->map_links[$key])) {
                 printf("<a href=\"%s%s\">%s</a>",$target,$val,htmlspecialchars($val,ENT_COMPAT,"UTF-8"));
         } else {
 		if ($this->trust_the_data) 
 			echo $val;
 		else
-			echo htmlspecialchars($val,ENT_COMPAT,"UTF-8");
+			if ($val) echo htmlspecialchars($val,ENT_COMPAT,"UTF-8"); 
+			else echo $val;	//zero
 	}
     }
     $this->table_cell_close($class);
@@ -1066,7 +1077,7 @@ class Table
     ## Check for column name remapping
     if ($this->verify_array($this->map_cols))
     {
-      foreach($this->map_cols as $key => $name)
+      foreach($this->map_cols as $key=>$name)
       {
         if ($key == $val)
         {
@@ -1076,6 +1087,7 @@ class Table
         }
       }
     }
+    $key = $val;
     if (!$class) $class='toplink';
     global $sess, $sortorder;
     if (isset($key) and ($key==$sortorder)) $key .= " desc";
@@ -1237,7 +1249,7 @@ class Table
   {
     if (is_array($ary))
     {
-      foreach ($ary as $key=> $val)
+      foreach($ary as $key=>$val)
       {
         echo "&nbsp;&nbsp;$key = $val<br>\n";
         if (is_array($val))
@@ -1368,6 +1380,9 @@ function ".$this->classname."SaveCell(elem,index) {
         echo "<option value=''>with selected...</option>\n";
 	foreach ($this->checkbox_menu as $menu_item) echo "<option value='$menu_item'>$menu_item</option>\n";
         echo "</select>\n";
+	$searchfields = [];
+	foreach ($this->fields as $f) if (array_key_exists($f,$_REQUEST)) $searchfields[$f] = $_REQUEST[$f]; 
+	echo "<input type=hidden name=_searchfields value='".base64_encode(serialize($searchfields))."'>\n";
 	echo "</td></tr>";
         echo "</form>\n";
     }
@@ -1440,13 +1455,14 @@ function ".$this->classname."SaveCell(elem,index) {
 	$tenpages = $rowcount * 10;
  	if ($startingwith>0 or $this->rowcount >= $rowcount) {
 		if ($class) echo "<th class='$class'>"; else echo "<th>";
+		echo $this->rowcount;
 		if (isset($this->add_insert)) {
  	 		printf("<a href='javascript:Back10Pages();'>&lt;&lt;</a>&nbsp;");
 			printf("<a href='javascript:prevPage();'>&lt;</a>&nbsp;");
 	  		printf("<a href='javascript:nextPage();'>&gt;</a>&nbsp;");
 			printf("<a href='javascript:Jump10Pages();'>&gt;&gt;</a></th>");
 		} else {
-			$self=$sess->self_url();
+			if (is_object($sess)) $self=$sess->self_url(); else $self=$PHP_SELF;
 			$lotsless = $startingwith-$tenpages; 
 			if ($lotsless<0) $lotsless=0;
 			$less = $startingwith-$rowcount; 
@@ -1458,6 +1474,10 @@ function ".$this->classname."SaveCell(elem,index) {
 			printf("<a href='%s%s'>&gt;</a>&nbsp;",$self,$sess->add_query(array("rowcount"=>$rowcount,"startingwith"=>$more)));
 			printf("<a href='%s%s'>&gt;&gt;</a></th>",$self,$sess->add_query(array("rowcount"=>$rowcount,"startingwith"=>$lotsmore)));
 		}
+	} else {
+		if ($class) echo "<th class='$class'>"; else echo "<th>";
+		echo $this->rowcount;
+		echo "</th>";
 	}
   }
 
@@ -1601,15 +1621,17 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
     $this->orig_fields = Array();
     if (strtolower(substr($class,0,3))=="my_") $class=substr($class,3);
     if (strtolower(substr($class,0,2))=="my") $class=substr($class,2);
+    if (strtolower(substr($class,0,2))=="My") $class=substr($class,2);
     $fk = new $_ENV["MyForeignKeysDB"];
     $db = new $form->database_class;
     $sql_table = $db->qi($this->sql_table);
     $from = "\nFROM $sql_table";
     $where = "\nWHERE ";
-    $select = ""; 
+    $select = "";
+    $form->joins = [];
     $joins = $this->joins;
     if ($join) $tc=1; else $tc=0;  // table counter
-    if (!$this->edit) {
+    if (!$this->edit and !empty($_ENV["MyForeignKeys"])) {
       $links = "";
       $sql = "select * from ".$_ENV["MyForeignKeys"]." where FormName = '$class' order by id";
       $fk->query($sql);
@@ -1623,9 +1645,10 @@ td.ae a.ae_delete { background: url('images/delete.jpg'); }
 		$table = "_t$tc";
 		$LinkName = "$table$LinkDesc"; 
 		$links .= ", $table.$LinkDesc AS $LinkName";
-		$from .= "\nLEFT OUTER JOIN $LinkTable AS $table ON $sql_table.$q_FieldName=$table.$q_LinkField";
+		$from .= "\nLEFT JOIN $LinkTable AS $table ON $sql_table.$q_FieldName=$table.$q_LinkField";
 		$this->map_cols[$LinkName] = $this->map_cols[$FieldName];
 		$this->orig_fields[$LinkName] = $FieldName;
+		$form->joins[$FieldName] = "$table.$LinkDesc";
 		if ($field_key!==false) {
 			$this->fields[$field_key] = $LinkName;
 			$this->map_cols[$LinkName] = $this->map_cols[$FieldName];

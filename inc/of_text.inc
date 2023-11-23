@@ -32,7 +32,7 @@ class of_text extends of_element {
     if (is_array($this->value))
       $v = htmlspecialchars($this->value[$which],ENT_COMPAT, "UTF-8");
     else 
-      $v = htmlspecialchars($this->value,ENT_COMPAT, "UTF-8");
+      $v = @htmlspecialchars($this->value,ENT_COMPAT, "UTF-8");
     $n = $this->name . ($this->multiple ? "[]" : "");
     $str .= "<input id='$n' name='$n' value=\"$v\"";
     $extra = "";
@@ -76,8 +76,9 @@ class of_text extends of_element {
     $str .= " class='$this->class'";
     if ($size) 
       $str .= " size='$size'";
-    else
-      $str .= " style='width:80%'";
+    else 
+      $str .= " style='width:90%'";
+    if ($this->action=="ips") $str .= " size='4'";
     if ($this->extrahtml) 
       $str .= " $this->extrahtml";
     else
@@ -95,10 +96,10 @@ class of_text extends of_element {
       $v = $this->value[$which];
     else 
       $v = $this->value;
-    $v = htmlentities($v,ENT_IGNORE,"UTF-8");
+    if (!empty($v)) $v = htmlentities($v,ENT_IGNORE,"UTF-8");
     $n = $this->name . ($this->multiple ? "[]" : "");
     $str .= "<input type='hidden' name='$n' id='$n' value='$v'>\n";
-    if (strncmp(strtoupper($v),"HTTP://",7)==0) $v="<a href=$v target=_blank>$v</a>";
+    if (!empty($v)) if (strncmp(strtoupper($v),"HTTP://",7)==0) $v="<a href=$v target=_blank>$v</a>";
     // $str .= "<table border=0><tr><td>$v</td></tr></table>\n";
     if ($this->format) $v=money_fmat($this->format,$v);
     $str .= "$v\n";
@@ -111,7 +112,7 @@ class of_text extends of_element {
   function self_get_js($ndx_array) {
    $str = "";
    if (is_array($ndx_array)) { //Added by DaveB
-    foreach ($ndx_array as $k=>$n) {
+    foreach($ndx_array as $k=>$n) {
       if ($this->length_e) {
         $str .= "if (f.elements[\"${n}\"].value.length < $this->minlength) {\n";
         $str .= "  alert(\"$this->length_e\");\n";
@@ -136,7 +137,7 @@ class of_text extends of_element {
 
   function self_validate($val) {
     if (!is_array($val)) $val = array($val);
-    foreach ($val as $k=>$v) {
+    foreach($val as $k=>$v) {
       if ($this->length_e && (strlen($v) < $this->minlength)) {
         return $this->length_e;
       }//if

@@ -747,9 +747,14 @@ TODO: Change this to have some AJAX to handle larger lists.
                 }
 	    if ($_phplib_count>0) {
 		if ($oldval) { 
+		    if (strpos($oldval,",") and ctype_digit(str_replace(",","",$oldval))) {   # Bulk Edit
+			$sql .= " \nWHERE ".$db->qi($this->key)." IN ($oldval)";
+			$pdo .= " WHERE ".$db->qi($this->key)." IN ($oldval)";
+		    } else {			# Single Record
 			$sql .= " \nWHERE ".$db->qi($this->key)." = ".$db->quote($oldval);
 			$pdo .= " WHERE ".$db->qi($this->key)." = :$key";
 			$data[":$key"] = $oldval;
+		    }
 		} else {
 			$sql .= "($fields) VALUES ($values)";
 			$pdo .= "($fields) VALUES ($labels)";
@@ -828,6 +833,7 @@ TODO: Change this to have some AJAX to handle larger lists.
           $this->setup();
         }
         if (!$id) return false;
+	if (is_array($id)) return false;
 	$ID = $id;
 	if (!$key) $key = empty($this->key_field) ? $this->key : $this->key_field;
 	if (($key=="id") and !ctype_digit("$id")) {

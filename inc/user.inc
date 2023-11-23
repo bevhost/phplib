@@ -65,7 +65,8 @@ class User extends Session {
     $this->serialize("this->in",$str);
     $this->serialize("this->pt",$str);
 
-    foreach ( $this->pt as $thing) {
+    reset($this->pt);
+    while ( list($thing) = each($this->pt) ) {
       $thing=trim($thing);
       if ( $thing ) {
         $this->serialize("GLOBALS['".$thing."']",$str);

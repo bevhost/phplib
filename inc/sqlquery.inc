@@ -22,7 +22,7 @@ class Sql_Query {
   var $start_row  = 0;
   var $row_count  = 100;
   var $max_chooser = 20;			// (DaveB) Maximum drop down box entries.
-  var $default_query = "id!='0'";		// (DaveB)
+  var $default_query = "true";			// (DaveB)
   var $default_sortorder = "id desc";		// (DaveB)
   var $extra_cond = "";				// (DaveB)
 
@@ -136,7 +136,7 @@ class Sql_Query {
     $res .= sprintf("<select%s name=\"%s\" %s>\n",
               ($class)?" class='$class'":"",
               $name, $chooser);
-    foreach ($option as $k=>$v) {
+    foreach($option as $k=>$v) {
       if (($trans == "" && $old == $v)
        || ($trans != "" && $old == $db->qi($k)." desc")
        || ($trans != "" && $old == $db->qi($k)) 
@@ -399,7 +399,7 @@ class Sql_Query {
     } else if ($this->extra_cond) $qq = "$this->extra_cond AND ($qq)"; 
 
     $this->join = "";
-    foreach($used_joins as $lt=>$lc) $this->join .= "\nLEFT OUTER JOIN $lt ON $lc ";
+    foreach($used_joins as $lt=>$lc) $this->join .= "\nLEFT JOIN $lt ON $lc ";
 
     if ($order_field = @$GLOBALS[$base]["ord_1"]) {
 		if (substr(strtolower($order_field),-5) == " desc") {

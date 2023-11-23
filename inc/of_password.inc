@@ -81,7 +81,8 @@ class of_password extends of_element {
   function self_get_js($ndx_array) {
    $str = "";
    if (is_array($ndx_array)) { //Added by DaveB
-    foreach ($ndx_array as $k=>$n) {
+    reset($ndx_array);
+    while (list($k,$n) = each($ndx_array)) {
       if ($this->length_e) {
         $str .= "if (f.elements[\"${n}\"].value.length < $this->minlength) {\n";
         $str .= "  alert(\"$this->length_e\");\n";
@@ -106,7 +107,8 @@ class of_password extends of_element {
 
   function self_validate($val) {
     if (!is_array($val)) $val = array($val);
-    foreach ($val as $k=>$v) {
+    reset($val);
+    while (list($k,$v) = each($val)) {
       if ($this->length_e && (strlen($v) < $this->minlength))
         return $this->length_e;
       if ($this->valid_e && (($this->icase && 

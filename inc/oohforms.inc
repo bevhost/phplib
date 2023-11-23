@@ -74,11 +74,7 @@ class of_element {
         "min_l"=>"minlength",
         "max_l"=>"maxlength",
         "extra_html"=>"extrahtml");
-    reset($a);
-    foreach ($a as $k=>$v) {
-      #if ($cv_tab[$k]=="ignore") continue;
-      #else $k = (array_key_exists($k,$cv_tab) ? $cv_tab[$k] : $k);
-      #$this->$k = $v;
+    foreach($a as $k=>$v) {
         if (array_key_exists($k,$cv_tab)) { $k = $cv_tab[$k]; }
         if ($k != "ignore") $this->$k = $v;
     }
@@ -99,7 +95,7 @@ class of_hidden extends of_element {
 
     $v = (is_array($this->value) ? $this->value : array($this->value));
     $n = $this->name . ($this->multiple ? "[]" : "");
-    foreach($v as $k => $tv) {
+    foreach($v as $k=>$tv) {
       $str .= "<input type='hidden' name='$n' value='$tv'";
       if ($this->extrahtml)
         $str .=" $this->extrahtml";
@@ -167,6 +163,8 @@ class form {
   var $save_class=false; /* cells to be save immediately using this ajax function prefix */  
   var $calendar=false;   /* form has date field, requires javascript calendar popup */
   var $editor=false;	 /* form has htmlarea field, requires wysiwyg editor */
+  var $autocomplete="off"; /* set to off to disable autocomplete */
+
 
   function get_start($jvs_name="",$method="",$action="",$target="",$form_name="") {
     
@@ -180,6 +178,7 @@ class form {
 
     $str .= "<form name='$jvs_name' ";
     if ($this->in_table) $str .= " class='well form-inline'";
+    if ($this->autocomplete) $str .= " autocomplete='off'";
     if ($this->isfile) {
       $str .= " enctype='multipart/form-data'";
       $method = "post";
@@ -212,7 +211,7 @@ class form {
     $str = "";
     
     if ($this->hidden) {
-      foreach ($this->hidden as $k => $elname) 
+      foreach($this->hidden as $k=>$elname)
         $str .= $this->get_element($elname);
     }
     if (is_object($sess) && (!isset($_COOKIE[$sess->name]))) {
@@ -229,7 +228,7 @@ class form {
 
     // serialize compress and encode the whole record so that you can tell which fields have been changed on submit.
     if ($GLOBALS["cmd"]<>"Back") {
-      foreach ($this->elements as $k=>$elrec) {
+      foreach($this->elements as $k=>$elrec) {
 	$el = $elrec["ob"];
 	$old[$el->name] = $el->value;
       }
@@ -367,7 +366,6 @@ class form {
 
     if (false == $value) 
        $value = $el->value; 
-
     if (isset($this->elements[$name]["frozen"]))
       $str .= $el->self_get_frozen($value,$this->elements[$name]["which"]++, $x);
     else

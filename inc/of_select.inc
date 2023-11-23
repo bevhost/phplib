@@ -141,7 +141,12 @@ class of_select extends of_element {
     if (empty($val) &&  $this->valid_e) return $this->valid_e; 
     if (!$this->multiple && $this->valid_e) {
       foreach($this->options as $k=>$v) {
-	if ($val==$v["value"] || $val==$v) return false;
+	#if ($val==$v["value"] || $val==$v) return false;  #old
+	if (isset($v["value"])) {
+		if ($val==$v["value"]) return false;
+	} else {
+		if ($val==$v) return false;
+	}
       }
     }
     return $this->valid_e;
