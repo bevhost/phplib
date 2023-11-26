@@ -14,6 +14,8 @@ class of_textarea extends of_element {
   var $length_e;
   var $cols;
   var $wrap;
+  var $height;
+  var $width;
 
   // Constructor
   function __construct($a) {
@@ -30,7 +32,7 @@ class of_textarea extends of_element {
       $str .= " wrap='$this->wrap'";
     if ($this->extrahtml) 
       $str .= " $this->extrahtml";
-    $str .= ">" . htmlspecialchars($this->value) ."</textarea>";
+    $str .= ">" . htmlspecialchars($this->value ? $this->value : "") ."</textarea>";
     
     $count = 1;
     return $str;
@@ -58,18 +60,18 @@ class of_textarea extends of_element {
     $str = "/* textarea */\n";
     foreach ($ndx_array as $k=>$n) {
       if ($this->length_e) {
-        $str .= "if (f.elements[\"${n}\"].value.length < $this->minlength) {\n";
+        $str .= "if (f.elements[\"$n\"].value.length < $this->minlength) {\n";
         $str .= "  alert(\"$this->length_e\");\n";
-        $str .= "  f.elements[\"${n}\"].focus();\n";
+        $str .= "  f.elements[\"$n\"].focus();\n";
         $str .= "  return(false);\n}\n";
       }
       if (!empty($this->valid_e)) {
         $flags = ($this->icase ? "gi" : "g");
         $str .= "if (window.RegExp) {\n";
         $str .= "  var reg = new RegExp(\"$this->valid_regex\",\"$flags\");\n";
-        $str .= "  if (!reg.test(f.elements[\"${n}\"].value)) {\n";
+        $str .= "  if (!reg.test(f.elements[\"$n\"].value)) {\n";
         $str .= "    alert(\"$this->valid_e\");\n";
-        $str .= "    f.elements[\"${n}\"].focus();\n";
+        $str .= "    f.elements[\"$n\"].focus();\n";
         $str .= "    return(false);\n";
         $str .= "  }\n}\n";
       }

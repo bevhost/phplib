@@ -10,6 +10,7 @@ class of_file extends of_element {
 
   var $isfile = true;
   var $size;
+  var $sqlsize;
 
   function __construct($a) {
     $this->setup_element($a);

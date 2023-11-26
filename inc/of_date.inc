@@ -64,7 +64,7 @@ class of_date extends of_text {
     if (is_array($this->value))
       $v = htmlspecialchars($this->value[$which]);
     else 
-      $v = htmlspecialchars($this->value);
+      $v = $this->value ? $v = htmlspecialchars($this->value) : "";
     if ($this->class <> "ips") $v = $this->format_value($v);
     $n = $this->name . ($this->multiple ? "[]" : "");
     $str .= "<input id='$n' name='$n' value=\"$v\"";
@@ -118,9 +118,9 @@ class of_date extends of_text {
    if (is_array($ndx_array)) { //Added by DaveB
     foreach ($ndx_array as $k=>$n) {
       if ($this->length_e) {
-        $str .= "if (f.elements[\"${n}\"].value.length < $this->minlength) {\n";
+        $str .= "if (f.elements[\"$n\"].value.length < $this->minlength) {\n";
         $str .= "  alert(\"$this->length_e\");\n";
-        $str .= "  f.elements[\"${n}\"].focus();\n";
+        $str .= "  f.elements[\"$n\"].focus();\n";
         $str .= "  return(false);\n}\n";
       }
       if ($this->valid_e) {
@@ -136,18 +136,18 @@ class of_date extends of_text {
 	    case 'time':
 	    case 'timestamp':
 	    case 'datetime':
-		$str .= "if (!dateValidator(\"$this->valid_regex\",f.elements[\"${n}\"],f.elements[\"${n}\"].value,'".$AllowNull."')) {\n";
+		$str .= "if (!dateValidator(\"$this->valid_regex\",f.elements[\"$n\"],f.elements[\"$n\"].value,'".$AllowNull."')) {\n";
 	        $str .= "    alert(ErrorStr);\n";
-	        $str .= "    f.elements[\"${n}\"].focus();\n";
+	        $str .= "    f.elements[\"$n\"].focus();\n";
 		$str .= "    return(false);\n";
 	        $str .= "}\n";
 		break;
 	    default:
 	        $str .= "if (window.RegExp) {\n";
 	        $str .= "  var reg = new RegExp(\"$this->valid_regex\",\"$flags\");\n";
-	        $str .= "  if (!reg.test(f.elements[\"${n}\"].value)) {\n";
+	        $str .= "  if (!reg.test(f.elements[\"$n\"].value)) {\n";
 	        $str .= "    alert(\"$this->valid_e\");\n";
-	        $str .= "    f.elements[\"${n}\"].focus();\n";
+	        $str .= "    f.elements[\"$n\"].focus();\n";
 	        $str .= "    return(false);\n";
 	        $str .= "  }\n}\n";
 	}

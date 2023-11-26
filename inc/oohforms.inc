@@ -21,6 +21,16 @@ class of_element {
   var $is_checkbox=false;
   var $LinkedTable=false;  
   var $format=false;		// see php money_format()
+  var $size;
+  var $field;
+  var $key;
+  var $type;
+  var $options;
+  var $edit;
+  var $LinkField;
+  var $LinkDesc;
+  var $FormName;
+
 
   function marshal_dispatch($m,$func) {   
     $v = array_key_exists($this->name,$GLOBALS) ? $GLOBALS[$this->name] : "";
@@ -165,6 +175,9 @@ class form {
   var $editor=false;	 /* form has htmlarea field, requires wysiwyg editor */
   var $autocomplete="off"; /* set to off to disable autocomplete */
 
+  var $key;
+  var $after;
+  var $before;
 
   function get_start($jvs_name="",$method="",$action="",$target="",$form_name="") {
     
@@ -194,7 +207,7 @@ class form {
     if ($cmd=="Connect") $jvs_name="";  //DaveB  I don't want to validate a record I'm going to connect.
     if ($jvs_name) {
       $this->jvs_name = $jvs_name;
-	$str .= " onsubmit=\"return ${jvs_name}_Validator(this)\"";
+	$str .= " onsubmit=\"return ".$jvs_name."_Validator(this)\"";
     }
     
     $str .= " accept-charset='UTF-8'>";
@@ -242,7 +255,7 @@ class form {
     if ($this->jvs_name) {
       $jvs_name = $this->jvs_name;
       $str .= "<script language='javascript'>\n<!--\n";
-      $str .= "function ${jvs_name}_Validator(f) {\n";
+      $str .= "function ".$jvs_name."_Validator(f) {\n";
 
       if (isset($before)) $str .= "$before\n";
       if (isset($this->before)) $str .= "$this->before\n";

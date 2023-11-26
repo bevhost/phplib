@@ -18,6 +18,8 @@
 
 class of_htmlarea extends of_element {
 
+  var $rows;
+  var $cols;
   var $height;
   var $width;
   var $wrap;

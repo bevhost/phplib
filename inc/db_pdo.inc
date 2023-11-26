@@ -50,7 +50,7 @@ class DB_Sql {
   function quote($str) {
 	if (!$this->connect()) return 0; 
 #	if (get_magic_quotes_gpc()) $str = stripslashes($str);  #function removed in php8
-	return $this->dbh->quote($str);
+	return $this->dbh->quote("$str");
   }
   function quote_identifier($str) {
 	$arr = explode(".",$str);
@@ -330,7 +330,7 @@ class DB_Sql {
 					switch($type) {
 						case "date":
 						case "datetime":
-							$casted_row[$name] = (strtotime($val)/86400)+25569.4167;
+							$casted_row[$name] = $val ? (strtotime($val)/86400)+25569.4167 : $val;
 							break;
 						case "int":
 						case "long":

@@ -103,6 +103,7 @@ class Table
   var $no_open = '';			 ## Allows printing of more rows to a table that is already open. 
   var $primary_field = "id";		 ## default key for add_extra
   var $rowcount = 0;			 ## holds value from db->affected rows or count(array);
+  var $GroupBy;
 
   #==========================================================================
   ## Public functions
@@ -934,7 +935,7 @@ echo "<!-- AddIns form: $this->add_insert -->";
 		// Numeric Field
 		if (!isset($this->total[$val])) $this->total[$val]=0;
 		$number = str_replace(",","",str_replace("$","",$dval));
-		$this->total[$val] += $number;
+		if (is_numeric($number)) $this->total[$val] += $number; 
 		switch ($val) {
 			case "AcctSessionTime":
 				$align = "right";
@@ -950,7 +951,7 @@ echo "<!-- AddIns form: $this->add_insert -->";
 					if ($fmat=$this->format[$val]) $output = money_fmat($fmat,$number);
 					else $output=$dval;
 				} else {	
-					if (strpos($number,".")) $output = number_format($number,2);
+					if (is_numeric($number) and strpos($number,".")) $output = number_format($number,2);
 					else switch($val) {
 						case "MerchantID":
 						case "Mobile":
@@ -1005,7 +1006,7 @@ echo "<!-- AddIns form: $this->add_insert -->";
     $title="";
     $shown = false;
     if (array_key_exists($key,$this->orig_fields)) $key = $this->orig_fields[$key];
-    if (isset($this->total[$key])) $title=number_format($this->total[$key]);
+    if (!empty($this->total[$key])) $title=$this->total[$key];
     if ($comment) $title = $comment;
     $this->table_cell_open($class, $align, $title, $key, $index);
     if (!empty($this->edit)) {

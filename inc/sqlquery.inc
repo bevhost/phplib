@@ -37,6 +37,13 @@ class Sql_Query {
   var $joins = array(); 
   var $tables = array();
   var $search = array();
+
+  var $database_class;
+  var $table;
+  var $fields;
+  var $map_cols;
+  var $last_query;
+  var $last_sortorder;
   
   ## HTML Widget dictionary
   var $dict = array(

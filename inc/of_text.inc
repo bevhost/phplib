@@ -114,9 +114,9 @@ class of_text extends of_element {
    if (is_array($ndx_array)) { //Added by DaveB
     foreach($ndx_array as $k=>$n) {
       if ($this->length_e) {
-        $str .= "if (f.elements[\"${n}\"].value.length < $this->minlength) {\n";
+        $str .= "if (f.elements[\"$n\"].value.length < $this->minlength) {\n";
         $str .= "  alert(\"$this->length_e\");\n";
-        $str .= "  f.elements[\"${n}\"].focus();\n";
+        $str .= "  f.elements[\"$n\"].focus();\n";
         $str .= "  return(false);\n}\n";
       }
       if ($this->valid_e) {
@@ -124,9 +124,9 @@ class of_text extends of_element {
 	$AllowNull = "";
         $str .= "if (window.RegExp) {\n";
         $str .= "  var reg = new RegExp(\"$this->valid_regex\",\"$flags\");\n";
-        $str .= "  if (!reg.test(f.elements[\"${n}\"].value)) {\n";
+        $str .= "  if (!reg.test(f.elements[\"$n\"].value)) {\n";
         $str .= "    alert(\"$this->valid_e\");\n";
-        $str .= "    f.elements[\"${n}\"].focus();\n";
+        $str .= "    f.elements[\"$n\"].focus();\n";
         $str .= "    return(false);\n";
         $str .= "  }\n}\n";
       }

@@ -75,6 +75,9 @@ class tpl_form {
 
   var $map_rels = array();   # map relational field names
 
+  var $joins;
+  
+
   # This is a sort of constructor for the class. $values
   # is an array used to store form values. The class
   # writes data into it, but may also use it to obtain

@@ -9,6 +9,7 @@
 class of_checkbox extends of_element {
 
   var $checked;
+  var $options;
 
   // Constructor
   function __construct($a) {
