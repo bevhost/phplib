@@ -113,13 +113,13 @@ class of_text extends of_element {
    $str = "";
    if (is_array($ndx_array)) { //Added by DaveB
     foreach($ndx_array as $k=>$n) {
-      if ($this->length_e) {
+      if (!empty($this->length_e)) {
         $str .= "if (f.elements[\"$n\"].value.length < $this->minlength) {\n";
         $str .= "  alert(\"$this->length_e\");\n";
         $str .= "  f.elements[\"$n\"].focus();\n";
         $str .= "  return(false);\n}\n";
       }
-      if ($this->valid_e) {
+      if (!empty($this->valid_e)) {
         $flags = (!empty($this->icase) ? "gi" : "g");
 	$AllowNull = "";
         $str .= "if (window.RegExp) {\n";
